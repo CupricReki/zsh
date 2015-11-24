@@ -1,10 +1,10 @@
 # ignore everything and add exceptions later
-*
+/*
 
 # But not these files:
 !.gitignore
 !.zfunc
+!.zshrc  
+!.oh-my-zsh
 
-# ....even if they are in subdirectories
-!*/
 
