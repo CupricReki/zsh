@@ -1,2 +1,7 @@
+# Author: Skyler Ogden
+# Contact: CupricReki@gmail.com
+# November 24, 2015
+# Description: This script is to be ran using oh-my-zsh and allows for dot files to be carried to any new ssh connection
+
 tar c -C${HOME} .zshrc .zfunc .oh-my-zsh | ssh $1 'tar mx -C${HOME}' 
 ssh -t $1 "/bin/zsh"
