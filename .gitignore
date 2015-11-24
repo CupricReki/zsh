@@ -1,0 +1,10 @@
+# ignore everything and add exceptions later
+*
+
+# But not these files:
+!.gitignore
+!.zfunc
+
+# ....even if they are in subdirectories
+!*/
+
