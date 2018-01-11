@@ -1,5 +1,5 @@
 # Path to your oh-my-zsh installation.
-export ZSH=$HOME/.oh-my-zsh
+export ZSH=$HOME/.zsh/.oh-my-zsh
 
 # Set name of the theme to load.
 # Look in ~/.oh-my-zsh/themes/
@@ -76,7 +76,7 @@ source $ZSH/oh-my-zsh.sh
 # export SSH_KEY_PATH="~/.ssh/dsa_id"
 
 # Function folder
-export FPATH="$HOME/.zfunc:$FPATH"
+export FPATH="$HOME/.zsh/zfunc:$FPATH"
 autoload -Uz extract
 autoload -Uz sshdc
 autoload -Uz mkcd
@@ -93,3 +93,11 @@ autoload -Uz zssh
 alias xc="xclip -selection clipboard"
 alias please="sudo"
 alias plz="sudo"
+alias ssh="ssh -v"
+alias rsyncmove="rsync --stats --partial --progress --append --rsh=ssh -r -h --remove-sent-files"
+alias rsynccopy="rsync --stats --partial --progress --append --rsh=ssh -r -h"
+alias dirs="dirs -v"
+alias df="df -h"
+alias dd="dd conv=noerror status=progress"
+alias subl="sublime"
+
