@@ -2,13 +2,13 @@
 export ZSH=$HOME/.zsh/.oh-my-zsh
 
 # Would you like to use another custom folder than $ZSH/custom?
-ZSH_CUSTOM=~/.zsh/.oh-my-zsh
+# ZSH_CUSTOM=~/.zsh/.custom
 
 # Set name of the theme to load.
 # Look in ~/.oh-my-zsh/themes/
 # Optionally, if you set this to "random", it'll load a random theme each
 # time that oh-my-zsh is loaded.
-ZSH_THEME="gnzh"
+ZSH_THEME="cupric_gnzh"
 # ZSH_THEME="robbyrussell"
 # ZSH_THEME="cobalt2"
 
@@ -101,5 +101,4 @@ alias rsynccopy="rsync --stats --partial --progress --append --rsh=ssh -r -h"
 alias dirs="dirs -v"
 alias df="df -h"
 alias dd="dd conv=noerror status=progress"
-alias subl="sublime"
-
+alias subl="/opt/sublime_text/sublime_text"
