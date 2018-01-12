@@ -78,7 +78,7 @@ source $ZSH/oh-my-zsh.sh
 # export SSH_KEY_PATH="~/.ssh/dsa_id"
 
 # Functions folder
-ZFUNC="$HOME/.zsh/.zsfunc"
+ZFUNC="$HOME/.zsh/.zfunc"
 export FPATH="$ZFUNC:$FPATH"
 autoload -Uz extract
 autoload -Uz sshdc
