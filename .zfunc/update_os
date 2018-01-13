@@ -1,7 +1,7 @@
 #!/bin/bash
 # if not root, run as root
 if (( $EUID != 0 )); then
-    sudo $ZFUNC/ubuntu_update
+    sudo $ZFUNC/update_os
     exit
 fi
 apt-get update

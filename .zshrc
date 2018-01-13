@@ -78,13 +78,12 @@ source $ZSH/oh-my-zsh.sh
 # export SSH_KEY_PATH="~/.ssh/dsa_id"
 
 # Functions folder
-ZFUNC="$HOME/.zsh/.zfunc"
-export FPATH="$ZFUNC:$FPATH"
+export FPATH="$HOME/.zsh/.zfunc:$FPATH"
 autoload -Uz extract
 autoload -Uz sshdc
 autoload -Uz mkcd
 autoload -Uz zssh
-autoload -Uz ubuntu_update
+autoload -Uz update_os
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
@@ -103,4 +102,5 @@ alias rsynccopy="rsync --stats --partial --progress --append --rsh=ssh -r -h"
 alias dirs="dirs -v"
 alias df="df -h"
 alias dd="dd conv=noerror status=progress"
-alias subl="/opt/sublime_text/sublime_text"
+alias subl="/opt/sublime_text/sublime_text
+alias zgu="(cd $FPATH && git pull origin master)
