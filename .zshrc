@@ -102,5 +102,5 @@ alias rsynccopy="rsync --stats --partial --progress --append --rsh=ssh -r -h"
 alias dirs="dirs -v"
 alias df="df -h"
 alias dd="dd conv=noerror status=progress"
-alias subl="/opt/sublime_text/sublime_text
-alias zgu="(cd $FPATH && git pull origin master)
+alias subl="/opt/sublime_text/sublime_text"
+alias zgu="(cd $FPATH && git pull origin master) && source ~/.zshrc"
