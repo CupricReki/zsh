@@ -78,6 +78,7 @@ source $ZSH/oh-my-zsh.sh
 # export SSH_KEY_PATH="~/.ssh/dsa_id"
 
 # Functions folder
+export ZFUNC="$HOME/.zsh/.zfunc"
 export FPATH="$ZFUNC:$FPATH"
 autoload -Uz extract
 autoload -Uz sshdc
@@ -103,4 +104,4 @@ alias dirs="dirs -v"
 alias df="df -h"
 alias dd="dd conv=noerror status=progress"
 alias subl="/opt/sublime_text/sublime_text"
-alias zgu="(cd $FPATH && git pull origin master) && source ~/.zshrc"
+alias zgu="(cd $ZFUNC && git pull origin master) && source ~/.zshrc"
