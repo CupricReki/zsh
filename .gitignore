@@ -1,3 +1,3 @@
-$HOME/.zsh/.zLocal
-$HOME/.zsh/.oh-my-zsh/lib/setup_extraterm_zsh.zsh
+.zLocal/*
+.oh-my-zsh/lib/setup_extraterm_zsh.zsh
 
