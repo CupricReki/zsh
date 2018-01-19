@@ -59,7 +59,7 @@ plugins=(git colored-man cp kate)
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
 # export MANPATH="/usr/local/man:$MANPATH"
 
-source $ZSH/oh-my-zsh.sh
+
 
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
@@ -79,12 +79,23 @@ source $ZSH/oh-my-zsh.sh
 
 # Functions folder
 export ZFUNC="$HOME/.zsh/.zfunc"
-export FPATH="$ZFUNC:$FPATH"
+export ZLOCAL="$HOME/.zsh/.zLocal"
+
+# Adding to the path variable
+export FPATH="$ZFUNC:$ZLOCAL:$FPATH"
+
+# Source oh-my-zsh: https://github.com/robbyrussell/oh-my-zsh
+source $ZSH/oh-my-zsh.sh
+
+# Add any local configruations
+source $ZLOCAL/.zshrc_local
+
 autoload -Uz extract
 autoload -Uz sshdc
 autoload -Uz mkcd
 autoload -Uz zssh
 autoload -Uz update_os
+
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
@@ -105,3 +116,4 @@ alias df="df -h"
 alias dd="dd conv=noerror status=progress"
 alias subl="/opt/sublime_text/sublime_text"
 alias zgu="(cd $ZFUNC && git pull origin master) && source ~/.zshrc"
+alias ezsh="subl ~/.zsh/.zshrc"

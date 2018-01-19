@@ -1,0 +1,1 @@
+/home/cupric/.zsh/.zLocal/extraterm-commands-0.29.2/setup_extraterm_zsh.zsh
