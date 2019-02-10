@@ -79,10 +79,11 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/g
 
 # Functions folder
 export ZFUNC="$HOME/.zsh/.zfunc"
+export ZSCRIPTS="$HOME/.zsh/.zscripts"
 export ZLOCAL="$HOME/.zsh/.zLocal"
 
 # Adding to the path variable
-export FPATH="$ZFUNC:$ZLOCAL:$FPATH"
+export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 
 # Source oh-my-zsh: https://github.com/robbyrussell/oh-my-zsh
 source $ZSH/oh-my-zsh.sh
@@ -95,7 +96,7 @@ autoload -Uz sshdc
 autoload -Uz mkcd
 autoload -Uz zssh
 autoload -Uz update_os
-
+autoload -Uz install_rsub
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
