@@ -1,8 +1,12 @@
 # zsh
-My zsh scripts
 
 sudo apt install zsh
 
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
 
 git clone https://github.com/CupricReki/zsh.git
+
+rm -fdr .oh-my.zsh
+mv zsh .oh-my-zsh
+rm .zshrc
+ln -s .oh-my-zsh/zshrc .zshrc
