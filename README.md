@@ -9,4 +9,5 @@ git clone https://github.com/CupricReki/zsh.git
 rm -fdr .oh-my.zsh
 mv zsh .zsh
 rm .zshrc
+
 ln -s .zsh/zshrc .zshrc
