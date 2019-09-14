@@ -109,7 +109,6 @@ autoload -Uz install_rsub
 alias xc="xclip -selection clipboard"
 alias please="sudo"
 alias plz="sudo"
-alias ssh="ssh -v"
 alias rsyncmove="rsync --stats --partial --progress --append --rsh=ssh -r -h --remove-sent-files"
 alias rsynccopy="rsync --stats --partial --progress --append --rsh=ssh -r -h"
 alias dirs="dirs -v"
