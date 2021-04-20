@@ -113,6 +113,7 @@ alias rsyncmove="rsync --stats --partial --progress --append --rsh=ssh -r -h --r
 alias rsynccopy="rsync --stats --partial --progress --append --rsh=ssh -r -h"
 alias dirs="dirs -v"
 alias df="df -h"
+alias dl="docker logs -f"
 alias dc="docker-compose"
 alias dcl="docker-compose logs -f"
 alias dcu="docker-compose up"
