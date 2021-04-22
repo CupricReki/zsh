@@ -89,7 +89,7 @@ export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 source $ZSH/oh-my-zsh.sh
 
 # Add any local configruations
-source $ZLOCAL/.zshrc_local
+source $ZLOCAL/*
 
 autoload -Uz extract
 autoload -Uz sshdc
