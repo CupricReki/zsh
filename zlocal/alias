@@ -1,0 +1,2 @@
+alias reboot_windows='sudo gksu grub-reboot 0 && sudo gksu reboot'
+alias game_time='~/dev/kvm/vm_scripts/gaming_start.sh'

@@ -2,7 +2,7 @@
 export ZSH=$HOME/.zsh/.oh-my-zsh
 
 # Would you like to use another custom folder than $ZSH/custom?
-ZSH_CUSTOM=~/.zsh/.zcustom
+ZSH_CUSTOM=~/.zsh/zcustom
 
 # Set name of the theme to load.
 # Look in ~/.oh-my-zsh/themes/
@@ -78,9 +78,9 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/g
 # export SSH_KEY_PATH="~/.ssh/dsa_id"
 
 # Functions folder
-export ZFUNC="$HOME/.zsh/.zfunc"
-export ZSCRIPTS="$HOME/.zsh/.zscripts"
-export ZLOCAL="$HOME/.zsh/.zLocal"
+export ZFUNC="$HOME/.zsh/zfunc"
+export ZSCRIPTS="$HOME/.zsh/zscripts"
+export ZLOCAL="$HOME/.zsh/zlocal"
 
 # Adding to the path variable
 export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
