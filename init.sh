@@ -27,6 +27,7 @@ git clone https://github.com/CupricReki/zsh.git
 mv zsh .zsh
 rm .zshrc
 ln -s .zsh/.zshrc .zshrc
+ln -s .zsh/.zlogin
 
 # Antigen
 mkdir ~/.zsh/antigen

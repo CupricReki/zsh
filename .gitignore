@@ -1,3 +1,4 @@
-.zLocal/*
-.oh-my-zsh/
+.oh-my-zsh
 antigen/*
+zlocal/*
+zlogin_local/*
