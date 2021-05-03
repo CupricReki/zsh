@@ -89,23 +89,32 @@ antigen use oh-my-zsh
 
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
 antigen bundle git
-antigen bundle heroku
 antigen bundle pip
-antigen bundle lein
 antigen bundle command-not-found
-antigen bundle autosuggestions
 antigen bundle b4b4r07/enhancd
+antigen bundle supercrabtree/k
+
+# Save better command history using sqlite3
+# Usage: histdb
+antigen bundle larkery/zsh-histdb
+antigen bundle zsh-users/zsh-autosuggestions
+antigen bundle colored-man-pages
+
+# Open command on explain-shell.com usage: explain <command>
+antigen bundle gmatheu/zsh-plugins explain-shell
+
 
 # Syntax highlighting bundle.
 antigen bundle zsh-users/zsh-syntax-highlighting
 
 # Load the theme.
-antigen theme robbyrussell
+antigen theme denysdovhan/spaceship-prompt
 
 # Tell Antigen that you're done.
 antigen apply
 
 # Initialize enhancd
+ENHANCD_FILTER=fzy; export ENHANCD_FILTER
 source $ADOTDIR/bundles/b4b4r07/enhancd/init.sh
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
@@ -141,3 +150,5 @@ alias ezsh="subl ~/.zsh/.zshrc"
 alias vi="nvim"
 alias zgu='git -C ~/.zsh pull origin master && source ~/.zshrc'
 alias xc="xclip -selection clipboard"
+alias myip='curl http://ipecho.net/plain; echo'
+alias distro='cat /etc/*-release'

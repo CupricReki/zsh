@@ -23,6 +23,7 @@ rm .zshrc
 ln -s .zsh/.zshrc .zshrc
 
 # Antigen
+mkdir ~/.zsh/antigen
 cd ~/.zsh/antigen
 curl -L git.io/antigen > antigen.zsh
 
