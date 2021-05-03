@@ -2,6 +2,12 @@
 # zsh setup script
 # Update 5/2/21
 # Requires zsh, git, curl, fzy
+
+# Arch
+# for spacship-prompt theme
+# powerline-fonts
+# noto-fonts-emoji
+
 if ! command -v zsh &>/dev/null; then
   echo 'Install ZSH first'
   exit 2
