@@ -1,19 +1,5 @@
-# Path to your oh-my-zsh installation.
-export ZSH=$HOME/.zsh/.oh-my-zsh
-
 # Would you like to use another custom folder than $ZSH/custom?
 ZSH_CUSTOM=$HOME/.zsh/zcustom
-
-# Set name of the theme to load.
-# Look in ~/.oh-my-zsh/themes/
-# Optionally, if you set this to "random", it'll load a random theme each
-# time that oh-my-zsh is loaded.
-ZSH_THEME="cupric_gnzh"
-# ZSH_THEME="robbyrussell"
-# ZSH_THEME="cobalt2"
-
-# Uncomment the following line to use case-sensitive completion.
-CASE_SENSITIVE="false"
 
 # Uncomment the following line to use hyphen-insensitive completion. Case
 # sensitive completion must be off. _ and - will be interchangeable.
@@ -23,7 +9,7 @@ CASE_SENSITIVE="false"
 # DISABLE_AUTO_UPDATE="true"
 
 # Uncomment the following line to change how often to auto-update (in days).
-export UPDATE_ZSH_DAYS=13
+UPDATE_ZSH_DAYS=13
 
 # Uncomment the following line to disable colors in ls.
 # DISABLE_LS_COLORS="true"
@@ -52,14 +38,12 @@ HIST_STAMPS="yyyy-mm-dd"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git colored-man cp kate)
+# plugins=(git colored-man cp kate)
 
 # User configuration
 
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
 # export MANPATH="/usr/local/man:$MANPATH"
-
-
 
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
@@ -85,9 +69,6 @@ export ZLOCAL="$HOME/.zsh/zlocal"
 # Adding to the path variable
 export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 
-# Source oh-my-zsh: https://github.com/robbyrussell/oh-my-zsh
-source $ZSH/oh-my-zsh.sh
-
 # Add any local configruations
 for file in $ZLOCAL/*; do
   source "$file"
@@ -99,6 +80,35 @@ autoload -Uz mkcd
 autoload -Uz zssh
 autoload -Uz update_os
 autoload -Uz install_rsub
+
+# Antigen plugin manager
+# https://github.com/zsh-users/antigen
+
+# Set antigen directory
+export ADOTDIR=$HOME/.zsh/antigen
+
+export ANTIGEN_LOG=$ADOTDIR/antigen.log
+# Source Antigen
+source $HOME/.zsh/antigen/antigen.zsh
+
+# Load the oh-my-zsh's library.
+antigen use oh-my-zsh
+
+# Bundles from the default repo (robbyrussell's oh-my-zsh).
+antigen bundle git
+antigen bundle heroku
+antigen bundle pip
+antigen bundle lein
+antigen bundle command-not-found
+
+# Syntax highlighting bundle.
+antigen bundle zsh-users/zsh-syntax-highlighting
+
+# Load the theme.
+antigen theme robbyrussell
+
+# Tell Antigen that you're done.
+antigen apply
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
@@ -130,6 +140,6 @@ alias jcu="sudo journalctl -u"
 alias jcuf="sudo journalctl -f -x -e -u"
 alias subl="/opt/sublime_text/sublime_text"
 alias ezsh="subl ~/.zsh/.zshrc"
-alias vi="nvim" 
+alias vi="nvim"
 alias zgu='git -C ~/.zsh pull origin master && source ~/.zshrc'
 alias xc="xclip -selection clipboard"

@@ -23,4 +23,7 @@ ln -s .zsh/.zshrc .zshrc
 cd ~/.zsh
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --keep-zshrc
 
+# Antigen
+curl -L git.io/antigen > antigen.zsh
+
 source .zshrc
