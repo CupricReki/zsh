@@ -1,18 +1,20 @@
 function zsh_stats() {
-  fc -l 1 | awk '{CMD[$2]++;count++;}END { for (a in CMD)print CMD[a] " " CMD[a]/count*100 "% " a;}' | grep -v "./" | column -c3 -s " " -t | sort -nr | nl |  head -n20
+  fc -l 1 \
+    | awk '{ CMD[$2]++; count++; } END { for (a in CMD) print CMD[a] " " CMD[a]*100/count "% " a }' \
+    | grep -v "./" | sort -nr | head -20 | column -c3 -s " " -t | nl
 }
 
 function uninstall_oh_my_zsh() {
-  env ZSH=$ZSH /bin/sh $ZSH/tools/uninstall.sh
+  env ZSH="$ZSH" sh "$ZSH/tools/uninstall.sh"
 }
 
 function upgrade_oh_my_zsh() {
-  env ZSH=$ZSH /bin/sh $ZSH/tools/upgrade.sh
+  echo >&2 "${fg[yellow]}Note: \`$0\` is deprecated. Use \`omz update\` instead.$reset_color"
+  omz update
 }
 
 function take() {
-  mkdir -p $1
-  cd $1
+  mkdir -p $@ && cd ${@:$#}
 }
 
 function open_command() {
@@ -20,15 +22,19 @@ function open_command() {
 
   # define the open command
   case "$OSTYPE" in
-    darwin*)  open_cmd="open" ;;
-    cygwin*)  open_cmd="cygstart" ;;
-    linux*)   open_cmd="xdg-open" ;;
+    darwin*)  open_cmd='open' ;;
+    cygwin*)  open_cmd='cygstart' ;;
+    linux*)   [[ "$(uname -r)" != *icrosoft* ]] && open_cmd='nohup xdg-open' || {
+                open_cmd='cmd.exe /c start ""'
+                [[ -e "$1" ]] && { 1="$(wslpath -w "${1:a}")" || return 1 }
+              } ;;
+    msys*)    open_cmd='start ""' ;;
     *)        echo "Platform $OSTYPE not supported"
               return 1
               ;;
   esac
 
-  nohup $open_cmd "$@" &>/dev/null
+  ${=open_cmd} "$@" &>/dev/null
 }
 
 #
@@ -43,8 +49,7 @@ function open_command() {
 #    1 if it does not exist
 #
 function alias_value() {
-    alias "$1" | sed "s/^$1='\(.*\)'$/\1/"
-    test $(alias "$1")
+    (( $+aliases[$1] )) && echo $aliases[$1]
 }
 
 #
@@ -67,27 +72,27 @@ function try_alias_value() {
 #
 # Arguments:
 #    1. name - The variable to set
-#    2. val  - The default value 
+#    2. val  - The default value
 # Return value:
 #    0 if the variable exists, 3 if it was set
 #
 function default() {
-    test `typeset +m "$1"` && return 0
+    (( $+parameters[$1] )) && return 0
     typeset -g "$1"="$2"   && return 3
 }
 
 #
-# Set enviroment variable "$1" to default value "$2" if "$1" is not yet defined.
+# Set environment variable "$1" to default value "$2" if "$1" is not yet defined.
 #
 # Arguments:
 #    1. name - The env variable to set
-#    2. val  - The default value 
+#    2. val  - The default value
 # Return value:
 #    0 if the env variable exists, 3 if it was set
 #
 function env_default() {
-    env | grep -q "^$1=" && return 0 
-    export "$1=$2"       && return 3
+    [[ ${parameters[$1]} = *-export* ]] && return 0
+    export "$1=$2" && return 3
 }
 
 
@@ -101,7 +106,7 @@ zmodload zsh/langinfo
 #
 # By default, reserved characters and unreserved "mark" characters are
 # not escaped by this function. This allows the common usage of passing
-# an entire URL in, and encoding just special characters in it, with 
+# an entire URL in, and encoding just special characters in it, with
 # the expectation that reserved and mark characters are used appropriately.
 # The -r and -m options turn on escaping of the reserved and mark characters,
 # respectively, which allows arbitrary strings to be fully escaped for
@@ -111,8 +116,8 @@ zmodload zsh/langinfo
 # Returns nonzero if encoding failed.
 #
 # Usage:
-#  omz_urlencode [-r] [-m] <string>
-#  
+#  omz_urlencode [-r] [-m] [-P] <string>
+#
 #    -r causes reserved characters (;/?:@&=+$,) to be escaped
 #
 #    -m causes "mark" characters (_.!~*''()-) to be escaped
@@ -120,6 +125,7 @@ zmodload zsh/langinfo
 #    -P causes spaces to be encoded as '%20' instead of '+'
 function omz_urlencode() {
   emulate -L zsh
+  local -a opts
   zparseopts -D -E -a opts r m P
 
   local in_str=$1
@@ -177,8 +183,8 @@ function omz_urlencode() {
 # URL-decode a string
 #
 # Decodes a RFC 2396 URL-encoded (%-escaped) string.
-# This decodes the '+' and '%' escapes in the input string, and leaves 
-# other characters unchanged. Does not enforce that the input is a 
+# This decodes the '+' and '%' escapes in the input string, and leaves
+# other characters unchanged. Does not enforce that the input is a
 # valid URL-encoded string. This is a convenience to allow callers to
 # pass in a full URL or similar strings and decode them for human
 # presentation.
@@ -196,7 +202,7 @@ function omz_urldecode {
   local caller_encoding=$langinfo[CODESET]
   local LC_ALL=C
   export LC_ALL
-  
+
   # Change + back to ' '
   local tmp=${encoded_url:gs/+/ /}
   # Protect other escapes to pass through the printf unchanged
@@ -220,4 +226,3 @@ function omz_urldecode {
 
   echo -E "$decoded"
 }
-
