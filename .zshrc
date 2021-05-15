@@ -93,12 +93,13 @@ antigen bundle pip
 antigen bundle command-not-found
 antigen bundle b4b4r07/enhancd
 antigen bundle supercrabtree/k
+antigen bundle zsh-users/zsh-autosuggestions
+antigen bundle colored-man-pages
+antigen bundle zsh-users/zsh-completions
 
 # Save better command history using sqlite3
 # Usage: histdb
 antigen bundle larkery/zsh-histdb
-antigen bundle zsh-users/zsh-autosuggestions
-antigen bundle colored-man-pages
 
 # Open command on explain-shell.com usage: explain <command>
 antigen bundle gmatheu/zsh-plugins explain-shell
@@ -152,3 +153,20 @@ alias zgu='git -C ~/.zsh pull origin master && source ~/.zshrc'
 alias xc="xclip -selection clipboard"
 alias myip='curl http://ipecho.net/plain; echo'
 alias distro='cat /etc/*-release'
+alias bwe='export BW_SESSION=$( bw unlock --raw )'
+
+# Alias commands only if commands exist
+# Check for ccat
+ccat --version &> /dev/null
+if [ $? -eq 0 ]; then
+  alias cat='ccat'
+fi
+
+# Check for nvim
+nvim --version &> /dev/null
+if [ $? -eq 0 ]; then
+	alias vi='nvim'
+  	alias vim='nvim'
+	export VISUAL=nvim;
+ 	export EDITOR=nvim;
+fi
