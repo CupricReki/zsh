@@ -97,13 +97,15 @@ antigen bundle zsh-users/zsh-autosuggestions
 antigen bundle colored-man-pages
 antigen bundle zsh-users/zsh-completions
 
+# Custom bundles
+antigen bundle cupricreki/zsh-bw-completion
+
 # Save better command history using sqlite3
 # Usage: histdb
 antigen bundle larkery/zsh-histdb
 
 # Open command on explain-shell.com usage: explain <command>
 antigen bundle gmatheu/zsh-plugins explain-shell
-
 
 # Syntax highlighting bundle.
 antigen bundle zsh-users/zsh-syntax-highlighting
@@ -118,6 +120,12 @@ antigen apply
 ENHANCD_FILTER=fzy; export ENHANCD_FILTER
 source $ADOTDIR/bundles/b4b4r07/enhancd/init.sh
 
+# Custom environmental  variables
+
+# Better questions
+export SPROMPT="Correct %R to %r? (Yes, No, Abort, Edit) "
+
+# Alias
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
 # users are encouraged to define aliases within the ZSH_CUSTOM folder.
