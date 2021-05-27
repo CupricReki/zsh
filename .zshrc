@@ -64,7 +64,7 @@ export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 
 # Add any local configruations
 for file in $ZLOCAL/*; do
-  source "$file"
+    source "$file"
 done
 
 autoload -Uz extract
