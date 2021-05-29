@@ -97,9 +97,6 @@ antigen bundle zsh-users/zsh-autosuggestions
 antigen bundle colored-man-pages
 antigen bundle zsh-users/zsh-completions
 
-# Custom bundles
-antigen bundle cupricreki/zsh-bw-completion
-
 # Save better command history using sqlite3
 # Usage: histdb
 antigen bundle larkery/zsh-histdb
@@ -112,9 +109,6 @@ antigen bundle zsh-users/zsh-syntax-highlighting
 
 # Load the theme.
 antigen theme denysdovhan/spaceship-prompt
-
-# Tell Antigen that you're done.
-antigen apply
 
 # Initialize enhancd
 ENHANCD_FILTER=fzy; export ENHANCD_FILTER
@@ -156,14 +150,19 @@ alias jcu="sudo journalctl -u"
 alias jcuf="sudo journalctl -f -x -e -u"
 alias subl="/opt/sublime_text/sublime_text"
 alias ezsh="subl ~/.zsh/.zshrc"
-alias vi="nvim"
 alias zgu='git -C ~/.zsh pull origin master && source ~/.zshrc'
 alias xc="xclip -selection clipboard"
 alias myip='curl http://ipecho.net/plain; echo'
 alias distro='cat /etc/*-release'
-alias bwe='export BW_SESSION=$( bw unlock --raw )'
 
 # Alias commands only if commands exist
+# Check for bitwarden
+bw --version &> /dev/null
+if [ $? -eq 0 ]; then
+    alias bwe='export BW_SESSION=$( bw unlock --raw )'
+    antigen bundle cupricreki/zsh-bw-completion
+fi
+
 # Check for ccat
 ccat --version &> /dev/null
 if [ $? -eq 0 ]; then
@@ -178,3 +177,8 @@ if [ $? -eq 0 ]; then
 	export VISUAL=nvim;
  	export EDITOR=nvim;
 fi
+
+# Tell Antigen that you're done.
+antigen apply
+
+
