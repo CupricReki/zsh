@@ -18,6 +18,14 @@ rm .zshrc
 ln -s .zsh/.zshrc .zshrc
 ````
 
+## Get Antigen
+````code
+mkdir ~/.zsh/antigen
+cd ~/.zsh/antigen
+curl -L git.io/antigen > antigen.zsh
+````
+
+
 ## Initialize
 ````code
 exec zsh
