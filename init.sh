@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # zsh
 # zsh setup script
 # Update 5/2/21
