@@ -23,7 +23,7 @@ elif ! command -v fzy &>/dev/null; then
 fi
 
 cd ~
-git clone https://github.com/CupricReki/zsh.git
+git clone https://gitlab.ogbase.net/zsh.git
 mv zsh .zsh
 rm .zshrc
 ln -s .zsh/.zshrc .zshrc
@@ -34,5 +34,4 @@ mkdir ~/.zsh/antigen
 cd ~/.zsh/antigen
 curl -L git.io/antigen > antigen.zsh
 
-# https://github.com/b4b4r07/enhancd
-source .zshrc
+exec zsh
