@@ -96,6 +96,7 @@ antigen bundle supercrabtree/k
 antigen bundle zsh-users/zsh-autosuggestions
 antigen bundle colored-man-pages
 antigen bundle zsh-users/zsh-completions
+#antigen bundle cupricreki/zsh-bw-completion
 
 # Save better command history using sqlite3
 # Usage: histdb
@@ -110,9 +111,9 @@ antigen bundle zsh-users/zsh-syntax-highlighting
 # Load the theme.
 antigen theme denysdovhan/spaceship-prompt
 
-# Initialize enhancd
-ENHANCD_FILTER=fzy; export ENHANCD_FILTER
-source $ADOTDIR/bundles/b4b4r07/enhancd/init.sh
+
+# Tell Antigen that you're done.
+antigen apply
 
 # Custom environmental  variables
 
@@ -154,15 +155,9 @@ alias zgu='git -C ~/.zsh pull origin master && source ~/.zshrc'
 alias xc="xclip -selection clipboard"
 alias myip='curl http://ipecho.net/plain; echo'
 alias distro='cat /etc/*-release'
+alias bwe='export BW_SESSION=$( bw unlock --raw )'
 
 # Alias commands only if commands exist
-# Check for bitwarden
-bw --version &> /dev/null
-if [ $? -eq 0 ]; then
-    alias bwe='export BW_SESSION=$( bw unlock --raw )'
-    antigen bundle cupricreki/zsh-bw-completion
-fi
-
 # Check for ccat
 ccat --version &> /dev/null
 if [ $? -eq 0 ]; then
@@ -178,7 +173,9 @@ if [ $? -eq 0 ]; then
  	export EDITOR=nvim;
 fi
 
-# Tell Antigen that you're done.
-antigen apply
+
+# Initialize enhancd
+ENHANCD_FILTER=fzy; export ENHANCD_FILTER
+source $ADOTDIR/bundles/b4b4r07/enhancd/init.sh
 
 
