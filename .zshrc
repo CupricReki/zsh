@@ -156,6 +156,7 @@ alias xc="xclip -selection clipboard"
 alias myip='curl http://ipecho.net/plain; echo'
 alias distro='cat /etc/*-release'
 alias bwe='export BW_SESSION=$( bw unlock --raw )'
+alias perms="stat -c '%a - %n'"
 
 # Alias commands only if commands exist
 # Check for ccat
