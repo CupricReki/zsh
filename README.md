@@ -33,4 +33,8 @@ curl -L git.io/antigen > antigen.zsh
 ## Initialize
 ````code
 exec zsh
-````
+
+
+## Update
+
+cd ~/.zsh && git pull && exec zsh
