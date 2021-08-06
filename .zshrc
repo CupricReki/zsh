@@ -73,6 +73,7 @@ autoload -Uz mkcd
 autoload -Uz zssh
 autoload -Uz update_os
 autoload -Uz install_rsub
+autoload -Uz update_zsh
 
 # Antigen plugin manager
 # https://github.com/zsh-users/antigen
