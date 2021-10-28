@@ -25,7 +25,7 @@ elif ! command -v fzy &>/dev/null; then
 fi
 
 cd ~
-git clone https://gitlab.ogbase.net/zsh.git
+git clone https://gitlab.ogbase.net/cupric/zsh.git
 mv zsh .zsh
 rm .zshrc
 ln -s .zsh/.zshrc .zshrc
