@@ -10,19 +10,13 @@
 # powerline-fonts
 # noto-fonts-emoji
 
-if ! command -v zsh &>/dev/null; then
-  echo 'Install ZSH first'
-  exit 2
-elif ! command -v git &>/dev/null; then
-  echo 'Install git first'
-  exit 2
-elif ! command -v curl &>/dev/null; then
-  echo 'Install curl first'
-  exit 2
-elif ! command -v fzy &>/dev/null; then
-  echo 'Install fzy first'
-  exit 2
-fi
+type zsh >/dev/null 2>&1 || { echo >&2 "This script requires zsh, git and curl but at least zsh is not installed.  Aborting."; exit 2; }
+
+type git >/dev/null 2>&1 || { echo >&2 "This script requires zsh, git and curl but at least git is not installed.  Aborting."; exit 2; }
+
+type curl >/dev/null 2>&1 || { echo >&2 "This script requires zsh, git and curl but at least curl is not installed.  Aborting."; exit 2; }
+
+type fzy >/dev/null 2>&1 || { echo >&2 "This script requires zsh, git and curl but at least fzy is not installed.  Aborting."; exit 2; }
 
 cd ~
 git clone https://gitlab.ogbase.net/cupric/zsh.git
