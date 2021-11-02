@@ -30,4 +30,5 @@ mkdir ~/.zsh/antigen
 cd ~/.zsh/antigen
 curl -L git.io/antigen > antigen.zsh
 
+cd ~
 exec zsh
