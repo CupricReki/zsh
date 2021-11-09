@@ -2,7 +2,7 @@
 
 > Install zsh, oh-my-zsh, curl, and fzy first
 ````code
-sudo apt install -y zsh git curl
+sudo apt install -y zsh git curl fzy
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
 ``````
 Run init script (this is enough for a full install)
@@ -33,6 +33,13 @@ curl -L git.io/antigen > antigen.zsh
 ## Initialize
 ````code
 exec zsh
+````
+
+## Fedora install fzy
+````code
+sudo dnf install dnf-plugins-core
+sudo dnf copr enable lehrenfried/fzy
+sudo dnf install fzy -y
 ````
 
 ## Update
