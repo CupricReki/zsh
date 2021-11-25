@@ -62,11 +62,6 @@ export ZLOCAL="$HOME/.zsh/zlocal"
 # Adding to the path variable
 export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 
-# Add any local configruations
-for file in $ZLOCAL/*; do
-    source "$file"
-done
-
 autoload -Uz extract
 autoload -Uz sshdc
 autoload -Uz mkcd
@@ -124,6 +119,11 @@ export SPROMPT="Correct %R to %r? (Yes, No, Abort, Edit) "
 # Spaceship prompt
 # Don't get battery
 export SPACESHIP_BATTERY_SHOW=false
+
+# Add any local configruations
+for file in $ZLOCAL/*; do
+    source "$file"
+done
 
 # Alias
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
