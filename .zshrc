@@ -121,6 +121,10 @@ antigen apply
 # Better questions
 export SPROMPT="Correct %R to %r? (Yes, No, Abort, Edit) "
 
+# Spaceship prompt
+# Don't get battery
+export SPACESHIP_BATTERY_SHOW=false
+
 # Alias
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
