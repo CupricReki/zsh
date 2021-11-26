@@ -28,7 +28,6 @@ get_zsh () {
 	echo "Getting zsh configs from gitlab.ogbase.net/cupric/zsh.git"
 	cd ~
 	git clone https://gitlab.ogbase.net/cupric/zsh.git
-	cp -r ~/dev/zsh ~
 	mv zsh .zsh
 	rm .zshrc
 	ln -s .zsh/.zshrc .zshrc
