@@ -93,6 +93,7 @@ antigen bundle zsh-users/zsh-autosuggestions
 antigen bundle colored-man-pages
 antigen bundle zsh-users/zsh-completions
 antigen bundle docker
+antigen bundle Tarrasch/zsh-bd
 #antigen bundle cupricreki/zsh-bw-completion
 
 # Save better command history using sqlite3
