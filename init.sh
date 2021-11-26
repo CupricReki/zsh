@@ -44,4 +44,4 @@ get_zsh
 
 cd ~
 #chsh -s /bin/zsh
-source ~/.zshrc
+exec zsh
