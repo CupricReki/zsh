@@ -35,7 +35,7 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/g
 export ZSH_CUSTOM=$HOME/.zsh/zcustom
 
 # Cache directory
-ZSH_CACHE_DIR=$HOME/zsh/.cache
+ZSH_CACHE_DIR=$HOME/.zsh/.cache
 
 # Functions folder
 export ZFUNC="$HOME/.zsh/zfunc"
