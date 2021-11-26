@@ -1,5 +1,9 @@
 # Install
 
+````code
+https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh
+````
+
 > Install zsh, oh-my-zsh, curl, and fzy first
 ````code
 sudo apt install -y zsh git curl fzy
