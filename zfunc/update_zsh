@@ -1,3 +1,8 @@
 #!/bin/bash
-cd ~/.zsh && git pull && exec zsh
+
+# update repo
+git -C $HOME'/.zsh' pull
+
+# apply changes
+exec zsh
 
