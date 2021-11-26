@@ -1,7 +1,7 @@
 # Install
 
 ````code
-https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh
+wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash
 ````
 
 > Install zsh, oh-my-zsh, curl, and fzy first
