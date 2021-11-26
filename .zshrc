@@ -79,10 +79,12 @@ autoload -Uz update_zsh
 
 
 # Load any local configuration
-for file in $ZLOCAL/*; do
-    source "$file"
-    echo "sourcing local config $file"
-done
+if [ "$(ls -A $ZLOCAL)" ]; then   
+  for file in $ZLOCAL/*; do
+      source "$file"
+      echo "sourcing local config $file"
+  done
+fi
 
 # Custom environmental  variables
 
