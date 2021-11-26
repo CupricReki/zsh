@@ -79,7 +79,7 @@ autoload -Uz update_zsh
 
 
 # Load any local configuration
-if [ "$(ls -A $ZLOCAL)" ]; then   
+if [ "$(ls $ZLOCAL)" ]; then   
   for file in $ZLOCAL/*; do
       source "$file"
       echo "sourcing local config $file"
