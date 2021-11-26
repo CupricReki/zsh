@@ -10,25 +10,39 @@
 # powerline-fonts
 # noto-fonts-emoji
 
-type zsh >/dev/null 2>&1 || { echo >&2 "This script requires zsh, git and curl but at least zsh is not installed.  Aborting."; exit 2; }
+install_deb () {
+	sudo apt install $1 -y
+}
 
-type git >/dev/null 2>&1 || { echo >&2 "This script requires zsh, git and curl but at least git is not installed.  Aborting."; exit 2; }
+dep_check () {
+# Checks for zsh, git, curl, fzy, and antibody
 
-type curl >/dev/null 2>&1 || { echo >&2 "This script requires zsh, git and curl but at least curl is not installed.  Aborting."; exit 2; }
+	type zsh >/dev/null 2>&1 || { deb_install "zsh"; }
+	type git >/dev/null 2>&1 || { deb_install "git"; }
+	type curl >/dev/null 2>&1 || { deb_install "curl"; }
+	type fzy >/dev/null 2>&1 || { deb_install "fzy"; }
+	type antibody >/dev/null 2>&1 || { install_antigen; }
+}
 
-type fzy >/dev/null 2>&1 || { echo >&2 "This script requires zsh, git and curl but at least fzy is not installed.  Aborting."; exit 2; }
+get_zsh () {
+	echo "Getting zsh configs from gitlab.ogbase.net/cupric/zsh.git"
+	cd ~
+	git clone https://gitlab.ogbase.net/cupric/zsh.git
+	cp -r ~/dev/zsh ~
+	mv zsh .zsh
+	rm .zshrc
+	ln -s .zsh/.zshrc .zshrc
+}
+
+install_antigen () {
+	echo "Getting antigen plugin manager from git.io/antibody"
+	#mkdir ~/.zsh/antibody
+	curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin
+}
+
+dep_check
+get_zsh
 
 cd ~
-git clone https://gitlab.ogbase.net/cupric/zsh.git
-mv zsh .zsh
-rm .zshrc
-ln -s .zsh/.zshrc .zshrc
-# ln -s .zsh/.zlogin
-
-# Antigen
-mkdir ~/.zsh/antigen
-cd ~/.zsh/antigen
-curl -L git.io/antigen > antigen.zsh
-
-cd ~
+#chsh -s /bin/zsh
 exec zsh

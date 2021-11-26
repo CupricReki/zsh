@@ -1,10 +1,5 @@
-# Customize to your needs...
-# autoload -Uz compinit promptinit
-
 # Would you like to use another custom folder than $ZSH/custom?
 ZSH_CUSTOM=$HOME/.zsh/zcustom
-
-ZSH_CACHE_DIR=$HOME/.cache
 
 # Uncomment the following line to use hyphen-insensitive completion. Case
 # sensitive completion must be off. _ and - will be interchangeable.
@@ -75,17 +70,61 @@ autoload -Uz update_os
 autoload -Uz install_rsub
 autoload -Uz update_zsh
 
+# Antigen plugin manager
+# https://github.com/zsh-users/antigen
+
+# Set antigen directory
+export ADOTDIR=$HOME/.zsh/antigen
+
+export ANTIGEN_LOG=$ADOTDIR/antigen.log
+# Source Antigen
+source $HOME/.zsh/antigen/antigen.zsh
+
+# Load the oh-my-zsh's library.
+antigen use oh-my-zsh
+
+# Bundles from the default repo (robbyrussell's oh-my-zsh).
+antigen bundle git
+antigen bundle pip
+antigen bundle command-not-found
+antigen bundle b4b4r07/enhancd
+antigen bundle supercrabtree/k
+antigen bundle zsh-users/zsh-autosuggestions
+antigen bundle colored-man-pages
+antigen bundle zsh-users/zsh-completions
+antigen bundle docker
+antigen bundle Tarrasch/zsh-bd
+#antigen bundle cupricreki/zsh-bw-completion
+
+# Save better command history using sqlite3
+# Usage: histdb
+antigen bundle larkery/zsh-histdb
+
+# Open command on explain-shell.com usage: explain <command>
+antigen bundle gmatheu/zsh-plugins explain-shell
+
+# Syntax highlighting bundle.
+antigen bundle zsh-users/zsh-syntax-highlighting
+
+# Load the theme.
+antigen theme denysdovhan/spaceship-prompt
 
 # Load any local configuration
-# for file in $ZLOCAL/*; do
-#     source "$file"
-#     echo "sourcing local config $file"
-# done
+for file in $ZLOCAL/*; do
+    source "$file"
+    echo "sourcing local config $file"
+done
 
 # Custom environmental  variables
 
 # Better questions
 export SPROMPT="Correct %R to %r? (Yes, No, Abort, Edit) "
+
+# Spaceship prompt
+# Don't get battery
+export SPACESHIP_BATTERY_SHOW=false
+
+# Add any local configruations
 
 
 # Alias
@@ -144,38 +183,8 @@ fi
 
 
 # Initialize enhancd
-#ENHANCD_FILTER=fzy; export ENHANCD_FILTER
-#source $ADOTDIR/bundles/b4b4r07/enhancd/init.sh
+ENHANCD_FILTER=fzy; export ENHANCD_FILTER
+source $ADOTDIR/bundles/b4b4r07/enhancd/init.sh
 
-
-# Antibody
-# source $HOME/.zsh/antibody/antibody/antibody.zsh
-source <(antibody init)
-antibody bundle ohmyzsh/ohmyzsh path:plugins/git
-antibody bundle ohmyzsh/ohmyzsh path:plugins/pip
-antibody bundle ohmyzsh/ohmyzsh path:plugins/kubectl
-antibody bundle ohmyzsh/ohmyzsh path:plugins/command-not-found
-antibody bundle b4b4r07/enhancd
-# antibody bundle supercrabtree/k
-antibody bundle zsh-users/zsh-autosuggestions
-antibody bundle ohmyzsh/ohmyzsh path:plugins/colored-man-pages
-antibody bundle zsh-users/zsh-completions
-antibody bundle ohmyzsh/ohmyzsh path:plugins/docker
-antibody bundle Tarrasch/zsh-bd
-#antibody bundle cupricreki/zsh-bw-completion
-
-# Save better command history using sqlite3
-# Usage: histdb
-antibody bundle larkery/zsh-histdb
-
-# Open command on explain-shell.com usage: explain <command>
-antibody bundle gmatheu/zsh-plugins explain-shell
-
-# Syntax highlighting bundle.
-antibody bundle zsh-users/zsh-syntax-highlighting
-
-# Load the theme.
-# Spaceship prompt
-antibody bundle spaceship-prompt/spaceship-prompt
-# Don't get battery
-export SPACESHIP_BATTERY_SHOW=false
+# Tell Antigen that you're done.
+antigen apply
