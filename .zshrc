@@ -92,6 +92,7 @@ antigen bundle supercrabtree/k
 antigen bundle zsh-users/zsh-autosuggestions
 antigen bundle colored-man-pages
 antigen bundle zsh-users/zsh-completions
+antigen bundle docker
 #antigen bundle cupricreki/zsh-bw-completion
 
 # Save better command history using sqlite3
@@ -112,9 +113,6 @@ for file in $ZLOCAL/*; do
     source "$file"
     echo "sourcing local config $file"
 done
-
-# Tell Antigen that you're done.
-antigen apply
 
 # Custom environmental  variables
 
@@ -187,4 +185,5 @@ fi
 ENHANCD_FILTER=fzy; export ENHANCD_FILTER
 source $ADOTDIR/bundles/b4b4r07/enhancd/init.sh
 
-
+# Tell Antigen that you're done.
+antigen apply
