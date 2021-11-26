@@ -107,6 +107,11 @@ antigen bundle zsh-users/zsh-syntax-highlighting
 # Load the theme.
 antigen theme denysdovhan/spaceship-prompt
 
+# Load any local configuration
+for file in $ZLOCAL/*; do
+    source "$file"
+    echo "sourcing local config $file"
+done
 
 # Tell Antigen that you're done.
 antigen apply
@@ -121,9 +126,7 @@ export SPROMPT="Correct %R to %r? (Yes, No, Abort, Edit) "
 export SPACESHIP_BATTERY_SHOW=false
 
 # Add any local configruations
-for file in $ZLOCAL/*; do
-    source "$file"
-done
+
 
 # Alias
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
