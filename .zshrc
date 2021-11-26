@@ -34,6 +34,9 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/g
 # Customizations folder
 export ZSH_CUSTOM=$HOME/.zsh/zcustom
 
+# Cache directory
+# Needed for kubectl
+ZSH_CACHE_DIR=$HOME/.zsh/.cache
 
 # Functions folder
 export ZFUNC="$HOME/.zsh/zfunc"
