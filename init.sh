@@ -21,7 +21,7 @@ dep_check () {
 	type git >/dev/null 2>&1 || { deb_install "git"; }
 	type curl >/dev/null 2>&1 || { deb_install "curl"; }
 	type fzy >/dev/null 2>&1 || { deb_install "fzy"; }
-	type antibody >/dev/null 2>&1 || { install_antigen; }
+	type antibody >/dev/null 2>&1 || { install_antibody; }
 }
 
 get_zsh () {
@@ -33,7 +33,7 @@ get_zsh () {
 	ln -s .zsh/.zshrc .zshrc
 }
 
-install_antigen () {
+install_antibody () {
 	echo "Getting antigen plugin manager from git.io/antibody"
 	#mkdir ~/.zsh/antibody
 	curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin
