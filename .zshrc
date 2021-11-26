@@ -1,4 +1,5 @@
-# Customize to your needs...
+# Compdef is basically a function used by zsh for load the auto-completions. 
+# The completion system needs to be activated. 
 autoload -Uz compinit 
 compinit
 
