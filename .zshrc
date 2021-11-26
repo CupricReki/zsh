@@ -1,5 +1,6 @@
 # Customize to your needs...
-# autoload -Uz compinit promptinit
+autoload -Uz compinit 
+compinit
 
 # Would you like to use another custom folder than $ZSH/custom?
 ZSH_CUSTOM=$HOME/.zsh/zcustom
