@@ -89,8 +89,7 @@ autoload -Uz update_zsh
 # Better questions
 export SPROMPT="Correct %R to %r? (Yes, No, Abort, Edit) "
 
-
-alias -='cd -'
+alias '-'='cd -'
 alias ...=../..
 alias ....=../../..
 alias .....=../../../..
