@@ -110,7 +110,7 @@ antibody bundle zsh-users/zsh-syntax-highlighting
 
 # Load the theme.
 # Spaceship prompt
-antibody bundle spaceship-prompt/spaceship-prompt
+antibody bundle spaceship-prompt/spaceship-prompt &> /dev/null
 # Don't get battery
 export SPACESHIP_BATTERY_SHOW=false
 
