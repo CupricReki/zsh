@@ -90,6 +90,7 @@ fi
 source <(antibody init)
 antibody bundle ohmyzsh/ohmyzsh path:plugins/git
 antibody bundle ohmyzsh/ohmyzsh path:plugins/pip
+antibody bundle ohmyzsh/ohmyzsh path:plugins/sudo
 antibody bundle ohmyzsh/ohmyzsh path:plugins/command-not-found
 antibody bundle ohmyzsh/ohmyzsh path:plugins/colored-man-pages
 # antibody bundle supercrabtree/k
@@ -110,6 +111,7 @@ bindkey '^r' _histdb-isearch
 # M-h will toggle limiting the search to the current host’s history.
 # M-d will toggle limiting the search to the current directory and subdirectories’ histories
 
+# Make zsh-autosuggestion use histdb
 _zsh_autosuggest_strategy_histdb_top_here() {
     local query="select commands.argv from
 history left join commands on history.command_id = commands.rowid
