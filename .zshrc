@@ -80,10 +80,10 @@ fi
 # Check for nvim
 nvim --version &> /dev/null
 if [ $? -eq 0 ]; then
-	alias vi='nvim'
-  	alias vim='nvim'
-	export VISUAL=nvim;
- 	export EDITOR=nvim;
+  alias vi='nvim'
+    alias vim='nvim'
+  export VISUAL=nvim;
+  export EDITOR=nvim;
 fi
 
 # Antibody Plug Manager
@@ -101,6 +101,14 @@ antibody bundle Tarrasch/zsh-bd
 # Save better command history using sqlite3
 # Usage: histdb
 antibody bundle larkery/zsh-histdb
+autoload -Uz add-zsh-hook
+source $HOME/.cache/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-larkery-SLASH-zsh-histdb/sqlite-history.zsh 
+source $HOME/.cache/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-larkery-SLASH-zsh-histdb/histdb-interactive.zsh
+bindkey '^r' _histdb-isearch
+
+# M-j will cd to the directory for the history entry you’re looking at. This means you can search for ./run-this-command and then M-j to go to the right directory before running.
+# M-h will toggle limiting the search to the current host’s history.
+# M-d will toggle limiting the search to the current directory and subdirectories’ histories
 
 # Open command on explain-shell.com usage: explain <command>
 antibody bundle gmatheu/zsh-plugins explain-shell
