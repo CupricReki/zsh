@@ -86,20 +86,15 @@ if [ $? -eq 0 ]; then
  	export EDITOR=nvim;
 fi
 
-# Antibody
-# source $HOME/.zsh/antibody/antibody/antibody.zsh
+# Antibody Plug Manager
 source <(antibody init)
 antibody bundle ohmyzsh/ohmyzsh path:plugins/git
 antibody bundle ohmyzsh/ohmyzsh path:plugins/pip
-antibody bundle ohmyzsh/ohmyzsh path:plugins/kubectl
 antibody bundle ohmyzsh/ohmyzsh path:plugins/command-not-found
-antibody bundle ohmyzsh/ohmyzsh path:plugins/command-not-found
-antibody bundle b4b4r07/enhancd
+antibody bundle ohmyzsh/ohmyzsh path:plugins/colored-man-pages
 # antibody bundle supercrabtree/k
 antibody bundle zsh-users/zsh-autosuggestions
-antibody bundle ohmyzsh/ohmyzsh path:plugins/colored-man-pages
 antibody bundle zsh-users/zsh-completions
-antibody bundle ohmyzsh/ohmyzsh path:plugins/docker
 antibody bundle Tarrasch/zsh-bd
 #antibody bundle cupricreki/zsh-bw-completion
 
@@ -120,5 +115,19 @@ antibody bundle spaceship-prompt/spaceship-prompt
 export SPACESHIP_BATTERY_SHOW=false
 
 # Initialize enhancd
+antibody bundle b4b4r07/enhancd
 ENHANCD_FILTER=fzy; export ENHANCD_FILTER
 source $HOME/.cache/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07-SLASH-enhancd/init.sh
+
+# Load kubectl bundle if installed
+kubectl --version &> /dev/null
+if [ $? -eq 0 ]; then
+  # Load bundle
+  antibody bundle ohmyzsh/ohmyzsh path:plugins/kubectl 
+fi
+
+# Load docker bundle if installed
+docker --version &> /dev/null
+if [ $? -eq 0 ]; then
+  antibody bundle ohmyzsh/ohmyzsh path:plugins/docker 
+fi
