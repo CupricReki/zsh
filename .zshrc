@@ -110,6 +110,19 @@ bindkey '^r' _histdb-isearch
 # M-h will toggle limiting the search to the current host’s history.
 # M-d will toggle limiting the search to the current directory and subdirectories’ histories
 
+_zsh_autosuggest_strategy_histdb_top_here() {
+    local query="select commands.argv from
+history left join commands on history.command_id = commands.rowid
+left join places on history.place_id = places.rowid
+where places.dir LIKE '$(sql_escape $PWD)%'
+and commands.argv LIKE '$(sql_escape $1)%'
+group by commands.argv order by count(*) desc limit 1"
+    suggestion=$(_histdb_query "$query")
+}
+
+ZSH_AUTOSUGGEST_STRATEGY=histdb_top_here
+
+
 # Open command on explain-shell.com usage: explain <command>
 antibody bundle gmatheu/zsh-plugins explain-shell
 
