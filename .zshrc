@@ -1,3 +1,8 @@
+# Requirements
+# 1. ZSH
+# 2. antibody
+# 3. sqlite3 (history)
+
 # Compdef is basically a function used by zsh for load the auto-completions. 
 # The completion system needs to be activated. 
 autoload -Uz compinit 
