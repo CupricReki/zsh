@@ -65,6 +65,6 @@ check_zsh () {
 
 dep_check
 get_zsh
-check_zsh
+# check_zsh
 zsh
 echo 'reload shell or run exec zsh'
