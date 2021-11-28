@@ -10,7 +10,7 @@
 # powerline-fonts
 # noto-fonts-emoji
 
-install_deb () {
+deb_install () {
 	sudo apt install $1 -y
 }
 
