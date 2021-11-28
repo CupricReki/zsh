@@ -47,7 +47,9 @@ ZSH_CACHE_DIR=$HOME/.zsh/.cache
 export ZFUNC="$HOME/.zsh/zfunc"
 export ZSCRIPTS="$HOME/.zsh/zscripts"
 export ZLOCAL="$HOME/.zsh/zlocal"
-export FPATH="$ZFUNC:$ZSCRIPTS:$ZLOCAL:FPATH"
+
+# Adding to the path variable
+export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 
 autoload -Uz extract
 autoload -Uz sshdc
@@ -91,7 +93,7 @@ fi
 
 # Antibody Plug Manager
 # Check to see if it's installed (and in the path)
-type antibody >/dev/null 2>&1 || { curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin; }
+type antibody >/dev/null 2>&1 || { echo 'antibody not detected' && exit 1; }
 source <(antibody init)
 antibody bundle ohmyzsh/ohmyzsh path:plugins/git
 antibody bundle ohmyzsh/ohmyzsh path:plugins/pip
@@ -159,4 +161,3 @@ docker --version &> /dev/null
 if [ $? -eq 0 ]; then
   antibody bundle ohmyzsh/ohmyzsh path:plugins/docker 
 fi
-test
