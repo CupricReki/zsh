@@ -92,6 +92,8 @@ if [ $? -eq 0 ]; then
 fi
 
 # Antibody Plug Manager
+# Check to see if it's installed (and in the path)
+type antibody >/dev/null 2>&1 || { curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin; }
 source <(antibody init)
 antibody bundle ohmyzsh/ohmyzsh path:plugins/git
 antibody bundle ohmyzsh/ohmyzsh path:plugins/pip
