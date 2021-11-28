@@ -30,7 +30,7 @@ get_zsh () {
 	cd ~
 	git clone https://gitlab.ogbase.net/cupric/zsh.git
 	mv zsh .zsh
-	rm .zshrc
+	rm -f .zshrc
 	ln -s .zsh/.zshrc .zshrc
 }
 
@@ -64,8 +64,9 @@ check_zsh () {
 }
 
 directory_clean () {
-	echo "removing files matchin '.z*'"
+	echo "removing zsh and any files matchin '.z*' "
 	rm -fdr .z*
+	rm -fdr zsh
 }
 
 if [ "$1" = "clean" ]; then
