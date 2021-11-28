@@ -48,9 +48,6 @@ export ZFUNC="$HOME/.zsh/zfunc"
 export ZSCRIPTS="$HOME/.zsh/zscripts"
 export ZLOCAL="$HOME/.zsh/zlocal"
 
-# Adding to the path variable
-export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
-
 autoload -Uz extract
 autoload -Uz sshdc
 autoload -Uz mkcd
@@ -92,6 +89,9 @@ if [ $? -eq 0 ]; then
 fi
 
 # Antibody Plug Manager
+# Check to see if it's installed (and in the path)
+type antibody >/dev/null 2>&1 || { echo 'antibody not detected'; }
+autoload -Uz antibody
 source <(antibody init)
 antibody bundle ohmyzsh/ohmyzsh path:plugins/git
 antibody bundle ohmyzsh/ohmyzsh path:plugins/pip
