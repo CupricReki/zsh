@@ -47,6 +47,7 @@ ZSH_CACHE_DIR=$HOME/.zsh/.cache
 export ZFUNC="$HOME/.zsh/zfunc"
 export ZSCRIPTS="$HOME/.zsh/zscripts"
 export ZLOCAL="$HOME/.zsh/zlocal"
+export FPATH="$ZFUNC:$ZSCRIPTS:$ZLOCAL:FPATH"
 
 autoload -Uz extract
 autoload -Uz sshdc
