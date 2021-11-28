@@ -64,6 +64,7 @@ check_zsh () {
 }
 
 directory_clean () {
+	echo "removing files matchin '.z*'"
 	rm -fdr .z*
 }
 
