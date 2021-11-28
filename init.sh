@@ -73,7 +73,6 @@ if [ "$1" = "clean" ]; then
 	directory_clean
 fi
 
-directory_clean
 dep_check
 get_zsh
 # check_zsh
