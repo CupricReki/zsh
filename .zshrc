@@ -92,8 +92,6 @@ if [ $? -eq 0 ]; then
 fi
 
 # Antibody Plug Manager
-# Check to see if it's installed (and in the path)
-type antibody >/dev/null 2>&1 || { echo 'antibody not detected' && exit 1; }
 source <(antibody init)
 antibody bundle ohmyzsh/ohmyzsh path:plugins/git
 antibody bundle ohmyzsh/ohmyzsh path:plugins/pip
