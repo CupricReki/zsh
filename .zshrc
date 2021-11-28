@@ -159,3 +159,4 @@ docker --version &> /dev/null
 if [ $? -eq 0 ]; then
   antibody bundle ohmyzsh/ohmyzsh path:plugins/docker 
 fi
+test
