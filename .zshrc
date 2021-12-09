@@ -8,14 +8,13 @@
 autoload -Uz compinit 
 compinit
 
-# Auto-completion case-insensitive and hyphen insensitive
-zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z-_}={A-Za-z_-}'
+# Auto-completion case-insensitive
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
 
 # Uncomment the following line to enable command auto-correction.
 ENABLE_CORRECTION="true"
 
 # Uncomment the following line to display red dots whilst waiting for completion.
-# This might be a oh-my-zsh option
 COMPLETION_WAITING_DOTS="true"
 
 # The optional three formats: "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
