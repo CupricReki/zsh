@@ -73,8 +73,15 @@ if [ "$1" = "clean" ]; then
 	directory_clean
 fi
 
+hierarcy () {
+	# Create folder and files to avoid issues on first creation
+	mkdir -p ~/.histdb
+	touch ~/.histdb/zsh-history.db
+}
+
 dep_check
 get_zsh
 # check_zsh
+hierarchy
 zsh
 echo 'reload shell or run exec zsh'
