@@ -74,7 +74,7 @@ if [ "$1" = "clean" ]; then
 fi
 
 hierarcy () {
-	# Create folder and files to avoid issues on first creation
+	# Create folder and files to avoid issues on first creation with histdb
 	mkdir -p ~/.histdb
 	touch ~/.histdb/zsh-history.db
 }

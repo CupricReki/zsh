@@ -11,14 +11,22 @@ compinit
 # Auto-completion case-insensitive
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
 
-# Uncomment the following line to enable command auto-correction.
-ENABLE_CORRECTION="true"
-
 # Uncomment the following line to display red dots whilst waiting for completion.
 COMPLETION_WAITING_DOTS="true"
 
 # The optional three formats: "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
 HIST_STAMPS="yyyy-mm-dd"
+
+# Set options
+# Set command line autocorrect
+setopt correct
+
+# Custom environmental  variables
+# Local environment variables hould go into $ZDOTDIR/.zshenv where $ZDOTDIR is home unless specified
+
+# Better questions
+autoload -U colors && colors
+export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes, No, Abort, Edit) "
 
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
 
@@ -55,11 +63,6 @@ if [ "$(ls $ZLOCAL)" ]; then
       echo "sourcing local config $file"
   done
 fi
-
-# Custom environmental  variables
-
-# Better questions
-export SPROMPT="Correct %R to %r? (Yes, No, Abort, Edit) "
 
 # Alias commands only if commands exist
 # Check for ccat

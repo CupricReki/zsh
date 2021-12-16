@@ -1,3 +1,6 @@
+# To disable autocorrect for any command
+# alias foobar="nocorrect foobar"
+# updated 20211216
 alias ...=../..
 alias ....=../../..
 alias .....=../../../..
@@ -21,6 +24,8 @@ alias dcd='docker-compose down'
 alias dcl='docker-compose logs -f'
 alias dcu='docker-compose up'
 alias dcud='docker-compose up -d'
+alias dcr='docker-compose down && docker-compose up -d'
+alias dcur='docker-compose down && docker-compose pull && docker-compose up -d'
 alias dd='dd conv=noerror status=progress'
 alias df='df -h'
 alias diff='diff --color'
