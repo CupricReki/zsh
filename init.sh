@@ -27,7 +27,7 @@ dep_check () {
 
 get_zsh () {
 	echo "Getting zsh configs from gitlab.ogbase.net/cupric/zsh.git"
-	cd ~
+	cd $HOME
 	git clone https://gitlab.ogbase.net/cupric/zsh.git
 	mv zsh .zsh
 	rm -f .zshrc
