@@ -75,8 +75,8 @@ fi
 
 hierarcy () {
 	# Create folder and files to avoid issues on first creation with histdb
-	mkdir -p ~/.histdb
-	touch ~/.histdb/zsh-history.db
+	mkdir -p $HOME/.histdb
+	touch $HOME/.histdb/zsh-history.db
 }
 
 dep_check
