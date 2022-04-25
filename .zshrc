@@ -90,7 +90,6 @@ antibody bundle ohmyzsh/ohmyzsh path:plugins/sudo
 antibody bundle ohmyzsh/ohmyzsh path:plugins/command-not-found
 antibody bundle ohmyzsh/ohmyzsh path:plugins/colored-man-pages
 antibody bundle ohmyzsh/ohmyzsh path:plugins/extract
-antibody bundle ohmyzsh/ohmyzsh path:plugins/aws
 # antibody bundle supercrabtree/k
 antibody bundle zsh-users/zsh-autosuggestions
 antibody bundle zsh-users/zsh-completions
@@ -152,3 +151,16 @@ docker --version &> /dev/null
 if [ $? -eq 0 ]; then
   antibody bundle ohmyzsh/ohmyzsh path:plugins/docker 
 fi
+
+# Load docker-compose bundle if installed
+docker-compose --version &> /dev/null
+if [ $? -eq 0 ]; then
+  antibody bundle ohmyzsh/ohmyzsh path:plugins/docker-compose 
+fi
+
+# Load aws bundle if installed
+docker-compose --version &> /dev/null
+if [ $? -eq 0 ]; then
+  antibody bundle ohmyzsh/ohmyzsh path:plugins/aws
+fi
+
