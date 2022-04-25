@@ -90,6 +90,7 @@ antibody bundle ohmyzsh/ohmyzsh path:plugins/sudo
 antibody bundle ohmyzsh/ohmyzsh path:plugins/command-not-found
 antibody bundle ohmyzsh/ohmyzsh path:plugins/colored-man-pages
 antibody bundle ohmyzsh/ohmyzsh path:plugins/extract
+antibody bundle ohmyzsh/ohmyzsh path:plugins/aws
 # antibody bundle supercrabtree/k
 antibody bundle zsh-users/zsh-autosuggestions
 antibody bundle zsh-users/zsh-completions
