@@ -9,7 +9,7 @@ autoload -Uz compinit
 compinit
 
 # Auto-completion case-insensitive
-zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+zstyle ':completion:*' menu select matcher-list 'm:{a-zA-Z}={A-Za-z}'
 
 # Uncomment the following line to display red dots whilst waiting for completion.
 COMPLETION_WAITING_DOTS="true"
