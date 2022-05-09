@@ -45,6 +45,10 @@ sudo dnf install dnf-plugins-core
 sudo dnf copr enable lehrenfried/fzy
 sudo dnf install fzy -y
 ````
+## Change shell to zsh
+````code
+chsh -s /bin/zsh
+````
 
 ## Update
 
