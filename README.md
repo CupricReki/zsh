@@ -7,7 +7,6 @@ wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash
 > Install zsh, oh-my-zsh, curl, and fzy first
 ````code
 sudo apt install -y zsh git curl fzy
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
 ``````
 Run init script (this is enough for a full install)
 ````code
