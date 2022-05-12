@@ -73,7 +73,7 @@ if [ "$1" = "clean" ]; then
 	directory_clean
 fi
 
-hierarcy () {
+hierarchy () {
 	# Create folder and files to avoid issues on first creation with histdb
 	mkdir -p $HOME/.histdb
 	touch $HOME/.histdb/zsh-history.db
