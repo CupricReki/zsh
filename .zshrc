@@ -84,17 +84,24 @@ fi
 # Check to see if it's installed (and in the path)
 type antibody >/dev/null 2>&1 || { curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin; }
 source <(antibody init)
+export ANTIBODY_HOME="$HOME/.cache/antibody"
 antibody bundle ohmyzsh/ohmyzsh path:plugins/git
 antibody bundle ohmyzsh/ohmyzsh path:plugins/pip
 antibody bundle ohmyzsh/ohmyzsh path:plugins/sudo
 antibody bundle ohmyzsh/ohmyzsh path:plugins/command-not-found
 antibody bundle ohmyzsh/ohmyzsh path:plugins/colored-man-pages
 antibody bundle ohmyzsh/ohmyzsh path:plugins/extract
+
 # antibody bundle supercrabtree/k
 antibody bundle zsh-users/zsh-autosuggestions
 antibody bundle zsh-users/zsh-completions
+
+# Back directory
+# https://github.com/Tarrasch/zsh-bd
 antibody bundle Tarrasch/zsh-bd
+antibody bundle jeffreytse/zsh-vi-mode
 #antibody bundle cupricreki/zsh-bw-completion
+
 
 # Save better command history using sqlite3
 # Usage: histdb
@@ -162,5 +169,12 @@ fi
 docker-compose --version &> /dev/null
 if [ $? -eq 0 ]; then
   antibody bundle ohmyzsh/ohmyzsh path:plugins/aws
+fi
+
+# Load tmux bundle if installed
+tmux --version &> /dev/null
+if [ $? -eq 0 ]; then
+  ZSH_TMUX_AUTOSTART=true
+  antibody bundle ohmyzsh/ohmyzsh path:plugins/tmux
 fi
 
