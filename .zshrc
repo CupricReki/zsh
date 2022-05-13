@@ -173,8 +173,5 @@ fi
 
 # Load tmux bundle if installed
 tmux --version &> /dev/null
-if [ $? -eq 0 ]; then
-  ZSH_TMUX_AUTOSTART=true
-  antibody bundle ohmyzsh/ohmyzsh path:plugins/tmux
-fi
-
+#if [ $? -eq 0 ]; then
+command -v tmux &>/dev/null && ZSH_TMUX_AUTOSTART=true && antibody bundle ohmyzsh/ohmyzsh path:plugins/tmux
