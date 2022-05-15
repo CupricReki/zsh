@@ -245,4 +245,4 @@ alias sudo='nocorrect sudo'
 alias which-command=whence
 alias xc='xclip -selection clipboard'
 alias zgu='git -C ~/.zsh pull origin master && source ~/.zshrc'
-alias zsi="ssh -o RemoteCommand='wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash'"
+alias zsi='ssh -o RemoteCommand='wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash''
