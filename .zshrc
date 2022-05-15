@@ -1,7 +1,6 @@
 # Requirements
 # 1. ZSH
 # 2. antibody
-# 3. sqlite3 (history)
 
 # Compdef is basically a function used by zsh for load the auto-completions. 
 # The completion system needs to be activated. 
@@ -102,33 +101,6 @@ antibody bundle Tarrasch/zsh-bd
 antibody bundle jeffreytse/zsh-vi-mode
 #antibody bundle cupricreki/zsh-bw-completion
 
-
-# Save better command history using sqlite3
-# Usage: histdb
-antibody bundle larkery/zsh-histdb
-autoload -Uz add-zsh-hook
-source $HOME/.cache/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-larkery-SLASH-zsh-histdb/sqlite-history.zsh 
-source $HOME/.cache/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-larkery-SLASH-zsh-histdb/histdb-interactive.zsh
-bindkey '^r' _histdb-isearch
-
-# M-j will cd to the directory for the history entry you’re looking at. This means you can search for ./run-this-command and then M-j to go to the right directory before running.
-# M-h will toggle limiting the search to the current host’s history.
-# M-d will toggle limiting the search to the current directory and subdirectories’ histories
-
-# Make zsh-autosuggestion use histdb
-_zsh_autosuggest_strategy_histdb_top_here() {
-    local query="select commands.argv from
-history left join commands on history.command_id = commands.rowid
-left join places on history.place_id = places.rowid
-where places.dir LIKE '$(sql_escape $PWD)%'
-and commands.argv LIKE '$(sql_escape $1)%'
-group by commands.argv order by count(*) desc limit 1"
-    suggestion=$(_histdb_query "$query")
-}
-
-ZSH_AUTOSUGGEST_STRATEGY=histdb_top_here
-
-
 # Open command on explain-shell.com usage: explain <command>
 antibody bundle gmatheu/zsh-plugins explain-shell
 
@@ -172,6 +144,4 @@ if [ $? -eq 0 ]; then
 fi
 
 # Load tmux bundle if installed
-tmux --version &> /dev/null
-#if [ $? -eq 0 ]; then
 command -v tmux &>/dev/null && ZSH_TMUX_AUTOSTART=true && antibody bundle ohmyzsh/ohmyzsh path:plugins/tmux

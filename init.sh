@@ -21,7 +21,6 @@ dep_check () {
 	type git >/dev/null 2>&1 || { deb_install "git"; }
 	type curl >/dev/null 2>&1 || { deb_install "curl"; }
 	type fzy >/dev/null 2>&1 || { deb_install "fzy"; }
-	type sqlite3 >/dev/null 2>&1 || { deb_install "sqlite3"; }
 	type antibody >/dev/null 2>&1 || { install_antibody; }
 }
 
@@ -81,7 +80,7 @@ hierarchy () {
 
 dep_check
 get_zsh
-# check_zsh
+check_zsh
 hierarchy
 zsh
 echo 'reload shell or run exec zsh'
