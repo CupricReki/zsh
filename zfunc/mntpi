@@ -1,2 +1,0 @@
-sudo umount /mnt/radpi
-sshfs printerpi:/ /mnt/radpi
