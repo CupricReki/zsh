@@ -232,7 +232,7 @@ alias pipunall='pipreq && pip uninstall -r requirements.txt -y && rm -rf require
 alias pipupall='pipreq && sed -i '\''s/==/>=/g'\'' requirements.txt && pip install -r requirements.txt --upgrade && rm -rf requirements.txt'
 alias please=sudo
 alias plz=sudo
-alias rd=rmdir
+alias rd='rm -dr'
 alias reboot_windows='sudo gksu grub-reboot 2 && sudo gksu reboot'
 alias rsynccopy='rsync --stats --partial --progress --append --rsh=ssh -r -h'
 alias rsyncmove='rsync --stats --partial --progress --append --rsh=ssh -r -h --remove-sent-files'
