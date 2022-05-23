@@ -40,7 +40,7 @@ install_antibody () {
 
 check_zsh () {
     # Change shell if zsh was installed
-    type zsh >/dev/null 2>&1 || { chsh -s /bin/zsh }
+    type zsh >/dev/null 2>&1 || { chsh "-s /bin/zsh"; }
 }
 
 directory_clean () {
