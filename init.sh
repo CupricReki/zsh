@@ -14,8 +14,7 @@ deb_install () {
 	sudo apt install $1 -y
 }
 
-dep_check () {
-	# Checks for zsh, git, curl, fzy, and antibody
+dep_check () { # Checks for zsh, git, curl, fzy, and antibody
 
 	type zsh >/dev/null 2>&1 || { deb_install "zsh"; }
 	type git >/dev/null 2>&1 || { deb_install "git"; }
@@ -40,7 +39,8 @@ install_antibody () {
 }
 
 check_zsh () {
-    chsh -s /bin/zsh
+    # Change shell if zsh was installed
+    type zsh >/dev/null 2>&1 || { chsh -s /bin/zsh }
 }
 
 directory_clean () {
