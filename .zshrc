@@ -106,7 +106,7 @@ antibody bundle jeffreytse/zsh-vi-mode
 #antibody bundle cupricreki/zsh-bw-completion
 
 # Open command on explain-shell.com usage: explain <command>
-antibody bundle gmatheu/zsh-plugins explain-shell
+# antibody bundle gmatheu/zsh-plugins explain-shell
 
 # Syntax highlighting bundle.
 antibody bundle zsh-users/zsh-syntax-highlighting
