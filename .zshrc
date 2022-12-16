@@ -144,7 +144,7 @@ fi
 # Set docker-compose alias for v2 
 docker compose --version &> /dev/null
 if [ $? -eq 0 ]; then
-  alias dc=docker compose
+  alias dc="docker compose"
 fi
 
 # Load aws bundle if installed
