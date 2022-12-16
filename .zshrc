@@ -135,23 +135,20 @@ if [ $? -eq 0 ]; then
   antibody bundle ohmyzsh/ohmyzsh path:plugins/docker 
 fi
 
-# Load docker-compose bundle if installed
+# Set docker-compose alias for v1
 docker-compose --version &> /dev/null
 if [ $? -eq 0 ]; then
-  antibody bundle ohmyzsh/ohmyzsh path:plugins/docker-compose
-  # Load Alias
-  source $ZSH_CUSTOM/alias_docker-compose
+  alias dc=docker-compose
 fi
 
+# Set docker-compose alias for v2 
 docker compose --version &> /dev/null
 if [ $? -eq 0 ]; then
-  antibody bundle ohmyzsh/ohmyzsh path:plugins/docker-compose
-  # Load Alias
-  source $ZSH_CUSTOM/alias_docker_compose
+  alias dc=docker compose
 fi
 
 # Load aws bundle if installed
-aws --version &> /dev/null
+docker-compose --version &> /dev/null
 if [ $? -eq 0 ]; then
   antibody bundle ohmyzsh/ohmyzsh path:plugins/aws
 fi
