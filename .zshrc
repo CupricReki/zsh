@@ -148,7 +148,7 @@ if [ $? -eq 0 ]; then
 fi
 
 # Load aws bundle if installed
-docker-compose --version &> /dev/null
+aws --version &> /dev/null
 if [ $? -eq 0 ]; then
   antibody bundle ohmyzsh/ohmyzsh path:plugins/aws
 fi
