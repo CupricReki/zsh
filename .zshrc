@@ -80,6 +80,7 @@ if [ $? -eq 0 ]; then
   alias vi='nvim'
     alias vim='nvim'
   export VISUAL=nvim;
+  export SUDO_EDITOR=nvim;
   export EDITOR=nvim;
 fi
 
