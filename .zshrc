@@ -23,6 +23,8 @@ export SAVEHIST=1000
 # Set options
 # Set command line autocorrect
 setopt correct
+# Share history between terminal sessions
+setopt share_history 
 
 # Custom environmental  variables
 # Local environment variables hould go into $ZDOTDIR/.zshenv where $ZDOTDIR is home unless specified
