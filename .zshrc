@@ -65,7 +65,6 @@ source $ZSH_CUSTOM/alias
 if [ "$(ls $ZLOCAL)" ]; then   
   for file in $ZLOCAL/*; do
       source "$file"
-      echo "sourcing local config $file"
   done
 fi
 
