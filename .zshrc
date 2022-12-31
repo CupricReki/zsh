@@ -4,11 +4,10 @@
 
 # Compdef is basically a function used by zsh for load the auto-completions. 
 # The completion system needs to be activated. 
-autoload -Uz compinit 
-compinit
+autoload -Uz compinit && compinit
 
 # Auto-completion case-insensitive
-zstyle ':completion:*' menu select matcher-list 'm:{a-zA-Z}={A-Za-z}'
+zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
 
 # Uncomment the following line to display red dots whilst waiting for completion.
 COMPLETION_WAITING_DOTS="true"
@@ -156,4 +155,4 @@ if [ $? -eq 0 ]; then
 fi
 
 # Load tmux bundle if installed
-command -v tmux &>/dev/null && ZSH_TMUX_AUTOSTART=true && antibody bundle ohmyzsh/ohmyzsh path:plugins/tmux
+command -v tmux &>/dev/null && ZSH_TMUX_AUTOSTART=false && antibody bundle ohmyzsh/ohmyzsh path:plugins/tmux
