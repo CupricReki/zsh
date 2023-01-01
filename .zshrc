@@ -103,7 +103,6 @@ antibody bundle zsh-users/zsh-completions
 # Back directory
 # https://github.com/Tarrasch/zsh-bd
 antibody bundle Tarrasch/zsh-bd
-antibody bundle jeffreytse/zsh-vi-mode
 #antibody bundle cupricreki/zsh-bw-completion
 
 # Open command on explain-shell.com usage: explain <command>
@@ -111,6 +110,9 @@ antibody bundle jeffreytse/zsh-vi-mode
 
 # Syntax highlighting bundle.
 antibody bundle zsh-users/zsh-syntax-highlighting
+
+# Vi mode
+antibody bundle jeffreytse/zsh-vi-mode
 
 # Load the theme.
 # Spaceship prompt
