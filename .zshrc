@@ -74,6 +74,13 @@ if [ $? -eq 0 ]; then
   alias cat='ccat'
 fi
 
+# Check for bat
+bat --version &> /dev/null
+if [ $? -eq 0 ]; then
+  alias cat='bat'
+fi
+
+
 # Check for nvim
 nvim --version &> /dev/null
 if [ $? -eq 0 ]; then
@@ -117,6 +124,8 @@ antibody bundle jeffreytse/zsh-vi-mode
 # Load the theme.
 # Spaceship prompt
 antibody bundle spaceship-prompt/spaceship-prompt &> /dev/null
+# Custom spaceship location
+export SPACESHIP_CONFIG=".zcustom/spaceship.zsh"
 # Don't get battery
 export SPACESHIP_BATTERY_SHOW=false
 
