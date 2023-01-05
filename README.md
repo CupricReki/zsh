@@ -4,9 +4,9 @@
 wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash
 ````
 
-> Install zsh, oh-my-zsh, curl, and fzy first
+> Install zsh, oh-my-zsh, curl, and fzf first
 ````code
-sudo apt install -y zsh git curl fzy
+sudo apt install -y zsh git curl fzf
 ``````
 Run init script (this is enough for a full install)
 ````code
@@ -38,11 +38,11 @@ curl -L git.io/antigen > antigen.zsh
 exec zsh
 ````
 
-## Fedora install fzy
+## Fedora install fzf
 ````code
 sudo dnf install dnf-plugins-core
-sudo dnf copr enable lehrenfried/fzy
-sudo dnf install fzy -y
+sudo dnf copr enable lehrenfried/fzf
+sudo dnf install fzf -y
 ````
 ## Change shell to zsh
 ````code

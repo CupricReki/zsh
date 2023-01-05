@@ -19,7 +19,7 @@ dep_check () { # Checks for zsh, git, curl, fzy, and antibody
 	type zsh >/dev/null 2>&1 || { deb_install "zsh"; }
 	type git >/dev/null 2>&1 || { deb_install "git"; }
 	type curl >/dev/null 2>&1 || { deb_install "curl"; }
-	type fzy >/dev/null 2>&1 || { deb_install "fzy"; }
+	type fzf >/dev/null 2>&1 || { deb_install "fzf"; }
 	type antibody >/dev/null 2>&1 || { install_antibody; }
 }
 
