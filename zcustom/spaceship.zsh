@@ -13,4 +13,4 @@ SPACESHIP_DIR_TRUNC_REPO=false
 # See: https://github.com/spaceship-prompt/spaceship-vi-mode
 spaceship add --before char vi_mode
 
-SPACESHIP_PROMPT_ADD_NEWLINE=false
+SPACESHIP_PROMPT_ADD_NEWLINE=true
