@@ -1,6 +1,29 @@
 # To disable autocorrect for any command
 # alias foobar="nocorrect foobar"
 # updated 20211216
+
+# Check for ccat
+ccat --version &> /dev/null
+if [ $? -eq 0 ]; then
+  alias cat='ccat'
+fi
+
+# Check for bat
+bat --version &> /dev/null
+if [ $? -eq 0 ]; then
+  alias cat='bat'
+fi
+
+# Check for nvim
+nvim --version &> /dev/null
+if [ $? -eq 0 ]; then
+  alias vi='nvim'
+    alias vim='nvim'
+  export VISUAL=nvim;
+  export SUDO_EDITOR=nvim;
+  export EDITOR=nvim;
+fi
+
 alias ...=../..
 alias ....=../../..
 alias .....=../../../..

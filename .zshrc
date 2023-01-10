@@ -1,8 +1,13 @@
 # Requirements
 # 1. ZSH
-# 2. antibody
+# 2. antibody (This scrept will install if needed)
 # 3. powerline 
 # 4. powerline-fonts
+# 5. fzf (yay)
+
+
+# ZSH modules
+# zmodload zsh/zprof
 
 # Compdef is basically a function used by zsh for load the auto-completions. 
 # The completion system needs to be activated. 
@@ -60,23 +65,13 @@ autoload -Uz install_rsub
 autoload -Uz update_zsh
 
 # # Load Alias
-source $ZSH_CUSTOM/alias
+source $ZSH_CUSTOM/alias.zsh
 
 # Load any local configuration
 if [ "$(ls $ZLOCAL)" ]; then   
   for file in $ZLOCAL/*; do
       source "$file"
   done
-fi
-
-# Check for nvim
-nvim --version &> /dev/null
-if [ $? -eq 0 ]; then
-  alias vi='nvim'
-    alias vim='nvim'
-  export VISUAL=nvim;
-  export SUDO_EDITOR=nvim;
-  export EDITOR=nvim;
 fi
 
 # Antibody Plug Manager
@@ -90,9 +85,10 @@ antibody bundle ohmyzsh/ohmyzsh path:plugins/sudo
 antibody bundle ohmyzsh/ohmyzsh path:plugins/command-not-found
 antibody bundle ohmyzsh/ohmyzsh path:plugins/colored-man-pages
 antibody bundle ohmyzsh/ohmyzsh path:plugins/extract
+antibody bundle ohmyzsh/ohmyzsh path:plugins/fzf
 
 antibody bundle supercrabtree/k
-antibody bundle "zsh-users/zsh-autosuggestions"
+# antibody bundle "zsh-users/zsh-autosuggestions"
 antibody bundle "zsh-users/zsh-completions"
 
 # Back directory
@@ -115,10 +111,10 @@ powerline-daemon -q
 
 # Load the theme.
 # Spaceship prompt
-antibody bundle "spaceship-prompt/spaceship-vi-mode"
-antibody bundle "spaceship-prompt/spaceship-prompt"
+# antibody bundle "spaceship-prompt/spaceship-vi-mode"
+#antibody bundle "KyleOndy/spaceship-prompt/tree/bump-async"
 # Custom spaceship location
-export SPACESHIP_CONFIG="$ZSH_CUSTOM/spaceship.zsh" 
+# export SPACESHIP_CONFIG="$ZSH_CUSTOM/spaceship.zsh" 
 
 # Initialize enhancd
 antibody bundle "b4b4r07/enhancd"
@@ -158,6 +154,9 @@ fi
 
 # Load custom key bindings
 source "$ZSH_CUSTOM/keybindings.zsh"
+
+# Theme
+eval "$(starship init zsh)"
 
 # Load tmux bundle if installed
 command -v tmux &>/dev/null && ZSH_TMUX_AUTOSTART=false && antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"
