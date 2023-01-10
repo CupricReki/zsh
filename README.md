@@ -13,32 +13,35 @@ Run init script (this is enough for a full install)
 ./init.sh
 ````
 
-## Remove pre-configured files
+### Remove pre-configured files
 ````code
 rm -fdr .oh-my.zsh
 mv zsh .zsh
 rm .zshrc
 ````
 
-## Link new config file
+### Link new config file
 ````code
 ln -s .zsh/.zshrc .zshrc
 ````
 
-## Get Antigen
+### Get Antigen
 ````code
 mkdir ~/.zsh/antigen
 cd ~/.zsh/antigen
 curl -L git.io/antigen > antigen.zsh
 ````
+### Get spaceship
+````
+curl -sS https://starship.rs/install.sh | sh
+````
 
-
-## Initialize
+### Initialize
 ````code
 exec zsh
 ````
 
-## Fedora install fzf
+# Fedora install fzf
 ````code
 sudo dnf install dnf-plugins-core
 sudo dnf copr enable lehrenfried/fzf
@@ -53,4 +56,8 @@ chsh -s /bin/zsh
 
 ````code
 cd ~/.zsh && git pull && exec zsh
+````
+or
+````
+zgu
 ````

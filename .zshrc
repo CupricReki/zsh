@@ -1,6 +1,6 @@
 # Requirements
 # 1. ZSH
-# 2. antibody (This scrept will install if needed)
+# 2. antibody (This script will install if needed)
 # 3. powerline 
 # 4. powerline-fonts
 # 5. fzf (yay)
@@ -88,7 +88,7 @@ antibody bundle ohmyzsh/ohmyzsh path:plugins/extract
 antibody bundle ohmyzsh/ohmyzsh path:plugins/fzf
 
 antibody bundle supercrabtree/k
-# antibody bundle "zsh-users/zsh-autosuggestions"
+antibody bundle "zsh-users/zsh-autosuggestions"
 antibody bundle "zsh-users/zsh-completions"
 
 # Back directory
@@ -106,15 +106,8 @@ antibody bundle "zsh-users/zsh-completions"
 antibody bundle "jeffreytse/zsh-vi-mode"
 
 # Powerline loading
-powerline-daemon -q
-. /usr/share/powerline/bindings/zsh/powerline.zsh
-
-# Load the theme.
-# Spaceship prompt
-# antibody bundle "spaceship-prompt/spaceship-vi-mode"
-#antibody bundle "KyleOndy/spaceship-prompt/tree/bump-async"
-# Custom spaceship location
-# export SPACESHIP_CONFIG="$ZSH_CUSTOM/spaceship.zsh" 
+# powerline-daemon -q
+# . /usr/share/powerline/bindings/zsh/powerline.zsh
 
 # Initialize enhancd
 antibody bundle "b4b4r07/enhancd"

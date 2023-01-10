@@ -14,13 +14,12 @@ deb_install () {
 	sudo apt install $1 -y
 }
 
-dep_check () { # Checks for zsh, git, curl, fzy, and antibody
+dep_check () { # Checks for zsh, git, curl, fzf
 
 	type zsh >/dev/null 2>&1 || { deb_install "zsh"; }
 	type git >/dev/null 2>&1 || { deb_install "git"; }
 	type curl >/dev/null 2>&1 || { deb_install "curl"; }
 	type fzf >/dev/null 2>&1 || { deb_install "fzf"; }
-	type antibody >/dev/null 2>&1 || { install_antibody; }
 }
 
 get_zsh () {
@@ -36,6 +35,11 @@ install_antibody () {
 	echo "Getting antigen plugin manager from git.io/antibody"
 	#mkdir ~/.zsh/antibody
 	curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin
+}
+
+install_starship () {
+    echo "Getting spaceship from https://starship.rs/install.sh"
+    curl -sS https://starship.rs/install.sh | sh
 }
 
 check_zsh () {
@@ -55,6 +59,8 @@ fi
 
 dep_check
 get_zsh
+install_antibody
+install_starship
 check_zsh
 zsh
 echo 'reload shell or run exec zsh'
