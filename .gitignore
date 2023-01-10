@@ -3,3 +3,4 @@ antigen/*
 zlocal/*
 zlogin_local/*
 .cache/*
+*.zwc

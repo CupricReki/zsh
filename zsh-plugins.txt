@@ -1,2 +1,0 @@
-ohmyzsh/ohmyzsh path:plugins/kubectl
-denysdovhan/spaceship-prompt
