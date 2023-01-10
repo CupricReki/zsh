@@ -110,7 +110,8 @@ alias gco='git checkout'
 alias gcor='git checkout --recurse-submodules'
 alias gcount='git shortlog -sn'
 alias gcp='git cherry-pick'
-alias gcpa='git cherry-pick --abort'
+alias gcpa='git cherry-pick --abort'curl -sS https://starship.rs/install.sh | sh
+
 alias gcpc='git cherry-pick --continue' alias gcs='git commit -S'
 alias gcsm='git commit -s -m'
 alias gcss='git commit -S -s'
@@ -267,4 +268,5 @@ alias sudo=$'nocorrect sudo\t'
 alias which-command=whence
 alias xc='xclip -selection clipboard'
 alias zgu='git -C ~/.zsh pull origin master && exec zsh'
-alias zsi='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash"'
+alias zgi='https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh'
+alias zri='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash"'
