@@ -243,5 +243,5 @@ alias subl=/opt/sublime_text/sublime_text
 alias sudo=$'nocorrect sudo\t'
 alias which-command=whence
 alias xc='xclip -selection clipboard'
-alias zgu='git -C ~/.zsh pull origin master && source ~/.zshrc'
+alias zgu='git -C ~/.zsh pull origin master && exec zsh'
 alias zsi='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash"'
