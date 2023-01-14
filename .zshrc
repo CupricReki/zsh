@@ -93,7 +93,7 @@ antibody bundle ohmyzsh/ohmyzsh path:plugins/command-not-found
 antibody bundle ohmyzsh/ohmyzsh path:plugins/colored-man-pages
 antibody bundle ohmyzsh/ohmyzsh path:plugins/extract
 
-antibody bundle supercrabtree/k
+antibody bundle "supercrabtree/k"
 antibody bundle "zsh-users/zsh-autosuggestions"
 antibody bundle "zsh-users/zsh-completions"
 
@@ -152,14 +152,22 @@ if [ $? -eq 0 ]; then
 fi
 
 # Load custom key bindings
-source "$ZSH_CUSTOM/keybindings.zsh"
+# source "$ZSH_CUSTOM/keybindings.zsh"
+# source /usr/share/fzf-tab-completion/zsh/fzf-zsh-completion.sh
+
+
+# Fzf configuration
+# bindkey -r '^I'
+# export FZF_COMPLETION_TRIGGER=''
+# bindkey '^Tab' fzf-completion
+# bindkey '^I' $fzf_default_completion
 
 # Theme
 # Starship
 # eval "$(starship init zsh)"
 
 # Powerlevel 10k
-antibody bundle romkatv/powerlevel10k
+antibody bundle "romkatv/powerlevel10k"
 
 # Load tmux bundle if installed
 command -v tmux &>/dev/null && ZSH_TMUX_AUTOSTART=false && antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"

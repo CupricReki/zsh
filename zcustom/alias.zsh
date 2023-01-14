@@ -56,6 +56,7 @@ alias diff='diff --color'
 alias dirs='dirs -v'
 alias distro='cat /etc/*-release'
 alias dl='docker logs -f'
+alias dri='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/dot/-/raw/master/init.sh | bash"'
 alias ebuild='nocorrect ebuild'
 alias egrep='egrep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
 alias explain=explain-command
