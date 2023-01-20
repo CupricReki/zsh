@@ -94,8 +94,6 @@ antibody bundle ohmyzsh/ohmyzsh path:plugins/colored-man-pages
 antibody bundle ohmyzsh/ohmyzsh path:plugins/extract
 
 antibody bundle "supercrabtree/k"
-antibody bundle "zsh-users/zsh-autosuggestions"
-antibody bundle "zsh-users/zsh-completions"
 
 # Back directory
 # https://github.com/Tarrasch/zsh-bd
@@ -157,15 +155,17 @@ fi
 
 # Fzf configuration
 antibody bundle "ohmyzsh/ohmyzsh path:plugins/fzf"
-source /usr/share/fzf-tab-completion/zsh/fzf-zsh-completion.sh
 bindkey '^D' fzf-file-widget
 # export FZF_COMPLETION_TRIGGER=''
 # bindkey '^Tab' fzf-completion
 # bindkey '^I' $fzf_default_completion
+ 
+# Tab completion
+antibody bundle "Aloxaf/fzf-tab"
 
-# Theme
-# Starship
-# eval "$(starship init zsh)"
+# These have to go after most plugins as they wrap other ones
+antibody bundle "zdharma-continuum/fast-syntax-highlighting"
+antibody bundle "zsh-users/zsh-autosuggestions"
 
 # Powerlevel 10k
 antibody bundle "romkatv/powerlevel10k"
