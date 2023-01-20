@@ -37,7 +37,7 @@ export SAVEHIST=1000
 # Set command line autocorrect
 setopt correct
 # Share history between terminal sessions
-setopt share_history 
+# setopt share_history 
 
 # Custom environmental  variables
 # Local environment variables should go into $ZDOTDIR/.zshenv where $ZDOTDIR is home unless specified
@@ -153,11 +153,12 @@ fi
 
 # Load custom key bindings
 # source "$ZSH_CUSTOM/keybindings.zsh"
-# source /usr/share/fzf-tab-completion/zsh/fzf-zsh-completion.sh
 
 
 # Fzf configuration
-# bindkey -r '^I'
+antibody bundle "ohmyzsh/ohmyzsh path:plugins/fzf"
+source /usr/share/fzf-tab-completion/zsh/fzf-zsh-completion.sh
+bindkey '^D' fzf-file-widget
 # export FZF_COMPLETION_TRIGGER=''
 # bindkey '^Tab' fzf-completion
 # bindkey '^I' $fzf_default_completion
