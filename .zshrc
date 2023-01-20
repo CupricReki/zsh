@@ -24,6 +24,7 @@ fi
 # The completion system needs to be activated. 
 autoload -Uz compinit && compinit
 
+autoload -Uz promptinit && promptinit && prompt powerlevel10k
 
 # Auto-completion case-insensitive
 zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
@@ -89,51 +90,44 @@ if [ "$(ls $ZLOCAL)" ]; then
 fi
 
 # Antidote Plug Manager
-# ~/.zshrc
-
-# You can change the names/locations of these if you prefer.
 antidote_dir=$HOME/.cache/antidote
-export ANTIDOTE_HOME=$antidote_dir
-plugins_txt=$ZSH_CUSTOM/plugins.txt
-static_file=$ZSH_CUSTOM/plugins.zsh
-   
-# Clone antidote if necessary and generate a static plugin file.
-if [[ ! $static_file -nt $plugins_txt ]]; then
-  [[ -e $antidote_dir ]] ||
-    git clone --depth=1 https://github.com/mattmc3/antidote.git $antidote_dir
-  (
-    source $antidote_dir/antidote.zsh
-    [[ -e $plugins_txt ]] || touch $plugins_txt
-    antidote bundle <$plugins_txt >$static_file
-  )
-fi
+# Check to see if it's installed (and in the path)
+[ ! -d "$antidote_dir" ] && git clone --depth=1 https://github.com/mattmc3/antidote.git $antidote_dir
+source $antidote_dir/antidote.zsh
+# generate zsh_plugins.zsh
+antidote bundle <$ZHOME/plugins.txt >$ZHOME/plugins.zsh
 
-# Uncomment this if you want antidote commands like `antidote update` available
-# in your interactive shell session:
-autoload -Uz $antidote_dir/functions/antidote
-
-# source the static plugins file
-source $static_file
+# Powerline loading
+# powerline-daemon -q
+# . /usr/share/powerline/bindings/zsh/powerline.zsh
 
 # Initialize enhancd
-ENHANCD_FILTER=fzf; export ENHANCD_FILTER
-source "$antidote_dir/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07-SLASH-enhancd/init.sh"
+ENHANCD_FILTER=fzy; export ENHANCD_FILTER
+source "$HOME/.cache/antidote/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07-SLASH-enhancd/init.sh"
 
-# cleanup
-unset antidote_dir plugins_txt static_file
+# Set docker-compose alias for v1
+docker-compose --version &> /dev/null
+if [ $? -eq 0 ]; then
+    alias dc="docker-compose"
+
+# Set docker-compose alias for v2 
+docker compose --version &> /dev/null
+elif [ $? -eq 0 ]; then
+    alias dc="docker compose"
+fi
 
 # Load custom key bindings
 source "$ZSH_CUSTOM/keybindings.zsh"
 
 # Fzf configuration
-source "$ZSH_CUSTOM/fzf_keybindings.zsh"
-bindkey '^G' fzf-file-widget
+bindkey '^D' fzf-file-widget
+# export FZF_COMPLETION_TRIGGER=''
 # bindkey '^Tab' fzf-completion
 # bindkey '^I' $fzf_default_completion
  
-# Start tmux by default
-# ZSH_TMUX_AUTOSTART=false 
+
+# Load tmux bundle if installed
+command -v tmux &>/dev/null && ZSH_TMUX_AUTOSTART=false 
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
-# autoload -Uz promptinit && promptinit && prompt p10k

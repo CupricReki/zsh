@@ -32,5 +32,7 @@ zdharma-continuum/fast-syntax-highlighting     kind:defer
 zsh-users/zsh-autosuggestions
 
 # prompts:
+#   with prompt plugins, remember to add this to your .zshrc:
+#   `autoload -Uz promptinit && promptinit && prompt pure`
 # Powerlevel 10k
 romkatv/powerlevel10k                   kind:fpath
