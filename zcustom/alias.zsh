@@ -24,6 +24,17 @@ if [ $? -eq 0 ]; then
   export EDITOR=nvim;
 fi
 
+# Set docker-compose alias for v1
+docker-compose --version &> /dev/null
+if [ $? -eq 0 ]; then
+    alias dc="docker-compose"
+
+# Set docker-compose alias for v2 
+docker compose --version &> /dev/null
+elif [ $? -eq 0 ]; then
+    alias dc="docker compose"
+fi
+
 alias ...=../..
 alias ....=../../..
 alias .....=../../../..
@@ -40,9 +51,8 @@ alias 9='cd -9'
 alias _='sudo '
 alias afind='ack -il'
 alias bwe='export BW_SESSION=$( bw unlock --raw )'
-alias cd=__enhancd::cd
+alias cd='__enhancd::cd'
 alias cp='nocorrect cp'
-# dc alias set in init file
 alias dcd='dc down'
 alias dcl='dc logs -f'
 alias dcu='dc up'
@@ -60,8 +70,8 @@ alias di='wget -O - https://gitlab.ogbase.net/cupric/dot/-/raw/main/init.sh | ba
 alias dri='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/dot/-/raw/main/init.sh | bash"'
 alias ebuild='nocorrect ebuild'
 alias egrep='egrep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
-alias explain=explain-command
-alias explain-last=explain-last-command
+alias explain='explain-command'
+alias explain-last='explain-last-command'
 alias ezsh='subl ~/.zsh/.zshrc'
 alias fgrep='fgrep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
 alias g=git
@@ -112,9 +122,9 @@ alias gco='git checkout'
 alias gcor='git checkout --recurse-submodules'
 alias gcount='git shortlog -sn'
 alias gcp='git cherry-pick'
-alias gcpa='git cherry-pick --abort'curl -sS https://starship.rs/install.sh | sh
-
-alias gcpc='git cherry-pick --continue' alias gcs='git commit -S'
+alias gcpa='git cherry-pick --abort'
+alias gcpc='git cherry-pick --continue' 
+alias gcs='git commit -S'
 alias gcsm='git commit -s -m'
 alias gcss='git commit -S -s'
 alias gcssm='git commit -S -s -m'
@@ -132,7 +142,7 @@ alias gfo='git fetch origin'
 alias gg='git gui citool'
 alias gga='git gui citool --amend'
 alias ggpull='git pull origin "$(git_current_branch)"'
-alias ggpur=ggu
+alias ggpur='ggu'
 alias ggpush='git push origin "$(git_current_branch)"'
 alias ggsup='git branch --set-upstream-to=origin/$(git_current_branch)'
 alias ghh='git help'
@@ -157,7 +167,7 @@ alias gloga='git log --oneline --decorate --graph --all'
 alias glol='git log --graph --pretty='\''%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'\'
 alias glola='git log --graph --pretty='\''%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'\'' --all'
 alias glols='git log --graph --pretty='\''%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'\'' --stat'
-alias glp=_git_log_prettily
+alias glp='_git_log_prettily'
 alias glum='git pull upstream $(git_main_branch)'
 alias gm='git merge'
 alias gma='git merge --abort'
@@ -255,8 +265,8 @@ alias pipir='pip install -r requirements.txt'
 alias pipreq='pip freeze > requirements.txt'
 alias pipunall='pipreq && pip uninstall -r requirements.txt -y && rm -rf requirements.txt'
 alias pipupall='pipreq && sed -i '\''s/==/>=/g'\'' requirements.txt && pip install -r requirements.txt --upgrade && rm -rf requirements.txt'
-alias please=sudo
-alias plz=sudo
+alias please='sudo'
+alias plz='sudo'
 alias rd='rm -d'
 alias reboot_windows='sudo gksu grub-reboot 2 && sudo gksu reboot'
 alias rsynccopy='rsync --stats --partial --progress --append --rsh=ssh -r -h'
@@ -265,9 +275,9 @@ alias sc='sudo systemctl'
 alias scstart='sudo systemctl start'
 alias scstat='sudo systemctl status'
 alias scstop='sudo systemctl stop'
-alias subl=/opt/sublime_text/sublime_text
+alias subl='/opt/sublime_text/sublime_text'
 alias sudo=$'nocorrect sudo\t'
-alias which-command=whence
+alias which-command='whence'
 alias xc='xclip -selection clipboard'
 alias zgu='git -C ~/.zsh pull origin master && exec zsh'
 alias zgi='wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash'
