@@ -115,7 +115,7 @@ antibody bundle "jeffreytse/zsh-vi-mode"
 
 # Initialize enhancd
 antibody bundle "b4b4r07/enhancd"
-ENHANCD_FILTER=fzy; export ENHANCD_FILTER
+export ENHANCD_FILTER="fzf --preview='exa --tree --group-directories-first --git-ignore --level 1 {}'"
 source "$HOME/.cache/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07-SLASH-enhancd/init.sh"
 
 # Load kubectl bundle if installed
@@ -149,17 +149,25 @@ if [ $? -eq 0 ]; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/aws"
 fi
 
+# Load ansible bundle if installed
+ansible --version &> /dev/null
+if [ $? -eq 0 ]; then
+  antibody bundle "ohmyzsh/ohmyzsh path:plugins/ansible"
+fi
+
 # Load custom key bindings
 # source "$ZSH_CUSTOM/keybindings.zsh"
 
 
 # Fzf configuration
 antibody bundle "ohmyzsh/ohmyzsh path:plugins/fzf"
-bindkey '^D' fzf-file-widget
+# Bind rebind file search to alt+t
+bindkey -r '^T'
+bindkey '^[t' fzf-file-widget
 # export FZF_COMPLETION_TRIGGER=''
 # bindkey '^Tab' fzf-completion
 # bindkey '^I' $fzf_default_completion
- 
+
 # Tab completion
 antibody bundle "Aloxaf/fzf-tab"
 
@@ -171,7 +179,12 @@ antibody bundle "zsh-users/zsh-autosuggestions"
 antibody bundle "romkatv/powerlevel10k"
 
 # Load tmux bundle if installed
-command -v tmux &>/dev/null && ZSH_TMUX_AUTOSTART=false && antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"
+tmux --version &>/dev/null 
+if [ $? -eq 0 ]; then
+    ZSH_TMUX_AUTOSTART=true \
+    ZSH_TMUX_AUTOCONNECT=false \
+    antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"
+fi 
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh

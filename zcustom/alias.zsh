@@ -18,7 +18,8 @@ fi
 nvim --version &> /dev/null
 if [ $? -eq 0 ]; then
   alias vi='nvim'
-    alias vim='nvim'
+  alias vim='nvim'
+  alias nvimconf='vi $HOME/.config/nvim/init.vim'
   export VISUAL=nvim;
   export SUDO_EDITOR=nvim;
   export EDITOR=nvim;
@@ -259,14 +260,15 @@ alias please=sudo
 alias plz=sudo
 alias rd='rm -d'
 alias reboot_windows='sudo gksu grub-reboot 2 && sudo gksu reboot'
-alias rsynccopy='rsync --stats --partial --progress --append --rsh=ssh -r -h'
-alias rsyncmove='rsync --stats --partial --progress --append --rsh=ssh -r -h --remove-sent-files'
+alias rsynccopy='rsync --stats --partial --progress --append --rsh=ssh -a -h'
+alias rsyncmove='rsync --stats --partial --progress --append --rsh=ssh -a -h --remove-sent-files'
 alias sc='sudo systemctl'
 alias scstart='sudo systemctl start'
 alias scstat='sudo systemctl status'
 alias scstop='sudo systemctl stop'
 alias subl=/opt/sublime_text/sublime_text
 alias sudo=$'nocorrect sudo\t'
+alias ug='sudo -s -u ${USER}' # Update group
 alias which-command=whence
 alias xc='xclip -selection clipboard'
 alias zgu='git -C ~/.zsh pull origin master && exec zsh'
