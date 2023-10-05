@@ -24,7 +24,7 @@ dep_check () { # Checks for zsh, git, curl, fzf
 
 get_zsh () {
 	echo "Getting zsh configs from gitlab.ogbase.net/cupric/zsh.git"
-	git clone https://gitlab.ogbase.net/cupric/zsh.git $HOME
+	git clone https://gitlab.ogbase.net/cupric/zsh.git $HOME/zsh
 	mv $HOME/zsh $HOME/.zsh
 	rm -f $HOME/.zshrc
 	ln -s $HOME/.zsh/.zshrc $HOME/.zshrc
