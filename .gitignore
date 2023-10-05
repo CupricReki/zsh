@@ -2,5 +2,5 @@
 antigen/*
 zlocal/*
 zlogin_local/*
-.cache/*
+.cache/completions/*
 *.zwc
