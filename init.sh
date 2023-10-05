@@ -39,7 +39,7 @@ install_antibody () {
 
 install_starship () {
     echo "Getting spaceship from https://starship.rs/install.sh"
-    curl -sS https://starship.rs/install.sh | sh
+    curl -sS https://starship.rs/install.sh | sh -s -- --yes
 }
 
 check_zsh () {
