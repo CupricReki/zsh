@@ -25,6 +25,12 @@ if [ $? -eq 0 ]; then
   export EDITOR=nvim;
 fi
 
+# Check for apitude
+aptitude --version &> /dev/null
+if [ $? -eq 0 ]; then
+  alias apt='aptitude'
+fi
+     
 alias ...=../..
 alias ....=../../..
 alias .....=../../../..
