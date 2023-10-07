@@ -66,6 +66,8 @@ export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 # Set terminal colors 
 # Based on https://github.com/joshjon/bliss-dircolors
 eval `dircolors $ZSH_CUSTOM/bliss.dircolors`
+# force auto-complete to use color scheme
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 
 autoload -Uz extract
 autoload -Uz sshdc
