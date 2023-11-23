@@ -266,6 +266,7 @@ alias please=sudo
 alias plz=sudo
 alias rd='rm -d'
 alias reboot_windows='sudo gksu grub-reboot 2 && sudo gksu reboot'
+alias restart_plasmashell='sudo pkill plasmashell && kstart5 plasmashell > /dev/null 2>&1'
 alias rsynccopy='rsync --stats --partial --progress --append --rsh=ssh -a -h'
 alias rsyncmove='rsync --stats --partial --progress --append --rsh=ssh -a -h --remove-sent-files'
 alias sc='sudo systemctl'
