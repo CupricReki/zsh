@@ -28,6 +28,7 @@ get_zsh () {
 	mv $HOME/zsh $HOME/.zsh
 	rm -f $HOME/.zshrc
 	ln -s $HOME/.zsh/.zshrc $HOME/.zshrc
+    ln -s $HOME/.zsh/.zshenv $HOME/.zshenv
 }
 
 install_antibody () {

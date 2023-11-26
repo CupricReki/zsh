@@ -11,7 +11,7 @@ fi
 # 3. powerline 
 # 4. powerline-fonts
 # 5. fzf (yay)
-
+# 6. eza (ls alternative needed for fzf)
 
 # ZSH modules
 # zmodload zsh/zprof
@@ -46,7 +46,7 @@ setopt correct
 autoload -U colors && colors
 export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes, No, Abort, Edit) "
 
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$PATH"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:/opt/android-sdk/platform-tools:$PATH"
 
 # Customizations folder
 export ZSH_CUSTOM="$HOME/.zsh/zcustom"
