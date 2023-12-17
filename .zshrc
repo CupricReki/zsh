@@ -114,6 +114,7 @@ antibody bundle "supercrabtree/k"
 
 # Vi mode
 antibody bundle "jeffreytse/zsh-vi-mode"
+ZVM_LINE_INIT_MODE=$ZVM_MODE_INSERT
 
 # Powerline loading
 # powerline-daemon -q
