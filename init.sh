@@ -2,11 +2,10 @@
 
 # zsh
 # zsh setup script
-# Update 5/2/21
-# Requires zsh, git, curl, fzy
+# Update 12/23/23
+# Requires zsh, git, curl, fzf, git
 
 # Arch
-# for spacship-prompt theme
 # powerline-fonts
 # noto-fonts-emoji
 
@@ -37,11 +36,6 @@ install_antibody () {
 	curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin
 }
 
-install_starship () {
-    echo "Getting spaceship from https://starship.rs/install.sh"
-    curl -sS https://starship.rs/install.sh | sh -s -- --yes
-}
-
 check_zsh () {
     # Change shell if zsh was installed
     type zsh >/dev/null 2>&1 || { chsh "-s /bin/zsh"; }
@@ -60,7 +54,5 @@ fi
 dep_check
 get_zsh
 install_antibody
-install_starship
 check_zsh
 zsh
-echo 'reload shell or run exec zsh'
