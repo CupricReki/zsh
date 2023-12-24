@@ -176,7 +176,8 @@ bindkey '^[t' fzf-file-widget
 # bindkey '^I' $fzf_default_completion
 
 # Tab completion
-antibody bundle "Aloxaf/fzf-tab"
+# Breaks on debian
+# antibody bundle "Aloxaf/fzf-tab"
 
 # These have to go after most plugins as they wrap other ones
 antibody bundle "zdharma-continuum/fast-syntax-highlighting"
