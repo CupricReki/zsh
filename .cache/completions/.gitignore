@@ -1,0 +1,6 @@
+# Ignore everything in this directory to preserve the empty folder
+# for use as a cache later
+*
+# Except this file
+!.gitignore
+
