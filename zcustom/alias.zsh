@@ -30,7 +30,7 @@ aptitude --version &> /dev/null
 if [ $? -eq 0 ]; then
   alias apt='aptitude'
 fi
-     
+
 alias ...=../..
 alias ....=../../..
 alias .....=../../../..
@@ -120,7 +120,6 @@ alias gcor='git checkout --recurse-submodules'
 alias gcount='git shortlog -sn'
 alias gcp='git cherry-pick'
 alias gcpa='git cherry-pick --abort'curl -sS https://starship.rs/install.sh | sh
-
 alias gcpc='git cherry-pick --continue' alias gcs='git commit -S'
 alias gcsm='git commit -s -m'
 alias gcss='git commit -S -s'
@@ -242,6 +241,7 @@ alias gwch='git whatchanged -p --abbrev-commit --pretty=medium'
 alias gwip='git add -A; git rm $(git ls-files --deleted) 2> /dev/null; git commit --no-verify --no-gpg-sign -m "--wip-- [skip ci]"'
 alias heroku='nocorrect heroku'
 alias hpodder='nocorrect hpodder'
+alias ip='ip --color=auto'
 alias jc='sudo journalctl'
 alias jcu='sudo journalctl -u'
 alias jcuf='sudo journalctl -f -x -e -u'

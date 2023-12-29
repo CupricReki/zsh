@@ -8,7 +8,7 @@ fi
 # Requirements
 # 1. ZSH
 # 2. antibody (This script will install if needed)
-# 3. powerline 
+# 3. powerline
 # 4. powerline-fonts
 # 5. fzf (yay)
 # 6. eza (ls alternative needed for fzf)
@@ -16,12 +16,12 @@ fi
 # ZSH modules
 # zmodload zsh/zprof
 
-# Compdef is basically a function used by zsh for load the auto-completions. 
-# The completion system needs to be activated. 
+# Compdef is basically a function used by zsh for load the auto-completions.
+# The completion system needs to be activated.
 autoload -Uz compinit && compinit
 
 # Auto-completion case-insensitive
-zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' menu select matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
 
 # # Uncomment the following line to display red dots whilst waiting for completion.
 COMPLETION_WAITING_DOTS="true"
@@ -37,11 +37,11 @@ export SAVEHIST=1000
 # Set command line autocorrect
 setopt correct
 # Share history between terminal sessions
-# setopt share_history 
+# setopt share_history
 
 # Custom environmental  variables
 # Local environment variables should go into $ZDOTDIR/.zshenv where $ZDOTDIR is home unless specified
- 
+
 # Better questions
 autoload -U colors && colors
 export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes, No, Abort, Edit) "
@@ -63,7 +63,7 @@ export ZLOCAL="$HOME/.zsh/zlocal"
 # Adding to the path variable
 export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 
-# Set terminal colors 
+# Set terminal colors
 # Based on https://github.com/joshjon/bliss-dircolors
 eval `dircolors $ZSH_CUSTOM/bliss.dircolors`
 # force auto-complete to use color scheme
@@ -81,7 +81,7 @@ autoload -Uz update_zsh
 source $ZSH_CUSTOM/alias.zsh
 
 # Load any local configuration
-if [ "$(ls $ZLOCAL)" ]; then   
+if [ "$(ls $ZLOCAL)" ]; then
   for file in $ZLOCAL/*; do
       source "$file"
   done
@@ -129,13 +129,13 @@ source "$HOME/.cache/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07
 kubectl --version &> /dev/null
 if [ $? -eq 0 ]; then
   # Load bundle
-  antibody bundle "ohmyzsh/ohmyzsh path:plugins/kubectl" 
+  antibody bundle "ohmyzsh/ohmyzsh path:plugins/kubectl"
 fi
 
 # Load docker bundle if installed
 docker --version &> /dev/null
 if [ $? -eq 0 ]; then
-  antibody bundle "ohmyzsh/ohmyzsh path:plugins/docker" 
+  antibody bundle "ohmyzsh/ohmyzsh path:plugins/docker"
 fi
 
 # Set docker-compose alias for v1
@@ -144,7 +144,7 @@ if [ $? -eq 0 ]; then
   alias dc=docker-compose
 fi
 
-# Set docker-compose alias for v2 
+# Set docker-compose alias for v2
 docker compose --version &> /dev/null
 if [ $? -eq 0 ]; then
   alias dc="docker compose"
@@ -169,7 +169,7 @@ fi
 # Fzf configuration
 antibody bundle "ohmyzsh/ohmyzsh path:plugins/fzf"
 # Bind rebind file search to alt+t
-bindkey -r '^T'
+bindkey -r '^t'
 bindkey '^[t' fzf-file-widget
 # export FZF_COMPLETION_TRIGGER=''
 # bindkey '^Tab' fzf-completion
@@ -187,12 +187,12 @@ antibody bundle "zsh-users/zsh-autosuggestions"
 antibody bundle "romkatv/powerlevel10k"
 
 # Load tmux bundle if installed
-tmux --version &>/dev/null 
+tmux --version &>/dev/null
 if [ $? -eq 0 ]; then
     ZSH_TMUX_AUTOSTART=true \
     ZSH_TMUX_AUTOCONNECT=false \
     antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"
-fi 
+fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
