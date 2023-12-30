@@ -46,7 +46,7 @@ setopt correct
 autoload -U colors && colors
 export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes, No, Abort, Edit) "
 
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:/opt/android-sdk/platform-tools:$PATH"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$HOME/.zsh/bin:/opt/android-sdk/platform-tools:$PATH"
 
 # Customizations folder
 export ZSH_CUSTOM="$HOME/.zsh/zcustom"
@@ -66,8 +66,6 @@ export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 # Set terminal colors
 # Based on https://github.com/joshjon/bliss-dircolors
 eval `dircolors $ZSH_CUSTOM/bliss.dircolors`
-# force auto-complete to use color scheme
-zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 
 autoload -Uz extract
 autoload -Uz sshdc
@@ -165,19 +163,31 @@ fi
 # Load custom key bindings
 # source "$ZSH_CUSTOM/keybindings.zsh"
 
+# ================================================
+# Autocomplete
+# ================================================
 
 # Fzf configuration
 antibody bundle "ohmyzsh/ohmyzsh path:plugins/fzf"
 # Bind rebind file search to alt+t
-bindkey -r '^t'
+bindkey -r '^[t'
 bindkey '^[t' fzf-file-widget
 # export FZF_COMPLETION_TRIGGER=''
 # bindkey '^Tab' fzf-completion
 # bindkey '^I' $fzf_default_completion
 
 # Tab completion
-# Breaks on debian
-# antibody bundle "Aloxaf/fzf-tab"
+antibody bundle "Aloxaf/fzf-tab"
+# disable sort when completing `git checkout`
+zstyle ':completion:*:git-checkout:*' sort false
+# set descriptions format to enable group support
+zstyle ':completion:*:descriptions' format '[%d]'
+# set list-colors to enable filename colorizing
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+# preview directory's content with exa when completing cd
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
+# switch group using `,` and `.`
+zstyle ':fzf-tab:*' switch-group ',' '.'
 
 # These have to go after most plugins as they wrap other ones
 antibody bundle "zdharma-continuum/fast-syntax-highlighting"
