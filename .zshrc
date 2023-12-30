@@ -59,6 +59,7 @@ ZSH_CACHE_DIR="$HOME/.zsh/.cache"
 export ZFUNC="$HOME/.zsh/zfunc"
 export ZSCRIPTS="$HOME/.zsh/zscripts"
 export ZLOCAL="$HOME/.zsh/zlocal"
+export ZBIN="$HOME/.zsh/bin"
 
 # Adding to the path variable
 export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
@@ -168,7 +169,9 @@ fi
 # ================================================
 
 # Fzf configuration
-antibody bundle "ohmyzsh/ohmyzsh path:plugins/fzf"
+# antibody bundle "ohmyzsh/ohmyzsh path:plugins/fzf"
+source "$ZSH_CUSTOM/fzf_key-bindings.zsh"
+source "$ZSH_CUSTOM/fzf_completion.zsh"
 # Bind rebind file search to alt+t
 bindkey -r '^[t'
 bindkey '^[t' fzf-file-widget
