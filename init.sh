@@ -18,7 +18,6 @@ dep_check () { # Checks for zsh, git, curl, fzf
 	type zsh >/dev/null 2>&1 || { deb_install "zsh"; }
 	type git >/dev/null 2>&1 || { deb_install "git"; }
 	type curl >/dev/null 2>&1 || { deb_install "curl"; }
-	type fzf >/dev/null 2>&1 || { deb_install "fzf"; }
 }
 
 get_zsh () {
