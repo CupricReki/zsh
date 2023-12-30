@@ -270,9 +270,13 @@ alias restart_plasmashell='sudo pkill plasmashell && kstart5 plasmashell > /dev/
 alias rsynccopy='rsync --stats --partial --progress --append --rsh=ssh -a -h'
 alias rsyncmove='rsync --stats --partial --progress --append --rsh=ssh -a -h --remove-sent-files'
 alias sc='sudo systemctl'
+alias scu='sudo systemctl --user'
 alias scstart='sudo systemctl start'
 alias scstat='sudo systemctl status'
 alias scstop='sudo systemctl stop'
+alias scr='sudo systemctl restart'
+alias sce='sudo systemctl enable'
+alias scen='sudo systemctl enable --now'
 alias subl=/opt/sublime_text/sublime_text
 alias sudo=$'nocorrect sudo\t'
 alias ug='sudo -s -u ${USER}' # Update group
