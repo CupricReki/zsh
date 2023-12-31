@@ -27,8 +27,6 @@ fi
 # The completion system needs to be activated.
 autoload -Uz compinit && compinit
 
-# Auto-completion case-insensitive
-zstyle ':completion:*' menu select matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
 
 # # Uncomment the following line to display red dots whilst waiting for completion.
 COMPLETION_WAITING_DOTS="true"
@@ -175,6 +173,16 @@ fi
 # Autocomplete
 # ================================================
 
+# Add more completions
+antibody bundle "zsh-users/zsh-completions"
+
+# Genererate autocomoplete for tailscale
+command tailscale --version &> /dev/null
+if [ $? -eq 0 ]; then
+  source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
+fi
+
+
 # Fzf configuration
 source "$ZSH_CUSTOM/fzf_key-bindings.zsh"
 source "$ZSH_CUSTOM/fzf_completion.zsh"
@@ -186,6 +194,8 @@ bindkey '^[t' fzf-file-widget
 
 # Tab completion
 antibody bundle "Aloxaf/fzf-tab"
+# Auto-completion case-insensitive
+zstyle ':completion:*' menu select matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
 # disable sort when completing `git checkout`
 zstyle ':completion:*:git-checkout:*' sort false
 # set descriptions format to enable group support
@@ -193,8 +203,8 @@ zstyle ':completion:*:descriptions' format '[%d]'
 # set list-colors to enable filename colorizing
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 # preview directory's content with exa when completing cd
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'lsd -1 --color=always $realpath'
-# switch group using `,` and `.`
+# zstyle ':fzf-tab:complete:cd:*' fzf-preview 'lsd -1 --color=always $realpath'
+# switch group using `<` and `>`
 zstyle ':fzf-tab:*' switch-group '<' '>'
 # Tmux popup window
 # zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup

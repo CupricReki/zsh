@@ -264,7 +264,7 @@ alias pipunall='pipreq && pip uninstall -r requirements.txt -y && rm -rf require
 alias pipupall='pipreq && sed -i '\''s/==/>=/g'\'' requirements.txt && pip install -r requirements.txt --upgrade && rm -rf requirements.txt'
 alias please=sudo
 alias plz=sudo
-alias rd='rm -d'
+alias rd='rm -fdr'
 alias reboot_windows='sudo gksu grub-reboot 2 && sudo gksu reboot'
 alias restart_plasmashell='sudo pkill plasmashell && kstart5 plasmashell > /dev/null 2>&1'
 alias rsynccopy='rsync --stats --partial --progress --append --rsh=ssh -a -h'
@@ -282,6 +282,6 @@ alias sudo=$'nocorrect sudo\t'
 alias ug='sudo -s -u ${USER}' # Update group
 alias which-command=whence
 alias xc='xclip -selection clipboard'
-alias zgu='git -C ~/.zsh pull origin master && exec zsh'
+alias zgu='git -C ~/.zsh pull origin master || antibody update && exec zsh'
 alias zgi='wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash'
 alias zri='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash"'
