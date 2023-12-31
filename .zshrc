@@ -10,8 +10,15 @@ fi
 # 2. antibody (This script will install if needed)
 # 3. powerline
 # 4. powerline-fonts
-# 5. fzf (yay)
-# 6. eza (ls alternative needed for fzf)
+# 5. fzf
+# 6. eza (community exa - ls alternative needed for fzf)
+# 7. git-delta
+
+# Suggested
+# 1. bat
+# 2. mediainfo
+# 3. lsd
+# 4. Chafa
 
 # ZSH modules
 # zmodload zsh/zprof
@@ -90,7 +97,7 @@ fi
 # Check to see if it's installed (and in the path)
 type antibody >/dev/null 2>&1 || { curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin; }
 source <(antibody init)
-export ANTIBODY_HOME="$HOME/.cache/antibody"
+export ANTIBODY_HOME="$ZSH_CACHE_DIR/antibody"
 antibody bundle ohmyzsh/ohmyzsh path:plugins/git
 antibody bundle ohmyzsh/ohmyzsh path:plugins/pip
 antibody bundle ohmyzsh/ohmyzsh path:plugins/sudo
@@ -169,14 +176,12 @@ fi
 # ================================================
 
 # Fzf configuration
-# antibody bundle "ohmyzsh/ohmyzsh path:plugins/fzf"
 source "$ZSH_CUSTOM/fzf_key-bindings.zsh"
 source "$ZSH_CUSTOM/fzf_completion.zsh"
 # Bind rebind file search to alt+t
 bindkey -r '^[t'
 bindkey '^[t' fzf-file-widget
 # export FZF_COMPLETION_TRIGGER=''
-# bindkey '^Tab' fzf-completion
 # bindkey '^I' $fzf_default_completion
 
 # Tab completion
@@ -188,9 +193,43 @@ zstyle ':completion:*:descriptions' format '[%d]'
 # set list-colors to enable filename colorizing
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 # preview directory's content with exa when completing cd
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'lsd -1 --color=always $realpath'
 # switch group using `,` and `.`
-zstyle ':fzf-tab:*' switch-group ',' '.'
+zstyle ':fzf-tab:*' switch-group '<' '>'
+# Tmux popup window
+# zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
+# show systemd unit status
+zstyle ':fzf-tab:complete:systemctl-*:*' fzf-preview 'SYSTEMD_COLORS=1 systemctl status $word'
+# environment variables preview
+zstyle ':fzf-tab:complete:(-command-|-parameter-|-brace-parameter-|export|unset|expand):*' \
+	fzf-preview 'echo ${(P)word}'
+
+# git - requires git-delta
+zstyle ':fzf-tab:complete:git-(add|diff|restore):*' fzf-preview \
+	'git diff $word | delta'
+zstyle ':fzf-tab:complete:git-log:*' fzf-preview \
+	'git log --color=always $word'
+zstyle ':fzf-tab:complete:git-help:*' fzf-preview \
+	'git help $word | bat -plman --color=always'
+zstyle ':fzf-tab:complete:git-show:*' fzf-preview \
+	'case "$group" in
+	"commit tag") git show --color=always $word ;;
+	*) git show --color=always $word | delta ;;
+	esac'
+zstyle ':fzf-tab:complete:git-checkout:*' fzf-preview \
+	'case "$group" in
+	"modified file") git diff $word | delta ;;
+	"recent commit object name") git show --color=always $word | delta ;;
+	*) git log --color=always $word ;;
+	esac'
+# Generic preview panel
+zstyle ':fzf-tab:complete:*:*' fzf-preview 'less ${(Q)realpath}'
+export LESSOPEN='|$ZSH_CUSTOM/fzf_lessfilter.sh %s'
+
+# Install fzf from git - avoids out of date local package
+# Will set keybings and $FZF_PATH but doesn't overwrite already defined functions,
+# so needs to go at after other fzf configs
+# antibody bundle "CupricReki/fzf-zsh-plugin"
 
 # These have to go after most plugins as they wrap other ones
 antibody bundle "zdharma-continuum/fast-syntax-highlighting"
