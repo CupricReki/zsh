@@ -80,6 +80,9 @@ autoload -Uz zssh
 autoload -Uz update_os
 autoload -Uz install_rsub
 autoload -Uz update_zsh
+autoload -Uz zrepl_watch
+autoload -Uz healthcheck_init
+autoload -Uz iperf3_public
 
 # # Load Alias
 source $ZSH_CUSTOM/alias.zsh
@@ -175,6 +178,9 @@ fi
 
 # Add more completions
 antibody bundle "zsh-users/zsh-completions"
+antibody bundle "sinetoami/antibody-completion"
+antibody bundle "sunlei/zsh-ssh"
+antibody bundle "clavelm/yt-dlp-omz-plugin"
 
 # Genererate autocomoplete for tailscale
 command tailscale --version &> /dev/null
