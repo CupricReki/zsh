@@ -65,9 +65,10 @@ export ZFUNC="$HOME/.zsh/zfunc"
 export ZSCRIPTS="$HOME/.zsh/zscripts"
 export ZLOCAL="$HOME/.zsh/zlocal"
 export ZBIN="$HOME/.zsh/bin"
+export ZCOMPLETION="$HOME/.zsh/completion"
 
 # Adding to the path variable
-export FPATH="$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
+export FPATH="$ZCOMPLETION:$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 
 # Set terminal colors
 # Based on https://github.com/joshjon/bliss-dircolors
@@ -82,7 +83,6 @@ autoload -Uz install_rsub
 autoload -Uz update_zsh
 autoload -Uz zrepl_watch
 autoload -Uz healthcheck_init
-autoload -Uz iperf3_public
 
 # # Load Alias
 source $ZSH_CUSTOM/alias.zsh
