@@ -143,6 +143,8 @@ fi
 docker --version &> /dev/null
 if [ $? -eq 0 ]; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/docker"
+  # This repo pulls completions from the main docker repo. Prevents having to sync the full repo
+  antibody bundle "greymd/docker-zsh-completion"
 fi
 
 # Set docker-compose alias for v1
