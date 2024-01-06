@@ -191,17 +191,22 @@ if [ $? -eq 0 ]; then
 fi
 
 
+# ================================================
 # Fzf configuration
+# ================================================
 source "$ZSH_CUSTOM/fzf_key-bindings.zsh"
 source "$ZSH_CUSTOM/fzf_completion.zsh"
-# Bind rebind file search to alt+t
-bindkey -r '^[t'
-bindkey '^[t' fzf-file-widget
 # export FZF_COMPLETION_TRIGGER=''
 # bindkey '^I' $fzf_default_completion
 
 # Tab completion
 antibody bundle "Aloxaf/fzf-tab"
+
+# Bind rebind file search to alt+t
+bindkey -r '^T'
+bindkey -r '^[t'
+bindkey '^[t' fzf-file-widget
+
 # Auto-completion case-insensitive
 zstyle ':completion:*' menu select matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
 # disable sort when completing `git checkout`
@@ -244,10 +249,6 @@ zstyle ':fzf-tab:complete:git-checkout:*' fzf-preview \
 zstyle ':fzf-tab:complete:*:*' fzf-preview 'less ${(Q)realpath}'
 export LESSOPEN='|$ZSH_CUSTOM/fzf_lessfilter.sh %s'
 
-# Install fzf from git - avoids out of date local package
-# Will set keybings and $FZF_PATH but doesn't overwrite already defined functions,
-# so needs to go at after other fzf configs
-# antibody bundle "CupricReki/fzf-zsh-plugin"
 
 # These have to go after most plugins as they wrap other ones
 antibody bundle "zdharma-continuum/fast-syntax-highlighting"
