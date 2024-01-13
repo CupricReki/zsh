@@ -27,10 +27,6 @@ fi
 # The completion system needs to be activated.
 autoload -Uz compinit && compinit
 
-
-# # Uncomment the following line to display red dots whilst waiting for completion.
-COMPLETION_WAITING_DOTS="true"
-
 # # The optional three formats: "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
 HIST_STAMPS="yyyy-mm-dd"
 
@@ -208,19 +204,21 @@ bindkey -r '^[t'
 bindkey '^[t' fzf-file-widget
 
 # Auto-completion case-insensitive
-zstyle ':completion:*' menu select matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
+
 # disable sort when completing `git checkout`
 zstyle ':completion:*:git-checkout:*' sort false
+
 # set descriptions format to enable group support
 zstyle ':completion:*:descriptions' format '[%d]'
+
 # set list-colors to enable filename colorizing
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
-# preview directory's content with exa when completing cd
-# zstyle ':fzf-tab:complete:cd:*' fzf-preview 'lsd -1 --color=always $realpath'
+
 # switch group using `<` and `>`
 zstyle ':fzf-tab:*' switch-group '<' '>'
 # Tmux popup window
-# zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
+zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
 # show systemd unit status
 zstyle ':fzf-tab:complete:systemctl-*:*' fzf-preview 'SYSTEMD_COLORS=1 systemctl status $word'
 # environment variables preview
@@ -245,10 +243,14 @@ zstyle ':fzf-tab:complete:git-checkout:*' fzf-preview \
 	"recent commit object name") git show --color=always $word | delta ;;
 	*) git log --color=always $word ;;
 	esac'
-# Generic preview panel
+# review panel
 zstyle ':fzf-tab:complete:*:*' fzf-preview 'less ${(Q)realpath}'
-export LESSOPEN='|$ZSH_CUSTOM/fzf_lessfilter.sh %s'
+export LESSOPEN='|$ZSH_CUSTOM/fzf_lessfilter.sh %s'     # Formatting of panel
 
+
+### fzf-tab Keybindings
+# ctrl-a to select all
+zstyle ':fzf-tab:*' fzf-bindings 'ctrl-a:toggle-all'
 
 # These have to go after most plugins as they wrap other ones
 antibody bundle "zdharma-continuum/fast-syntax-highlighting"
