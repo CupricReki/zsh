@@ -11,14 +11,20 @@ fi
 # 3. powerline
 # 4. powerline-fonts
 # 5. fzf
-# 6. eza (community exa - ls alternative needed for fzf)
+# 6. lsd (community exa - ls alternative needed for fzf)
 # 7. git-delta
+# 8. bat: view code
+# 9. pandoc: convert any kind of file to markdown. Any generated cache file will be store in same /tmp/zsh-fzf-tab-$USER as fzf-tab
+# 10. mdcat: render markdown
+# 11. grc: colorize the output of some commands
+# 12. less: a pager
+# 13. pdf2text
+
 
 # Suggested
-# 1. bat
-# 2. mediainfo
-# 3. lsd
-# 4. Chafa
+# 1. mediainfo
+# 2. lsd
+# 3. Chafa
 
 # ZSH modules
 # zmodload zsh/zprof
@@ -126,7 +132,7 @@ ZVM_LINE_INIT_MODE=$ZVM_MODE_INSERT
 # Initialize enhancd
 antibody bundle "b4b4r07/enhancd"
 export ENHANCD_FILTER="fzf --preview='exa --tree --group-directories-first --git-ignore --level 1 {}'"
-source "$HOME/.cache/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07-SLASH-enhancd/init.sh"
+source "$ZSH_CACHE_DIR/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07-SLASH-enhancd/init.sh"
 
 # Load kubectl bundle if installed
 kubectl --version &> /dev/null
@@ -197,6 +203,7 @@ source "$ZSH_CUSTOM/fzf_completion.zsh"
 
 # Tab completion
 antibody bundle "Aloxaf/fzf-tab"
+antibody bundle "Freed-Wu/fzf-tab-source"           # formattting for fzf-preview in fzf-tab
 
 # Bind rebind file search to alt+t
 bindkey -r '^T'
@@ -220,33 +227,39 @@ zstyle ':fzf-tab:*' switch-group '<' '>'
 # Tmux popup window
 # zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
 # show systemd unit status
-zstyle ':fzf-tab:complete:systemctl-*:*' fzf-preview 'SYSTEMD_COLORS=1 systemctl status $word'
-# environment variables preview
-zstyle ':fzf-tab:complete:(-command-|-parameter-|-brace-parameter-|export|unset|expand):*' \
-	fzf-preview 'echo ${(P)word}'
-
-# git - requires git-delta
-zstyle ':fzf-tab:complete:git-(add|diff|restore):*' fzf-preview \
-	'git diff $word | delta'
-zstyle ':fzf-tab:complete:git-log:*' fzf-preview \
-	'git log --color=always $word'
-zstyle ':fzf-tab:complete:git-help:*' fzf-preview \
-	'git help $word | bat -plman --color=always'
-zstyle ':fzf-tab:complete:git-show:*' fzf-preview \
-	'case "$group" in
-	"commit tag") git show --color=always $word ;;
-	*) git show --color=always $word | delta ;;
-	esac'
-zstyle ':fzf-tab:complete:git-checkout:*' fzf-preview \
-	'case "$group" in
-	"modified file") git diff $word | delta ;;
-	"recent commit object name") git show --color=always $word | delta ;;
-	*) git log --color=always $word ;;
-	esac'
-# review panel
-zstyle ':fzf-tab:complete:*:*' fzf-preview 'less ${(Q)realpath}'
-export LESSOPEN='|$ZSH_CUSTOM/fzf_lessfilter.sh %s'     # Formatting of panel
-
+# zstyle ':fzf-tab:complete:systemctl-*:*' fzf-preview 'SYSTEMD_COLORS=1 systemctl status $word'
+# # environment variables preview
+# zstyle ':fzf-tab:complete:(-command-|-parameter-|-brace-parameter-|export|unset|expand):*' \
+# 	fzf-preview 'echo ${(P)word}'
+#
+# # git - requires git-delta
+# zstyle ':fzf-tab:complete:git-(add|diff|restore):*' fzf-preview \
+# 	'git diff $word | delta'
+# zstyle ':fzf-tab:complete:git-log:*' fzf-preview \
+# 	'git log --color=always $word'
+# zstyle ':fzf-tab:complete:git-help:*' fzf-preview \
+# 	'git help $word | bat -plman --color=always'
+# zstyle ':fzf-tab:complete:git-show:*' fzf-preview \
+# 	'case "$group" in
+# 	"commit tag") git show --color=always $word ;;
+# 	*) git show --color=always $word | delta ;;
+# 	esac'
+# zstyle ':fzf-tab:complete:git-checkout:*' fzf-preview \
+# 	'case "$group" in
+# 	"modified file") git diff $word | delta ;;
+# 	"recent commit object name") git show --color=always $word | delta ;;
+# 	*) git log --color=always $word ;;
+# 	esac'
+# # review panel
+# zstyle ':fzf-tab:complete:*:*' fzf-preview 'less ${(Q)realpath}'
+export LESSOPEN='|$ZSH_CUSTOM/lessfilter %s'     # Formatting of panel
+export LESS='-f'    # don't promp on binary
+#
+# give a preview of commandline arguments when completing `kill/ps` below
+zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm -w -w"
+zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-preview \
+  '[[ $group == "[process ID]" ]] && ps --pid=$word -o cmd --no-headers -w -w'
+zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-flags --preview-window=down:3:wrap
 
 ### fzf-tab Keybindings
 # ctrl-a to select all
