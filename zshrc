@@ -123,13 +123,14 @@ export ZCOMPLETION="$ZSH_DIR/completion"
 
 # Cache directory
 # Needed for kubectl
-ZSH_CACHE_DIR="$HOME/.cache/zsh"
+export ZSH_CACHE_DIR="$HOME/.cache/zsh"
 
 # Functions folder
 export ZFUNC="$ZSH_DIR/function"
 export ZSCRIPTS="$ZSH_DIR/script"
 export ZLOCAL="$ZSH_DIR/local"
 export ZBIN="$ZSH_DIR/bin"
+
 
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$ZSH_DIR/bin:/opt/android-sdk/platform-tools:$PATH"
 
@@ -206,13 +207,9 @@ if [ $? -eq 0 ]; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/kubectl"
 fi
 
-# Load docker bundle if installed
-docker --version &> /dev/null
-if [ $? -eq 0 ]; then
-  antibody bundle "ohmyzsh/ohmyzsh path:plugins/docker"
-  # This repo pulls completions from the main docker repo. Prevents having to sync the full repo
-  # antibody bundle "greymd/docker-zsh-completion"
-fi
+# Load docker completions if installed
+command docker >/dev/null 2>&1 && \
+  source $ZCOMPLETION/_docker
 
 # Set docker-compose alias for v1
 docker-compose --version &> /dev/null
