@@ -184,14 +184,8 @@ fi
 antibody bundle "zsh-users/zsh-completions"
 antibody bundle "sinetoami/antibody-completion"
 antibody bundle "sunlei/zsh-ssh"
-antibody bundle "clavelm/yt-dlp-omz-plugin"
-
-# Genererate autocomoplete for tailscale
-command tailscale --version &> /dev/null
-if [ $? -eq 0 ]; then
-  source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
-fi
-
+type yt-dlp >/dev/null 2>&1 || antibody bundle "clavelm/yt-dlp-omz-plugin"
+type tailscale >/dev/null 2>&1 || source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
 
 # ================================================
 # Fzf configuration
