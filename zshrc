@@ -114,22 +114,24 @@ setopt correct
 autoload -U colors && colors
 export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes, No, Abort, Edit) "
 
+# Main ZSH config directory
+export ZSH_DIR="$HOME/.config/zsh"
 
 # Customizations folder
-export ZSH_CUSTOM="$HOME/.zsh/zcustom"
+export ZSH_CUSTOM="$ZSH_DIR/custom"
+export ZCOMPLETION="$ZSH_DIR/completion"
 
 # Cache directory
 # Needed for kubectl
-ZSH_CACHE_DIR="$HOME/.zsh/.cache"
+ZSH_CACHE_DIR="$HOME/.cache/zsh"
 
 # Functions folder
-export ZFUNC="$HOME/.zsh/zfunc"
-export ZSCRIPTS="$HOME/.zsh/zscripts"
-export ZLOCAL="$HOME/.zsh/zlocal"
-export ZBIN="$HOME/.zsh/bin"
-export ZCOMPLETION="$HOME/.zsh/completion"
+export ZFUNC="$ZSH_DIR/function"
+export ZSCRIPTS="$ZSH_DIR/script"
+export ZLOCAL="$ZSH_DIR/local"
+export ZBIN="$ZSH_DIR/bin"
 
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$HOME/.zsh/bin:/opt/android-sdk/platform-tools:$PATH"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$ZSH_DIR/bin:/opt/android-sdk/platform-tools:$PATH"
 
 # Adding to the path variable
 export FPATH="$ZCOMPLETION:$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
