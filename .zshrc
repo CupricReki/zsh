@@ -184,8 +184,8 @@ fi
 antibody bundle "zsh-users/zsh-completions"
 antibody bundle "sinetoami/antibody-completion"
 antibody bundle "sunlei/zsh-ssh"
-type yt-dlp >/dev/null 2>&1 || antibody bundle "clavelm/yt-dlp-omz-plugin"
-type tailscale >/dev/null 2>&1 || source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
+type yt-dlp >/dev/null 2>&1 && antibody bundle "clavelm/yt-dlp-omz-plugin"
+type tailscale >/dev/null 2>&1 && source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
 
 # ================================================
 # Fzf configuration
