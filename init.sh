@@ -27,7 +27,7 @@ get_zsh () {
 	git clone https://gitlab.ogbase.net/cupric/zsh.git $zshdir
 	rm -f $HOME/.zshrc
 	ln -s $zshdir/zshrc $HOME/.zshrc
-    ln -s $zshdir/zshenv $HOME/.zshenv
+   	ln -s $zshdir/zshenv $HOME/.zshenv
 }
 
 install_antibody () {
