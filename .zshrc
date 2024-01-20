@@ -247,7 +247,7 @@ zstyle ':fzf-tab:*' switch-group '<' '>'
 # # review panel
 # zstyle ':fzf-tab:complete:*:*' fzf-preview 'less ${(Q)realpath}'
 export LESSOPEN='|$ZSH_CUSTOM/lessfilter %s'     # Formatting of panel
-export LESS='-f'    # don't promp on binary
+export LESS='-r -M -s -I --mouse'    # raw chars, verbose, chop lines, ignore case, mouse scrolling
 #
 # give a preview of commandline arguments when completing `kill/ps` below
 zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm -w -w"
