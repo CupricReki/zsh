@@ -9,6 +9,8 @@
 # powerline-fonts
 # noto-fonts-emoji
 
+zshdir=$HOME/.config/zsh
+
 deb_install () {
 	sudo apt install $1 -y
 }
@@ -22,16 +24,14 @@ dep_check () { # Checks for zsh, git, curl, fzf
 
 get_zsh () {
 	echo "Getting zsh configs from gitlab.ogbase.net/cupric/zsh.git"
-	git clone https://gitlab.ogbase.net/cupric/zsh.git $HOME/zsh
-	mv $HOME/zsh $HOME/.zsh
+	git clone https://gitlab.ogbase.net/cupric/zsh.git $zshdir/zsh
 	rm -f $HOME/.zshrc
-	ln -s $HOME/.zsh/.zshrc $HOME/.zshrc
-    ln -s $HOME/.zsh/.zshenv $HOME/.zshenv
+	ln -s $zshdir/zshrc $HOME/.zshrc
+    ln -s $zshdir/zshenv $HOME/.zshenv
 }
 
 install_antibody () {
 	echo "Getting antigen plugin manager from git.io/antibody"
-	#mkdir ~/.zsh/antibody
 	curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin
 }
 
@@ -42,8 +42,8 @@ check_zsh () {
 
 directory_clean () {
 	echo "removing zsh and any files matchin '.z*' "
-	rm -fdr .z*
-	rm -fdr zsh
+	rm -fdr $HOME/.z*
+	rm -fdr $zshdir
 }
 
 if [ "$1" = "clean" ]; then

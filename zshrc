@@ -88,6 +88,8 @@ fi
 # ZSH modules
 # zmodload zsh/zprof
 
+
+
 # Compdef is basically a function used by zsh for load the auto-completions.
 # The completion system needs to be activated.
 autoload -Uz compinit && compinit
@@ -112,7 +114,6 @@ setopt correct
 autoload -U colors && colors
 export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes, No, Abort, Edit) "
 
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$HOME/.zsh/bin:/opt/android-sdk/platform-tools:$PATH"
 
 # Customizations folder
 export ZSH_CUSTOM="$HOME/.zsh/zcustom"
@@ -127,6 +128,8 @@ export ZSCRIPTS="$HOME/.zsh/zscripts"
 export ZLOCAL="$HOME/.zsh/zlocal"
 export ZBIN="$HOME/.zsh/bin"
 export ZCOMPLETION="$HOME/.zsh/completion"
+
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$HOME/.zsh/bin:/opt/android-sdk/platform-tools:$PATH"
 
 # Adding to the path variable
 export FPATH="$ZCOMPLETION:$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"

@@ -11,7 +11,9 @@ fi
 # Check for bat
 bat --version &> /dev/null
 if [ $? -eq 0 ]; then
-  alias cat='bat'
+  alias cat="bat --pager=less --style=plain --wrap=character --theme='Coldark-Dark'"
+  # the following breaks enhancd https://github.com/babarot/enhancd/issues/224
+  # alias cat="bat --pager=less --color='always' --style=plain --wrap=character --theme='Coldark-Dark'"
 fi
 
 # Check for nvim
