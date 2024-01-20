@@ -18,7 +18,66 @@ fi
 # 10. mdcat: render markdown
 # 11. grc: colorize the output of some commands
 # 12. less: a pager
-# 13. pdf2text
+# 13. pdftotext
+
+# 4.1 Supported compression methods and archive formats
+#
+#     gzip, compress requires gzip
+#     bzip2 requires bzip2
+#     lzma requires lzma
+#     xz requires xz
+#     zstd requires zstd
+#     brotli requires bro
+#     lz4 requires lz4
+#     tar requires optionally archive_color for coloring
+#     ar library requires bsdtar or ar
+#     zip archive requires bsdtar or unzip
+#     jar archive requires bsdtar or unzip
+#     rar archive requires bsdtar or unrar or rar
+#     7-zip archive requires 7zr
+#     lzip archive requires lzip
+#     iso images requires bsdtar or isoinfo
+#     rpm requires rpm2cpio and cpio or bsdtar
+#     Debian requires bsdtar or ar
+#     cab requires cabextract
+#
+# 4.2 List of preprocessed file types
+#
+#     directory displayed using ls -lA
+#     nroff(man) requires groff or mandoc
+#     shared library requires nm
+#     MS Word (doc) requires wvText or antiword or catdoc or libreoffice
+#     Powerpoint (ppt) requires catppt
+#     Excel (xls) requires in2csv (csvkit) or xls2csv
+#     odt requires pandoc or odt2txt or libreoffice
+#     odp requires libreoffice
+#     ods requires xlscat or libreoffice
+#     MS Word (docx) requires pandoc or docx2txt or libreoffice
+#     Powerpoint (pptx) requires pptx2md or libreoffice
+#     Excel (xlsx) requires in2csv or xlscat or excel2csv or libreoffice
+#     csv requires csvtable or csvlook or column or pandoc
+#     rtf requires unrtf or libreoffice
+#     epub requires pandoc
+#     html,xml requires w3m or lynx or elinks or html2text
+#     pdf requires pdftotext or pdftohtml
+#     perl pod requires pod2text or perldoc
+#     dvi requires dvi2tty
+#     djvu requires djvutxt
+#     ps requires ps2ascii (from the gs package)
+#     mp3 requires id3v2
+#     multimedia formats requires mediainfo or exiftools
+#     image formats requires mediainfo or exiftools or identify
+#     hdf, nc4 requires h5dump or ncdump (NetCDF format)
+#     crt, pem, csr, crl requires openssl
+#     matlab requires matdump
+#     Jupyter notebook requires pandoc
+#     markdown requires mdcat or pandoc
+#     log requires ccze
+#     java.class requires procyon
+#     MacOS X plist requires plistutil
+#     binary data requires strings
+#     json requires jq
+#     device tree blobs requires dtc (extension dtb or dts)
 
 
 # Suggested
@@ -85,6 +144,7 @@ autoload -Uz install_rsub
 autoload -Uz update_zsh
 autoload -Uz zrepl_watch
 autoload -Uz healthcheck_init
+
 
 # # Load Alias
 source $ZSH_CUSTOM/alias.zsh
@@ -184,8 +244,8 @@ fi
 antibody bundle "zsh-users/zsh-completions"
 antibody bundle "sinetoami/antibody-completion"
 antibody bundle "sunlei/zsh-ssh"
-type yt-dlp >/dev/null 2>&1 && antibody bundle "clavelm/yt-dlp-omz-plugin"
-type tailscale >/dev/null 2>&1 && source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
+command yt-dlp >/dev/null 2>&1 && antibody bundle "clavelm/yt-dlp-omz-plugin"
+command tailscale >/dev/null 2>&1 && source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
 
 # ================================================
 # Fzf configuration
@@ -197,7 +257,7 @@ source "$ZSH_CUSTOM/fzf_completion.zsh"
 
 # Tab completion
 antibody bundle "Aloxaf/fzf-tab"
-antibody bundle "Freed-Wu/fzf-tab-source"           # formattting for fzf-preview in fzf-tab
+antibody bundle "Freed-Wu/fzf-tab-source"           # formatttin&g for fzf-preview in fzf-tab
 
 # Bind rebind file search to alt+t
 bindkey -r '^T'
@@ -245,9 +305,10 @@ zstyle ':fzf-tab:*' switch-group '<' '>'
 # 	*) git log --color=always $word ;;
 # 	esac'
 # # review panel
-# zstyle ':fzf-tab:complete:*:*' fzf-preview 'less ${(Q)realpath}'
-export LESSOPEN='|$ZSH_CUSTOM/lessfilter %s'     # Formatting of panel
-export LESS='-r -M -s -I --mouse'    # raw chars, verbose, chop lines, ignore case, mouse scrolling
+zstyle ':fzf-tab:complete:*:*' fzf-preview 'less ${(Q)realpath}'
+export LESSOPEN='|/usr/bin/lesspipe.sh %s'     # Formatting of panel
+export LESS='-r -M -S -I --mouse'    # raw, verbose, chop lines, ignore case, mouse scrolling
+export LESSQUIET=1 # Suppress additional output not belonging to the file contents
 #
 # give a preview of commandline arguments when completing `kill/ps` below
 zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm -w -w"

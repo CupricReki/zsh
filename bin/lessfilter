@@ -72,7 +72,6 @@ elif [ "$kind" = vnd.sqlite3 ]; then
 # https://github.com/wofr06/lesspipe/pull/107
 elif [ -d "$1" ]; then
 	if has_cmd eza; then
-      echo "directory"
 		eza -hl --git --color=always --icons "$1"
 	elif has_cmd exa; then
 		exa -hl --color=always --icons "$1"
@@ -90,7 +89,6 @@ elif [ "$kind" = rfc822 ]; then
 # https://github.com/wofr06/lesspipe/pull/106
 elif [ "$category" = image ]; then
 	if has_cmd chafa; then
-        echo "yes"
 		chafa -f symbols "$1"
 	fi
 	if has_cmd exiftool; then
@@ -99,6 +97,7 @@ elif [ "$category" = image ]; then
 # https://github.com/wofr06/lesspipe/pull/117
 elif [ "$category" = text ]; then
 	if has_cmd bat; then
+        # echo $1
 		bat --color=always "$1"
 	elif has_cmd pygmentize; then
 		pygmentize "$1" | less
