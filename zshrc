@@ -99,8 +99,8 @@ HIST_STAMPS="yyyy-mm-dd"
 
 # History file
 export HISTFILE="$HOME/.zsh_history"
-export HISTSIZE=1000
-export SAVEHIST=1000
+export HISTSIZE=10000
+export SAVEHIST=10000
 # Set options
 # Set command line autocorrect
 setopt correct
@@ -152,8 +152,12 @@ autoload -Uz zrepl_watch
 autoload -Uz healthcheck_init
 
 
-# # Load Alias
-source $ZSH_CUSTOM/alias.zsh
+# # Load source alias files
+if [ "$(ls $ZSH_CUSTOM/alias)" ]; then
+  for file in $ZSH_CUSTOM/alias/*; do
+      source "$file"
+  done
+fi
 
 # Load any local configuration
 if [ "$(ls $ZLOCAL)" ]; then
@@ -210,18 +214,6 @@ fi
 # Load docker completions if installed
 command docker >/dev/null 2>&1 && \
   source $ZCOMPLETION/_docker
-
-# Set docker-compose alias for v1
-docker-compose --version &> /dev/null
-if [ $? -eq 0 ]; then
-  alias dc=docker-compose
-fi
-
-# Set docker-compose alias for v2
-docker compose --version &> /dev/null
-if [ $? -eq 0 ]; then
-  alias dc="docker compose"
-fi
 
 # Load aws bundle if installed
 aws --version &> /dev/null
@@ -308,7 +300,7 @@ zstyle ':fzf-tab:*' switch-group '<' '>'
 # 	esac'
 # # review panel
 zstyle ':fzf-tab:complete:*:*' fzf-preview 'less ${(Q)realpath}'
-export LESSOPEN='|/usr/bin/lesspipe.sh %s'     # Formatting of panel
+# export LESSOPEN='|/usr/bin/lesspipe.sh %s'     # Formatting of panel
 export LESS='-r -M -S -I --mouse'    # raw, verbose, chop lines, ignore case, mouse scrolling
 export LESSQUIET=1 # Suppress additional output not belonging to the file contents
 #
