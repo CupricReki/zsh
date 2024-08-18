@@ -284,6 +284,6 @@ alias sudo=$'nocorrect sudo\t'
 alias ug='sudo -s -u ${USER}' # Update group
 alias which-command=whence
 alias xc='xclip -selection clipboard'
-alias zgu='git -C $HOME/.confg/zsh pull origin master || antibody update && exec zsh'
+alias zgu='git -C $HOME/.config/zsh pull origin master || antibody update && exec zsh'
 alias zgi='wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash'
 alias zri='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash"'
