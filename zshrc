@@ -12,13 +12,16 @@ fi
 # 4. powerline-fonts
 # 5. fzf
 # 6. lsd (community exa - ls alternative needed for fzf)
-# 7. git-delta
-# 8. bat: view code
-# 9. pandoc: convert any kind of file to markdown. Any generated cache file will be store in same /tmp/zsh-fzf-tab-$USER as fzf-tab
-# 10. mdcat: render markdown
-# 11. grc: colorize the output of some commands
-# 12. less: a pager
-# 13. pdftotext
+
+# Recommended
+# 1. git-delta
+# 2. bat: view code
+# 3. pandoc: convert any kind of file to markdown. Any generated cache file will be store in same /tmp/zsh-fzf-tab-$USER as fzf-tab
+# 4. mdcat: render markdown
+# 5. grc: colorize the output of some commands
+# 6. less: a pager
+# 7. pdftotext
+# 8. osc (go install osc) - OSC 52 support (copy from terminal)
 
 # 4.1 Supported compression methods and archive formats
 #
