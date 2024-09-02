@@ -117,6 +117,7 @@ setopt correct
 autoload -U colors && colors
 export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes, No, Abort, Edit) "
 
+# ==== Environment Variable Setup ====
 # Main ZSH config directory
 export ZSH_DIR="$HOME/.config/zsh"
 
@@ -133,7 +134,9 @@ export ZFUNC="$ZSH_DIR/function"
 export ZSCRIPTS="$ZSH_DIR/script"
 export ZLOCAL="$ZSH_DIR/local"
 export ZBIN="$ZSH_DIR/bin"
-
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$ZSH_DIR/bin:/opt/android-sdk/platform-tools"
+# FPATH: Contains a list of directories that the z/OS shell searches to find shell functions.
+export FPATH="$ZCOMPLETION:$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 
 # Set terminal colors
 # Based on https://github.com/joshjon/bliss-dircolors
@@ -226,10 +229,10 @@ if [ $? -eq 0 ]; then
 fi
 
 # Load ansible bundle if installed
-go --version &> /dev/null
+go version &> /dev/null
 if [ $? -eq 0 ]; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/golang"
-  PATH="$GOPATH/bin:$PATH"
+  export PATH="$(go env GOPATH)/bin:$PATH"
 fi
 
 # Load custom key bindings
@@ -334,11 +337,6 @@ if [ $? -eq 0 ]; then
     antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"
 fi
 
-
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$ZSH_DIR/bin:/opt/android-sdk/platform-tools:$PATH"
-
-# FPATH: Contains a list of directories that the z/OS shell searches to find shell functions.
-export FPATH="$ZCOMPLETION:$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
