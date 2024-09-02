@@ -15,13 +15,12 @@ deb_install () {
 	sudo apt install $1 -y
 }
 
-dep_check () { # Checks for zsh, git, curl, fzf
-
+dep_check () {
+    # Checks for required dependencies and installs if missing
 	type zsh >/dev/null 2>&1 || { deb_install "zsh"; }
 	type git >/dev/null 2>&1 || { deb_install "git"; }
 	type curl >/dev/null 2>&1 || { deb_install "curl"; }
-	type go >/dev/null 2>&1 || { deb_install "go"; }
-	type osc >/dev/null 2>&1 || { go install -v github.com/theimpostor/osc@latest; }
+	type osc >/dev/null 2>&1 || { /usr/local/go/go install -v github.com/theimpostor/osc@latest; }
 }
 
 get_zsh () {
@@ -36,6 +35,11 @@ get_zsh () {
 install_antibody () {
 	echo "Getting antigen plugin manager from git.io/antibody"
 	curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin
+}
+
+install_go () {
+    echo "Installing go 1.23.0"
+    curl https://gitlab.ogbase.net/cupric/golang-tools-install-script/-/raw/master/goinstall.sh | bash -s -- --version 1.23.0
 }
 
 check_zsh () {
@@ -53,7 +57,8 @@ if [ "$1" = "clean" ]; then
 	directory_clean
 fi
 
-sudo apt update
+install_go
+sudo apt update &> /dev/null
 dep_check
 get_zsh
 install_antibody
