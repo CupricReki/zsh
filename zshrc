@@ -21,7 +21,7 @@ fi
 # 5. grc: colorize the output of some commands
 # 6. less: a pager
 # 7. pdftotext
-# 8. osc (go install osc) - OSC 52 support (copy from terminal)
+# 8. osc (go install -v github.com/theimpostor/osc@latest) - OSC 52 support (copy from terminal)
 
 # 4.1 Supported compression methods and archive formats
 #
