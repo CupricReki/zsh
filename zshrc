@@ -233,6 +233,7 @@ go version &> /dev/null
 if [ $? -eq 0 ]; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/golang"
   export PATH="$(go env GOPATH)/bin:$PATH"
+  source $ZCOMPLETION/_osc
 fi
 
 # Load custom key bindings
