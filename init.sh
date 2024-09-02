@@ -20,7 +20,7 @@ dep_check () {
 	type zsh >/dev/null 2>&1 || { deb_install "zsh"; }
 	type git >/dev/null 2>&1 || { deb_install "git"; }
 	type curl >/dev/null 2>&1 || { deb_install "curl"; }
-	type osc >/dev/null 2>&1 || { /usr/local/go/go install -v github.com/theimpostor/osc@latest; }
+	type osc >/dev/null 2>&1 || { /usr/bin/go install -v github.com/theimpostor/osc@latest; }
 }
 
 get_zsh () {
@@ -49,8 +49,8 @@ check_zsh () {
 
 directory_clean () {
 	echo "removing zsh and any files matchin '.z*' "
-	rm -fdr $HOME/.z*
-	rm -fdr $zshdir
+	rm -fdr $HOME/.z* &> /dev/null
+	rm -fdr $zshdir &> /dev/null
 }
 
 if [ "$1" = "clean" ]; then
