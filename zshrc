@@ -132,11 +132,6 @@ export ZLOCAL="$ZSH_DIR/local"
 export ZBIN="$ZSH_DIR/bin"
 
 
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$ZSH_DIR/bin:/opt/android-sdk/platform-tools:$PATH"
-
-# Adding to the path variable
-export FPATH="$ZCOMPLETION:$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
-
 # Set terminal colors
 # Based on https://github.com/joshjon/bliss-dircolors
 eval `dircolors $ZSH_CUSTOM/bliss.dircolors`
@@ -225,6 +220,13 @@ fi
 ansible --version &> /dev/null
 if [ $? -eq 0 ]; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/ansible"
+fi
+
+# Load ansible bundle if installed
+go --version &> /dev/null
+if [ $? -eq 0 ]; then
+  antibody bundle "ohmyzsh/ohmyzsh path:plugins/golang"
+  PATH="$GOPATH/bin:$PATH"
 fi
 
 # Load custom key bindings
@@ -328,6 +330,12 @@ if [ $? -eq 0 ]; then
     ZSH_TMUX_AUTOCONNECT=false \
     antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"
 fi
+
+
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$ZSH_DIR/bin:/opt/android-sdk/platform-tools:$PATH"
+
+# FPATH: Contains a list of directories that the z/OS shell searches to find shell functions.
+export FPATH="$ZCOMPLETION:$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
