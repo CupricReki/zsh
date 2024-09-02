@@ -232,7 +232,7 @@ fi
 go version &> /dev/null
 if [ $? -eq 0 ]; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/golang"
-  export GOPATH="$(go env GOPATH)/bin)"
+  export GOPATH="$(go env GOPATH/bin)"
   export PATH="$GOPATH:$PATH"
   source $ZCOMPLETION/_osc
   alias oscc="osc copy"
