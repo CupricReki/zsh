@@ -46,7 +46,6 @@ alias 6='cd -6'
 alias 7='cd -7'
 alias 8='cd -8'
 alias 9='cd -9'
-alias sudo='sudo '
 alias afind='ack -il'
 alias bwe='export BW_SESSION=$( bw unlock --raw )'
 alias cd=__enhancd::cd
@@ -280,7 +279,7 @@ alias scr='sudo systemctl restart'
 alias sce='sudo systemctl enable'
 alias scen='sudo systemctl enable --now'
 alias subl=/opt/sublime_text/sublime_text
-alias sudo=$'nocorrect sudo\t'
+alias sudo='nocorrect sudo '
 alias ug='sudo -s -u ${USER}' # Update group
 alias which-command=whence
 alias xc='xclip -selection clipboard'
