@@ -151,6 +151,7 @@ autoload -Uz install_rsub
 autoload -Uz update_zsh
 autoload -Uz zrepl_watch
 autoload -Uz healthcheck_init
+autoload -Uz nocorrect
 
 
 # # Load source alias files
