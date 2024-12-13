@@ -59,6 +59,7 @@ alias distro='cat /etc/*-release'
 alias dl='docker logs -f'
 alias di='wget -O - https://gitlab.ogbase.net/cupric/dot/-/raw/main/init.sh | bash'
 alias dri='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/dot/-/raw/main/init.sh | bash"'
+alias dcrmva='docker volume rm $(docker volume ls -qf dangling=true)' # delete all volumes associated with docker
 alias ebuild='nocorrect ebuild'
 alias egrep='egrep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
 alias explain=explain-command
