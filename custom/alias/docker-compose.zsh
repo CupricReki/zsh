@@ -18,3 +18,4 @@ alias dcudl='dcud && dcl'
 alias dcr='dcd && dcud'
 alias dcur='dcd && dc pull && dcud'
 alias dce='docker exec -it ${PWD##*/} /bin/bash'        # Enter docker shell of container matching current folder
+alias dcesh='docker exec -it ${PWD##*/} /bin/sh'        # Enter docker shell of container matching current folder
