@@ -152,7 +152,6 @@ autoload -Uz update_zsh
 autoload -Uz zrepl_watch
 autoload -Uz healthcheck_init
 autoload -Uz nocorrect
-autoload -Uz OCS52-copy_to_clipboard
 
 
 # # Load source alias files
@@ -230,12 +229,19 @@ if [ $? -eq 0 ]; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/ansible"
 fi
 
-# Load ansible bundle if installed
+# get go for osc
 go version &> /dev/null
 if [ $? -eq 0 ]; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/golang"
   export GOPATH="$HOME/.go"
   export PATH="$GOPATH/bin:$PATH"
+  osc version &> /dev/null
+
+  # install osc if missing
+  if [ $? -eq 0 ]; then
+    go install -v github.com/theimpostor/osc@latest
+  fi
+
   source $ZCOMPLETION/_osc
   alias oscc="osc copy"
   alias oscp="osc paste"
