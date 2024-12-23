@@ -152,6 +152,7 @@ autoload -Uz update_zsh
 autoload -Uz zrepl_watch
 autoload -Uz healthcheck_init
 autoload -Uz nocorrect
+autoload -Uz OCS52-copy_to_clipboard
 
 
 # # Load source alias files

@@ -1,0 +1,6 @@
+# Enable clipboard copying via OSC52
+copy_to_clipboard() {
+    local input
+    input=$(cat)
+    printf '\e]52;c;%s\a' "$(printf '%s' "$input" | base64 | tr -d '\n')"
+}

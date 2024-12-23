@@ -254,6 +254,7 @@ alias mv='nocorrect mv'
 alias myip='curl http://ipecho.net/plain; echo'
 alias mysql='nocorrect mysql'
 alias perms='stat -c '\''%a - %n'\'
+alias ocscopy='OCS52-copy_to_clipboard' # Remote SSH copy via OCS52
 alias pip='noglob pip'
 alias pipir='pip install -r requirements.txt'
 alias pipreq='pip freeze > requirements.txt'
