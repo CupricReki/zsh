@@ -134,9 +134,11 @@ export ZFUNC="$ZSH_DIR/function"
 export ZSCRIPTS="$ZSH_DIR/script"
 export ZLOCAL="$ZSH_DIR/local"
 export ZBIN="$ZSH_DIR/bin"
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$ZSH_DIR/bin:/opt/android-sdk/platform-tools"
+export GOPATH="$HOME/.go"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$ZSH_DIR/bin:/opt/android-sdk/platform-tools:$GOPATH/bin"
 # FPATH: Contains a list of directories that the z/OS shell searches to find shell functions.
 export FPATH="$ZCOMPLETION:$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
+
 
 # Set terminal colors
 # Based on https://github.com/joshjon/bliss-dircolors
@@ -233,8 +235,6 @@ fi
 go version &> /dev/null
 if [ $? -ne 0 ]; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/golang"
-  export GOPATH="$HOME/.go"
-  export PATH="$GOPATH/bin:$PATH"
 fi
 
 # install osc if missing
