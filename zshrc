@@ -229,23 +229,21 @@ if [ $? -eq 0 ]; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/ansible"
 fi
 
-# get go for osc
+# osc install
 go version &> /dev/null
-if [ $? -eq 0 ]; then
+if [ $? -ne 0 ]; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/golang"
   export GOPATH="$HOME/.go"
   export PATH="$GOPATH/bin:$PATH"
-  osc version &> /dev/null
-
-  # install osc if missing
-  if [ $? -eq 0 ]; then
-    go install -v github.com/theimpostor/osc@latest
-  fi
-
-  source $ZCOMPLETION/_osc
-  alias oscc="osc copy"
-  alias oscp="osc paste"
 fi
+
+# install osc if missing
+osc version &> /dev/null
+if [ $? -ne 0 ]; then
+  go install -v github.com/theimpostor/osc@latest
+  echo "osc installed"
+fi
+
 
 # Load custom key bindings
 # source "$ZSH_CUSTOM/keybindings.zsh"
@@ -260,6 +258,8 @@ antibody bundle "sinetoami/antibody-completion"
 antibody bundle "sunlei/zsh-ssh"
 command yt-dlp >/dev/null 2>&1 && antibody bundle "clavelm/yt-dlp-omz-plugin"
 command tailscale >/dev/null 2>&1 && source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
+source $ZCOMPLETION/_osc
+
 
 # ================================================
 # Fzf configuration
