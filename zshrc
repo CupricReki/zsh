@@ -82,7 +82,6 @@ fi
 #     json requires jq
 #     device tree blobs requires dtc (extension dtb or dts)
 
-
 # Suggested
 # 1. mediainfo
 # 2. lsd
@@ -90,8 +89,6 @@ fi
 
 # ZSH modules
 # zmodload zsh/zprof
-
-
 
 # Compdef is basically a function used by zsh for load the auto-completions.
 # The completion system needs to be activated.
@@ -139,7 +136,6 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/g
 # FPATH: Contains a list of directories that the z/OS shell searches to find shell functions.
 export FPATH="$ZCOMPLETION:$ZSCRIPTS:$ZFUNC:$ZLOCAL:$FPATH"
 
-
 # Set terminal colors
 # Based on https://github.com/joshjon/bliss-dircolors
 eval `dircolors $ZSH_CUSTOM/bliss.dircolors`
@@ -154,7 +150,6 @@ autoload -Uz update_zsh
 autoload -Uz zrepl_watch
 autoload -Uz healthcheck_init
 autoload -Uz nocorrect
-
 
 # # Load source alias files
 if [ "$(ls $ZSH_CUSTOM/alias)" ]; then
@@ -197,7 +192,9 @@ antibody bundle "supercrabtree/k"
 
 # Vi mode
 antibody bundle "jeffreytse/zsh-vi-mode"
-ZVM_LINE_INIT_MODE=$ZVM_MODE_INSERT
+# ZVM_LINE_INIT_MODE=$ZVM_MODE_INSERT
+ZVM_INIT_MODE=sourcing
+ZVM_VI_ESCAPE_BINDKEY=^v
 
 # Powerline loading
 # powerline-daemon -q
@@ -244,7 +241,6 @@ if [ $? -ne 0 ]; then
   echo "osc installed"
 fi
 
-
 # Load custom key bindings
 # source "$ZSH_CUSTOM/keybindings.zsh"
 
@@ -260,12 +256,12 @@ command yt-dlp >/dev/null 2>&1 && antibody bundle "clavelm/yt-dlp-omz-plugin"
 command tailscale >/dev/null 2>&1 && source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
 source $ZCOMPLETION/_osc
 
-
 # ================================================
 # Fzf configuration
 # ================================================
 source "$ZSH_CUSTOM/fzf_key-bindings.zsh"
 source "$ZSH_CUSTOM/fzf_completion.zsh"
+source "$ZSH_CUSTOM/fzf_functions.zsh"
 # export FZF_COMPLETION_TRIGGER=''
 # bindkey '^I' $fzf_default_completion
 
@@ -349,6 +345,12 @@ if [ $? -eq 0 ]; then
     antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"
 fi
 
+export PATH="$HOME/.pyenv/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
+
+# Added by ProtonUp-Qt on 29-01-2025 19:39:57
+if [ -d "/home/cupric/stl/prefix" ]; then export PATH="$PATH:/home/cupric/stl/prefix"; fi

@@ -48,6 +48,7 @@ alias 8='cd -8'
 alias 9='cd -9'
 alias afind='ack -il'
 alias bwe='export BW_SESSION=$( bw unlock --raw )'
+alias backup='f() { rsync -a "$1" "${1}.bak"; }; f'
 alias cd=__enhancd::cd
 alias cp='nocorrect cp'
 alias dd='dd conv=noerror status=progress'
@@ -64,7 +65,6 @@ alias ebuild='nocorrect ebuild'
 alias egrep='egrep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
 alias explain=explain-command
 alias explain-last=explain-last-command
-alias ezsh='subl ~/.zsh/.zshrc'
 alias fgrep='fgrep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
 alias g=git
 alias ga='git add'
@@ -286,6 +286,7 @@ alias sudo='sudo '
 alias ug='sudo -s -u ${USER}' # Update group
 alias which-command=whence
 alias xc='xclip -selection clipboard'
+alias zse='vi ~/.zshrc'
 alias zgu='git -C $HOME/.config/zsh pull origin master || antibody update && exec zsh'
 alias zgi='wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash'
 alias zri='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash"'
