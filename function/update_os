@@ -2,7 +2,6 @@
 # if not root, run as root
 if (( $EUID != 0 )); then
     sudo $ZFUNC/update_os
-    exit
 fi
 apt-get update
 apt-get -y upgrade
