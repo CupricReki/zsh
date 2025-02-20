@@ -1,0 +1,4 @@
+#!/bin/bash
+# generate upated completions
+
+wget "https://github.com/docker/cli/raw/master/contrib/completion/zsh/_docker" -O $ZSH_DIR/completion/_docker
