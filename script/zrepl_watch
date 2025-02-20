@@ -1,7 +1,0 @@
-#!/bin/bash
-tmux new -s zrepl -d
-tmux split-window -t zrepl  "journalctl -f -u zrepl.service"
-tmux split-window -t zrepl "watch 'zfs list -t snapshot -o name,creation -s creation'"
-tmux split-window -t zrepl "zrepl status"
-tmux select-layout -t zrepl tiled
-tmux attach -t zrepl

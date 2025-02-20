@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Script Name: aur-pkgupdate.sh
+# Description: This script manages version updates for a PKGBUILD and .SRCINFO file.
+#              It allows for a dry run, validates version formats, and commits changes to git.
+# Author: Skyler Ogden
+# Revision Date: 2023-10-05
+
 # Function to display help information
 show_help() {
     echo "Usage: $0 [-d] [new_version]"
@@ -126,3 +132,5 @@ if [[ "$confirm_commit" =~ ^[Yy]$ ]]; then
 else
     echo "Commit aborted."
 fi
+
+# End of script
