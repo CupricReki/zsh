@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Script Name: zrepl_watch.sh
+# Description: This script creates a new tmux window to monitor the zrepl service.
+#              It splits the window to show the journal logs, ZFS snapshots, and zrepl status.
+# Author: Skyler Ogden
+# Revision Date: 2023-10-05
+
+# Create a new tmux window named 'zrepl' in the current session
+tmux new-window -n zrepl
+
+# Split the window to show journal logs for the zrepl service
+tmux split-window -t zrepl "sudo journalctl -f -u zrepl.service"
+
+# Split the window to show ZFS snapshots
+tmux split-window -t zrepl "watch 'sudo zfs list -t snapshot -o name,creation -s creation'"
+
+# Split the window to show zrepl status
+tmux split-window -t zrepl "sudo zrepl status"
+
+# Set the layout to tiled
+tmux select-layout -t zrepl tiled
+
+# Select the first pane
+tmux select-pane -t zrepl:0
+
+# End of script

@@ -186,18 +186,17 @@ antibody bundle "supercrabtree/k"
 # antibody bundle "zsh-users/zsh-syntax-highlighting"
 
 # Vi mode
-antibody bundle "jeffreytse/zsh-vi-mode"
-# ZVM_LINE_INIT_MODE=$ZVM_MODE_INSERT
-ZVM_INIT_MODE=sourcing
-ZVM_VI_ESCAPE_BINDKEY=^v
-
-# Powerline loading
-# powerline-daemon -q
-# . /usr/share/powerline/bindings/zsh/powerline.zsh
+antibody bundle "ohmyzsh/ohmyzsh path:plugins/vi-mode"
+VI_MODE_SET_CURSOR=true         # Vertical bar on inserT
 
 # Initialize enhancd
 antibody bundle "b4b4r07/enhancd"
-export ENHANCD_FILTER="fzf --preview='exa --tree --group-directories-first --git-ignore --level 1 {}'"
+# export ENHANCD_FILTER="fzf --preview='exa --tree --group-directories-first --git-ignore --level 1 {}'"
+export ENHANCD_FILTER="fzf --preview 'exa -al --tree --level 1 --group-directories-first --git-ignore
+        --header --git --no-user --no-time --no-filesize --no-permissions {}'
+        --preview-window right,50% --height 35% --reverse --ansi
+        :fzy
+        :peco"
 source "$ZSH_CACHE_DIR/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07-SLASH-enhancd/init.sh"
 
 # Load kubectl bundle if installed
@@ -257,17 +256,26 @@ source $ZCOMPLETION/_osc
 source "$ZSH_CUSTOM/fzf_key-bindings.zsh"
 source "$ZSH_CUSTOM/fzf_completion.zsh"
 source "$ZSH_CUSTOM/fzf_functions.zsh"
-# export FZF_COMPLETION_TRIGGER=''
-# bindkey '^I' $fzf_default_completion
+export FZF_DEFAULT_COMMAND="fd --type f"
+export FZF_DEFAULT_OPTS="--tmux center,75%  --marker='✚' --pointer='▶' --prompt='❯ '"
+export FZF_CTRL_T_COMMAND="rg --files --hidden --follow --glob '!.git/*'"
+# export FZF_CTRL_T_OPTS="--reverse --preview 'bat --color=always --style=header,grid --line-range :100 {}'"
+export FZF_CTRL_T_OPTS="--reverse --preview '$ZSCRIPTS/fzf-preview.sh {}'"
+export FZF_ALT_C_COMMAND="fd --type d"
+export FZF_ALT_C_OPTS="--preview 'tree -C {} | head -100'"
+# --preview '$ZSCRIPTS/fzf-preview.sh {}'
 
 # Tab completion
+# Replace tab selection with fzf
 antibody bundle "Aloxaf/fzf-tab"
 antibody bundle "Freed-Wu/fzf-tab-source"           # formatttin&g for fzf-preview in fzf-tab
 
 # Bind rebind file search to alt+t
-bindkey -r '^T'
-bindkey -r '^[t'
+# bindkey -r '^T'
+# bindkey -r '^[t'
 bindkey '^[t' fzf-file-widget
+# bindkey -r '^r'
+# bindkey '^r' fzf-history-widget
 
 # Auto-completion case-insensitive
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'

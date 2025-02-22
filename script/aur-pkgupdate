@@ -1,20 +1,14 @@
 #!/bin/bash
 
-# Script Name: aur-pkgupdate.sh
-# Description: This script manages version updates for a PKGBUILD and .SRCINFO file.
-#              It allows for a dry run, validates version formats, and commits changes to git.
-# Author: Skyler Ogden
-# Revision Date: 2023-10-05
-
 # Function to display help information
 show_help() {
-    echo "Usage: $0 [-d] [new_version]"
+    echo "Usage: $0 [-d | --dry-run] [new_version]"
     echo
     echo "Options:"
-    echo "  -d            Perform a dry run without committing changes."
-    echo "  new_version   Specify the new version to set in the PKGBUILD and .SRCINFO."
-    echo "                If not provided, the current version will be used."
-    echo "  --help        Display this help message."
+    echo "  -d, --dry-run  Perform a dry run without committing changes."
+    echo "  new_version     Specify the new version to set in the PKGBUILD and .SRCINFO."
+    echo "                  If not provided, the current version will be used."
+    echo "  --help          Display this help message."
     exit 0
 }
 
@@ -61,9 +55,18 @@ update_pkgver() {
 
 # Function to run makepkg
 run_makepkg() {
-    echo "Running makepkg..."
-    if ! makepkg --printsrcinfo; then
+    echo "Running makepkg with -f..."
+    if ! makepkg -f; then
         echo "Error: makepkg failed."
+        exit 1
+    fi
+}
+
+# Function to display package information
+display_package_info() {
+    echo "Displaying package information..."
+    if ! makepkg --printsrcinfo; then
+        echo "Error: Failed to display package information."
         exit 1
     fi
 }
@@ -74,7 +77,7 @@ dry_run=false
 # Parse command-line options
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        -d)
+        -d|--dry-run)
             dry_run=true
             shift
             ;;
@@ -110,6 +113,13 @@ fi
 # Update the pkgver in .SRCINFO
 update_pkgver "$new_ver"
 
+# Display package information
+display_package_info
+
+# Prompt for a commit message
+read -p "Enter a commit message (default: 'Update to $new_ver'): " commit_message
+commit_message=${commit_message:-"Update to $new_ver"}  # Default message if none provided
+
 # Confirm the version before committing
 read -p "Are you sure you want to commit the changes with version '$new_ver'? (Y/n): " confirm_commit
 confirm_commit=${confirm_commit:-Y}  # Default to 'Y'
@@ -117,12 +127,13 @@ if [[ "$confirm_commit" =~ ^[Yy]$ ]]; then
     if $dry_run; then
         echo "Dry run: Changes would be committed with version '$new_ver'."
         echo "Files to be added: PKGBUILD, .SRCINFO"
+        echo "Commit message: $commit_message"
     else
         # Add only PKGBUILD and .SRCINFO to the git commit
         git add PKGBUILD .SRCINFO
         
         # Commit the changes using git
-        if git commit -m "Update to $new_ver"; then
+        if git commit -m "$commit_message"; then
             echo "Changes committed to git."
         else
             echo "Error: Git commit failed."
@@ -132,5 +143,3 @@ if [[ "$confirm_commit" =~ ^[Yy]$ ]]; then
 else
     echo "Commit aborted."
 fi
-
-# End of script
