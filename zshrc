@@ -258,7 +258,7 @@ source "$ZSH_CUSTOM/fzf_completion.zsh"
 source "$ZSH_CUSTOM/fzf_functions.zsh"
 export FZF_DEFAULT_COMMAND="fd --type f"
 export FZF_DEFAULT_OPTS="--tmux center,75%  --marker='✚' --pointer='▶' --prompt='❯ '"
-export FZF_CTRL_T_COMMAND="rg --files --hidden --follow --glob '!.git/*'"
+export FZF_CTRL_T_COMMAND="rg --files --hidden --follow --glob '!.git/*' 2>/dev/null"
 # export FZF_CTRL_T_OPTS="--reverse --preview 'bat --color=always --style=header,grid --line-range :100 {}'"
 export FZF_CTRL_T_OPTS="--reverse --preview '$ZSCRIPTS/fzf-preview.sh {}'"
 export FZF_ALT_C_COMMAND="fd --type d"
@@ -348,12 +348,13 @@ if [ $? -eq 0 ]; then
     antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"
 fi
 
-export PATH="$HOME/.pyenv/bin:$PATH"
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
+# load pyenv if installed
+pynenv --version &>/dev/null
+if [ $? -eq 0 ]; then
+  export PATH="$HOME/.pyenv/bin:$PATH"
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
+fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
-
-# Added by ProtonUp-Qt on 29-01-2025 19:39:57
-if [ -d "/home/cupric/stl/prefix" ]; then export PATH="$PATH:/home/cupric/stl/prefix"; fi
