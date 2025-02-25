@@ -47,9 +47,10 @@ check_zsh () {
 }
 
 directory_clean () {
-	echo "removing zsh and any files matchin '.z*' "
+	echo "removing zsh "
 	rm -fdr $HOME/.z* &> /dev/null
 	rm -fdr $zshdir &> /dev/null
+    rm -fdr $HOME/.cache/zsh &> /dev/nuu
 }
 
 if [ "$1" = "clean" ]; then
