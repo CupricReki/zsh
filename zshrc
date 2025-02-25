@@ -12,6 +12,8 @@ fi
 # 4. powerline-fonts
 # 5. fzf
 # 6. lsd (community exa - ls alternative needed for fzf)
+# 7. tree
+# 8. fd
 
 # Recommended
 # 1. git-delta
