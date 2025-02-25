@@ -258,7 +258,7 @@ source "$ZSH_CUSTOM/fzf_key-bindings.zsh"
 source "$ZSH_CUSTOM/fzf_completion.zsh"
 source "$ZSH_CUSTOM/fzf_functions.zsh"
 export FZF_DEFAULT_COMMAND="fd --type f"
-export FZF_DEFAULT_OPTS="--tmux center,75%  --marker='✚' --pointer='▶' --prompt='❯ '"
+export FZF_DEFAULT_OPTS="--height 40% --tmux center,75%  --marker='✚' --pointer='▶' --prompt='❯ '"
 export FZF_CTRL_T_COMMAND="rg --files --hidden --follow --glob '!.git/*' 2>/dev/null"
 # export FZF_CTRL_T_OPTS="--reverse --preview 'bat --color=always --style=header,grid --line-range :100 {}'"
 export FZF_CTRL_T_OPTS="--reverse --preview '$ZSCRIPTS/fzf-preview.sh {}'"
@@ -280,22 +280,20 @@ bindkey '^[t' fzf-file-widget
 
 # Auto-completion case-insensitive
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
-
 # disable sort when completing `git checkout`
 zstyle ':completion:*:git-checkout:*' sort false
-
 # set descriptions format to enable group support
 zstyle ':completion:*:descriptions' format '[%d]'
-
 # set list-colors to enable filename colorizing
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
-
 # force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
 zstyle ':completion:*' menu no
-
-
 # switch group using `<` and `>`
 zstyle ':fzf-tab:*' switch-group '<' '>'
+# Set minimum height
+zstyle ':fzf-tab:*' fzf-min-height 40
+# accept completion and start another immediately
+zstyle ':fzf-tab:*' continuous-trigger '/'
 # Tmux popup window
 zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
 # Minimum popup size
