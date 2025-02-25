@@ -185,16 +185,21 @@ antibody bundle "supercrabtree/k"
 # Syntax highlighting bundle.
 # antibody bundle "zsh-users/zsh-syntax-highlighting"
 
+
 # Vi mode
 antibody bundle "ohmyzsh/ohmyzsh path:plugins/vi-mode"
-VI_MODE_SET_CURSOR=true         # Vertical bar on inserT
+VI_MODE_SET_CURSOR=true         # Vertical bar on insert
+
+# Use system clipboard
+antibody bundle "kutsan/zsh-system-clipboard"
+export ZSH_SYSTEM_CLIPBOARD_METHOD="wlc"        # Use wl-clipboard with "CLIPBOARD" selection
 
 # Initialize enhancd
 antibody bundle "b4b4r07/enhancd"
-# export ENHANCD_FILTER="fzf --preview='exa --tree --group-directories-first --git-ignore --level 1 {}'"
-export ENHANCD_FILTER="fzf --preview 'exa -al --tree --level 1 --group-directories-first --git-ignore
-        --header --git --no-user --no-time --no-filesize --no-permissions {}'
-        --preview-window right,50% --height 35% --reverse --ansi
+export ENHANCD_FILTER="fzf --preview='eza --tree --group-directories-first --git-ignore --level 1 {}'"
+export ENHANCD_FILTER="fzf --preview 'eza -al --tree --level 1 --group-directories-first --git-ignore \
+  --header --git --no-user --no-time --no-filesize --no-permissions {}' \
+        --preview-window right,50% --height 35% --reverse --ansi \
         :fzy
         :peco"
 source "$ZSH_CACHE_DIR/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07-SLASH-enhancd/init.sh"
@@ -268,7 +273,7 @@ export FZF_ALT_C_OPTS="--preview 'tree -C {} | head -100'"
 # Tab completion
 # Replace tab selection with fzf
 antibody bundle "Aloxaf/fzf-tab"
-antibody bundle "Freed-Wu/fzf-tab-source"           # formatttin&g for fzf-preview in fzf-tab
+# antibody bundle "Freed-Wu/fzf-tab-source"           # formatttin&g for fzf-preview in fzf-tab
 
 # Bind rebind file search to alt+t
 # bindkey -r '^T'
@@ -289,34 +294,50 @@ zstyle ':completion:*:descriptions' format '[%d]'
 # set list-colors to enable filename colorizing
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 
+# force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
+zstyle ':completion:*' menu no
+
+
 # switch group using `<` and `>`
 zstyle ':fzf-tab:*' switch-group '<' '>'
 # Tmux popup window
-# zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
+zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
+# Minimum popup size
+zstyle ':fzf-tab:*' popup-min-size 150 0
+# preview directory's content with eza when completing cd
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -al --tree --level 1 --group-directories-first --git-ignore \
+        --header --git --no-user --no-time --no-filesize --no-permissions $realpath'
 # show systemd unit status
-# zstyle ':fzf-tab:complete:systemctl-*:*' fzf-preview 'SYSTEMD_COLORS=1 systemctl status $word'
-# # environment variables preview
-# zstyle ':fzf-tab:complete:(-command-|-parameter-|-brace-parameter-|export|unset|expand):*' \
-# 	fzf-preview 'echo ${(P)word}'
-#
-# # git - requires git-delta
-# zstyle ':fzf-tab:complete:git-(add|diff|restore):*' fzf-preview \
-# 	'git diff $word | delta'
-# zstyle ':fzf-tab:complete:git-log:*' fzf-preview \
-# 	'git log --color=always $word'
-# zstyle ':fzf-tab:complete:git-help:*' fzf-preview \
-# 	'git help $word | bat -plman --color=always'
-# zstyle ':fzf-tab:complete:git-show:*' fzf-preview \
-# 	'case "$group" in
-# 	"commit tag") git show --color=always $word ;;
-# 	*) git show --color=always $word | delta ;;
-# 	esac'
-# zstyle ':fzf-tab:complete:git-checkout:*' fzf-preview \
-# 	'case "$group" in
-# 	"modified file") git diff $word | delta ;;
-# 	"recent commit object name") git show --color=always $word | delta ;;
-# 	*) git log --color=always $word ;;
-# 	esac'
+zstyle ':fzf-tab:complete:systemctl-*:*' fzf-preview 'SYSTEMD_COLORS=1 systemctl status $word'
+# environment variables preview
+zstyle ':fzf-tab:complete:(-command-|-parameter-|-brace-parameter-|export|unset|expand):*' \
+	fzf-preview 'echo ${(P)word}'
+
+# git - requires git-delta
+zstyle ':fzf-tab:complete:git-(add|diff|restore):*' fzf-preview \
+	'git diff $word | delta'
+zstyle ':fzf-tab:complete:git-log:*' fzf-preview \
+	'git log --color=always $word'
+zstyle ':fzf-tab:complete:git-help:*' fzf-preview \
+	'git help $word | bat -plman --color=always'
+zstyle ':fzf-tab:complete:git-show:*' fzf-preview \
+	'case "$group" in
+	"commit tag") git show --color=always $word ;;
+	*) git show --color=always $word | delta ;;
+	esac'
+zstyle ':fzf-tab:complete:git-checkout:*' fzf-preview \
+	'case "$group" in
+	"modified file") git diff $word | delta ;;
+	"recent commit object name") git show --color=always $word | delta ;;
+	*) git log --color=always $word ;;
+	esac'
+
+# NOTE: fzf-tab does not follow FZF_DEFAULT_OPTS by default
+# zstyle ':fzf-tab:*' fzf-flags --color=fg:1,fg+:2 --bind=tab:accept
+# To make fzf-tab follow FZF_DEFAULT_OPTS.
+# NOTE: This may lead to unexpected behavior since some flags break this plugin. See Aloxaf/fzf-tab#455.
+# zstyle ':fzf-tab:*' use-fzf-default-opts yes
+
 # # review panel
 zstyle ':fzf-tab:complete:*:*' fzf-preview 'less ${(Q)realpath}'
 # export LESSOPEN='|/usr/bin/lesspipe.sh %s'     # Formatting of panel
@@ -333,13 +354,6 @@ zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-flags --preview-window=do
 # ctrl-a to select all
 zstyle ':fzf-tab:*' fzf-bindings 'ctrl-a:toggle-all'
 
-# These have to go after most plugins as they wrap other ones
-antibody bundle "zdharma-continuum/fast-syntax-highlighting"
-antibody bundle "zsh-users/zsh-autosuggestions"
-
-# Powerlevel 10k
-antibody bundle "romkatv/powerlevel10k"
-
 # Load tmux bundle if installed
 tmux --version &>/dev/null
 if [ $? -eq 0 ]; then
@@ -355,6 +369,13 @@ if [ $? -eq 0 ]; then
   eval "$(pyenv init -)"
   eval "$(pyenv virtualenv-init -)"
 fi
+
+# These have to go after most plugins as they wrap other ones
+antibody bundle "zdharma-continuum/fast-syntax-highlighting"
+antibody bundle "zsh-users/zsh-autosuggestions"
+
+# Powerlevel 10k
+antibody bundle "romkatv/powerlevel10k"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
