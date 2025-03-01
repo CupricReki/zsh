@@ -377,8 +377,11 @@ antibody bundle "romkatv/powerlevel10k"
 
 
 # Use system clipboard - must go after other keybindings
-antibody bundle "kutsan/zsh-system-clipboard"
-export ZSH_SYSTEM_CLIPBOARD_METHOD="wlc"        # Use wl-clipboard with "CLIPBOARD" selection
+--version &>/dev/null
+if [ $? -eq 0 ]; then
+  antibody bundle "kutsan/zsh-system-clipboard"
+  export ZSH_SYSTEM_CLIPBOARD_METHOD="wlc"        # Use wl-clipboard with "CLIPBOARD" selection
+fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
