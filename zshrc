@@ -368,6 +368,13 @@ if [ $? -eq 0 ]; then
   eval "$(pyenv virtualenv-init -)"
 fi
 
+# load afx if installed
+afx --version &>/dev/null
+if [ $? -eq 0 ]; then
+  source <(afx init)
+  source <(afx completion zsh)
+fi
+
 # These have to go after most plugins as they wrap other ones
 antibody bundle "zdharma-continuum/fast-syntax-highlighting"
 antibody bundle "zsh-users/zsh-autosuggestions"
