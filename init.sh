@@ -43,8 +43,9 @@ install_go () {
 
 install_afx () {
   echo "Installing afx"
-  /usr/bin/go install github.com/b4b4r07/afx@latest
+  mkdir -p $HOME/.config/afx
   git clone https://gitlab.ogbase.net/cupric/afx.git $HOME/.config/afx
+  /usr/bin/go install github.com/b4b4r07/afx@latest
 }
 
 check_zsh () {
@@ -56,7 +57,7 @@ directory_clean () {
 	echo "removing zsh "
 	rm -fdr $HOME/.z* &> /dev/null
 	rm -fdr $zshdir &> /dev/null
-    rm -fdr $HOME/.cache/zsh &> /dev/nuu
+    rm -fdr $HOME/.cache/zsh &> /dev/null
 }
 
 install () {
@@ -75,4 +76,5 @@ elif [ "$1" = "install-afx" ]; then
   install_afx
 else
   install
+fi
 
