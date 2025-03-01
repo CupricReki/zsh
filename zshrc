@@ -133,7 +133,7 @@ export ZFUNC="$ZSH_DIR/function"
 export ZSCRIPTS="$ZSH_DIR/script"
 export ZLOCAL="$ZSH_DIR/local"
 export ZBIN="$ZSH_DIR/bin"
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/.local/bin:$ZSH_DIR/bin:$ZSCRIPTS:opt/android-sdk/platform-tools"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/bin:$HOME/.local/bin:$ZSH_DIR/bin:$ZSCRIPTS:opt/android-sdk/platform-tools"
 # FPATH: Contains a list of directories that the z/OS shell searches to find shell functions.
 export FPATH="$ZCOMPLETION:$ZFUNC:$ZLOCAL:$FPATH"
 
