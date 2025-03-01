@@ -74,6 +74,7 @@ if [ "$1" = "clean" ]; then
   directory_clean
 elif [ "$1" = "install-afx" ]; then
   install_afx
+  afx install
 else
   install
 fi
