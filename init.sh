@@ -44,7 +44,7 @@ install_go () {
 install_afx () {
   echo "Installing afx"
   /usr/bin/go install github.com/b4b4r07/afx@latest
-  git clone https://gitlab.ogbase.net/cupric/afx.git
+  git clone https://gitlab.ogbase.net/cupric/afx.git $HOME/.config/afx
 }
 
 check_zsh () {
