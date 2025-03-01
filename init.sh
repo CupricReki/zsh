@@ -41,6 +41,12 @@ install_go () {
     curl https://gitlab.ogbase.net/cupric/golang-tools-install-script/-/raw/master/goinstall.sh | bash -s -- --version 1.23.0
 }
 
+install_afx () {
+  echo "Installing afx"
+  /usr/bin/go install github.com/b4b4r07/afx@latest
+  git clone https://gitlab.ogbase.net/cupric/afx.git
+}
+
 check_zsh () {
     # Change shell if zsh was installed
     type zsh >/dev/null 2>&1 || { chsh "-s /bin/zsh"; }
@@ -53,14 +59,20 @@ directory_clean () {
     rm -fdr $HOME/.cache/zsh &> /dev/nuu
 }
 
-if [ "$1" = "clean" ]; then
-	directory_clean
-fi
+install () {
+  install_go
+  sudo apt update &> /dev/null
+  dep_check
+  get_zsh
+  install_antibody
+  check_zsh
+  zsh
+}
 
-install_go
-sudo apt update &> /dev/null
-dep_check
-get_zsh
-install_antibody
-check_zsh
-zsh
+if [ "$1" = "clean" ]; then
+  directory_clean
+elif [ "$1" = "install-afx" ]; then
+  install_afx
+else
+  install
+
