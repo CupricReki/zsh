@@ -32,6 +32,12 @@
  sudo setfacl -m g:media:rwX "$DIRECTORY"
  sudo setfacl -m u:media:rwX "$DIRECTORY"
 
+ # Set ownership of the directory to user and group 'media'
+ sudo chown media:media -R "$DIRECTORY"
+
+ # Set the setgid bit to ensure new files inherit the group ownership
+ sudo chmod g+s "$DIRECTORY"
+
  # Verify the ACLs
  echo "ACLs set for $DIRECTORY:"
  getfacl "$DIRECTORY"
