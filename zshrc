@@ -133,7 +133,7 @@ export ZFUNC="$ZSH_DIR/function"
 export ZSCRIPTS="$ZSH_DIR/script"
 export ZLOCAL="$ZSH_DIR/local"
 export ZBIN="$ZSH_DIR/bin"
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/bin:$HOME/.local/bin:$ZSH_DIR/bin:$ZSCRIPTS:opt/android-sdk/platform-tools"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/bin:$HOME/.local/bin:$ZSH_DIR/bin:$ZSCRIPTS:opt/android-sdk/platform-tools:$HOME/.nix-profile/bin"
 # FPATH: Contains a list of directories that the z/OS shell searches to find shell functions.
 export FPATH="$ZCOMPLETION:$ZFUNC:$ZLOCAL:$FPATH"
 
@@ -193,6 +193,7 @@ VI_MODE_SET_CURSOR=true         # Vertical bar on insert
 
 # Initialize enhancd
 antibody bundle "b4b4r07/enhancd"
+export ENHANCD_DIR="$ZSH_CACHE_DIR/enhancd"
 export ENHANCD_FILTER="fzf --preview='eza --tree --group-directories-first --git-ignore --level 1 {}'"
 export ENHANCD_FILTER="fzf --preview 'eza -al --tree --level 1 --group-directories-first --git-ignore \
   --header --git --no-user --no-time --no-filesize --no-permissions {}' \
@@ -292,6 +293,8 @@ zstyle ':completion:*:descriptions' format '[%d]'
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 # force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
 zstyle ':completion:*' menu no
+zstyle ':fzf-tab:complete:(ls|cat|bat):*' fzf-preview 'less ${(Q)realpath}'
+zstyle ':completion:*' list-grouped true
 # switch group using `<` and `>`
 zstyle ':fzf-tab:*' switch-group '<' '>'
 # Set minimum height
@@ -330,14 +333,8 @@ zstyle ':fzf-tab:complete:git-checkout:*' fzf-preview \
 	*) git log --color=always $word ;;
 	esac'
 
-# NOTE: fzf-tab does not follow FZF_DEFAULT_OPTS by default
-# zstyle ':fzf-tab:*' fzf-flags --color=fg:1,fg+:2 --bind=tab:accept
-# To make fzf-tab follow FZF_DEFAULT_OPTS.
-# NOTE: This may lead to unexpected behavior since some flags break this plugin. See Aloxaf/fzf-tab#455.
-# zstyle ':fzf-tab:*' use-fzf-default-opts yes
-
 # # review panel
-zstyle ':fzf-tab:complete:*:*' fzf-preview 'less ${(Q)realpath}'
+# zstyle ':fzf-tab:complete:*:*' fzf-preview 'less ${(Q)realpath}'
 # export LESSOPEN='|/usr/bin/lesspipe.sh %s'     # Formatting of panel
 export LESS='-r -M -S -I --mouse'    # raw, verbose, chop lines, ignore case, mouse scrolling
 export LESSQUIET=1 # Suppress additional output not belonging to the file contents
@@ -347,6 +344,8 @@ zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm -w 
 zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-preview \
   '[[ $group == "[process ID]" ]] && ps --pid=$word -o cmd --no-headers -w -w'
 zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-flags --preview-window=down:3:wrap
+# zstyle ':fzf-tab:complete:tailscale:*' fzf-preview
+
 
 ### fzf-tab Keybindings
 # ctrl-a to select all
@@ -389,6 +388,8 @@ if [ $? -eq 0 ]; then
   antibody bundle "kutsan/zsh-system-clipboard"
   export ZSH_SYSTEM_CLIPBOARD_METHOD="wlc"        # Use wl-clipboard with "CLIPBOARD" selection
 fi
+
+eval "$(direnv hook bash)"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
