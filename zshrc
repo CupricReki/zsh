@@ -367,13 +367,6 @@ if [ $? -eq 0 ]; then
   eval "$(pyenv virtualenv-init -)"
 fi
 
-# load afx if installed
-afx --version &>/dev/null
-if [ $? -eq 0 ]; then
-  source <(afx init)
-  source <(afx completion zsh)
-fi
-
 # These have to go after most plugins as they wrap other ones
 antibody bundle "zdharma-continuum/fast-syntax-highlighting"
 antibody bundle "zsh-users/zsh-autosuggestions"
@@ -383,13 +376,17 @@ antibody bundle "romkatv/powerlevel10k"
 
 
 # Use system clipboard - must go after other keybindings
---version &>/dev/null
+wl-copy --version &>/dev/null
 if [ $? -eq 0 ]; then
   antibody bundle "kutsan/zsh-system-clipboard"
   export ZSH_SYSTEM_CLIPBOARD_METHOD="wlc"        # Use wl-clipboard with "CLIPBOARD" selection
 fi
 
-eval "$(direnv hook bash)"
+# direnv is a tool that automatically sets/unsets environment variables when you enter/leave directories (think: auto-loading .env files, but on steroids).
+# direnv hook bash outputs some shell code that integrates direnv into your shell's behavior.
+if command -v direnv >/dev/null 2>&1; then
+  eval "$(direnv hook bash)"
+fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
