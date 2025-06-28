@@ -1,0 +1,8 @@
+tarz() {
+    if [ -d "$1" ]; then
+        tar --zstd -cvf "${1%/}.tar.zst" "$1"
+    else
+        echo "Usage: tarzstd <directory>"
+    fi
+}
+
