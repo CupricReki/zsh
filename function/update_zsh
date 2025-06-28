@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# update repo
-git -C $HOME'/.zsh' pull
-
-# apply changes
-zsh
-

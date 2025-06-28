@@ -145,6 +145,7 @@ autoload -Uz extract
 autoload -Uz sshdc
 autoload -Uz mkcd
 autoload -Uz zssh
+autoload -Uz tarz       #tar --zstd -cvf
 autoload -Uz nocorrect
 
 # # Load source alias files
