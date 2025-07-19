@@ -13,6 +13,7 @@ DIR="."
 CUE_FILE=""
 AUDIO_FILE=""
 TEMP_FLAC=""
+TEMP_WAV=""
 
 # --- Functions ---
 
@@ -32,7 +33,7 @@ Arguments:
   directory    Optional path to directory containing the files (default: current)
 
 Notes:
-  - Supports both .flac and .m4a (converts to .flac for splitting)
+  - Supports both .flac and .m4a (converts to WAV for splitting)
   - Automatically detects files if exactly one .cue and one .flac/.m4a is present
   - Uses cuetag.sh to apply metadata
 EOF
@@ -93,22 +94,21 @@ if [[ -z "$AUDIO_FILE" ]]; then
   AUDIO_FILE="${AUDIO_CANDIDATES[0]}"
 fi
 
-# --- Convert .m4a to .flac if needed ---
+# --- Convert .m4a to .wav if needed ---
 EXT="${AUDIO_FILE##*.}"
 EXT_LOWER=$(echo "$EXT" | tr '[:upper:]' '[:lower:]')
 
 if [[ "$EXT_LOWER" == "m4a" ]]; then
-  TEMP_FLAC="$(basename "${AUDIO_FILE%.m4a}.converted.flac")"
-  echo "🔁 Converting .m4a to .flac: $TEMP_FLAC"
-  ffmpeg -y -i "$AUDIO_FILE" "$TEMP_FLAC"
+  TEMP_WAV="$(basename "${AUDIO_FILE%.m4a}.converted.wav")"
+  echo "🔁 Converting .m4a to 16-bit .wav: $TEMP_WAV"
+  ffmpeg -y -i "$AUDIO_FILE" -sample_fmt s16 "$TEMP_WAV"
 
-  # Safety check
-  if [[ ! -s "$TEMP_FLAC" ]]; then
-    echo "❌ Error: Conversion failed — resulting FLAC not created or is empty."
+  if [[ ! -s "$TEMP_WAV" ]]; then
+    echo "❌ Error: Conversion failed — resulting WAV not created or is empty."
     exit 1
   fi
 
-  AUDIO_FILE="$TEMP_FLAC"
+  AUDIO_FILE="$TEMP_WAV"
 fi
 
 echo "📁 Directory: $(pwd)"
@@ -147,8 +147,12 @@ cuetag.sh "$CUE_FILE" "${FLAC_TRACKS[@]}"
 echo "✅ Done. Tracks split and tagged in '$DIR'"
 
 # --- Clean up ---
-if [[ -n "$TEMP_FLAC" && -f "$TEMP_FLAC" ]]; then
+if [[ -n "${TEMP_FLAC:-}" && -f "$TEMP_FLAC" ]]; then
   echo "🧹 Cleaning up converted FLAC: $TEMP_FLAC"
   rm "$TEMP_FLAC"
+fi
+if [[ -n "${TEMP_WAV:-}" && -f "$TEMP_WAV" ]]; then
+  echo "🧹 Cleaning up converted WAV: $TEMP_WAV"
+  rm "$TEMP_WAV"
 fi
 
