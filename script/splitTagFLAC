@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# split_and_tag.sh
-# Splits a .flac album using a .cue file, removes pregap track00,
+# splitTagFLAC
+# Splits a .flac (or .m4a) album using a .cue file, removes pregap track00,
 # and applies metadata using cuetag.sh.
 #
 
@@ -10,36 +10,35 @@ set -euo pipefail
 # --- Defaults ---
 DIR="."
 CUE_FILE=""
-FLAC_FILE=""
+AUDIO_FILE=""
+TEMP_FLAC=""
 
 # --- Functions ---
 
 print_help() {
   cat <<EOF
-🎶 split_and_tag.sh - FLAC album splitter and tagger
+🎶 splitTagFLAC - FLAC/M4A album splitter and tagger
 
 Usage:
-  $(basename "$0") [-c cue_file] [-f flac_file] [directory]
+  $(basename "$0") [-c cue_file] [-f audio_file] [directory]
 
 Options:
   -c, --cue    Path to the .cue file to use
-  -f, --flac   Path to the .flac file to split
+  -f, --flac   Path to the .flac or .m4a file to split
   -h, --help   Show this help message
 
 Arguments:
   directory    Optional path to directory containing the files (default: current)
 
-If -c or -f are not provided, the script will auto-detect the only .cue and .flac
-file in the specified directory. It will fail if more than one of either exists.
+Notes:
+  - Supports both .flac and .m4a (converts to .flac for splitting)
+  - Automatically detects files if exactly one .cue and one .flac/.m4a is present
+  - Uses cuetag.sh to apply metadata
 
-Example:
-  ./split_and_tag.sh -c "album.cue" -f "album.flac" ~/Music/AlbumDir
-  ./split_and_tag.sh ~/Music/AlbumDir
 EOF
 }
 
 # --- Parse arguments ---
-
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -c|--cue)
@@ -47,7 +46,7 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     -f|--flac)
-      FLAC_FILE="$2"
+      AUDIO_FILE="$2"
       shift 2
       ;;
     -h|--help)
@@ -74,16 +73,7 @@ fi
 
 cd "$DIR"
 
-# --- Auto-detect files if not provided ---
-if [[ -z "$FLAC_FILE" ]]; then
-  FLACS=( *.flac )
-  if [[ ${#FLACS[@]} -ne 1 ]]; then
-    echo "❌ Error: Expected exactly one .flac file. Found ${#FLACS[@]}."
-    exit 1
-  fi
-  FLAC_FILE="${FLACS[0]}"
-fi
-
+# --- Auto-detect cue file if not provided ---
 if [[ -z "$CUE_FILE" ]]; then
   CUES=( *.cue )
   if [[ ${#CUES[@]} -ne 1 ]]; then
@@ -93,14 +83,32 @@ if [[ -z "$CUE_FILE" ]]; then
   CUE_FILE="${CUES[0]}"
 fi
 
-# --- Display ---
-echo "📁 Directory: $DIR"
-echo "🎧 FLAC:      $FLAC_FILE"
+# --- Auto-detect audio file if not provided ---
+if [[ -z "$AUDIO_FILE" ]]; then
+  AUDIO_CANDIDATES=( *.flac *.m4a )
+  AUDIO_CANDIDATES=( "${AUDIO_CANDIDATES[@]}" ) # flatten
+  if [[ ${#AUDIO_CANDIDATES[@]} -ne 1 ]]; then
+    echo "❌ Error: Expected exactly one .flac or .m4a file. Found ${#AUDIO_CANDIDATES[@]}."
+    exit 1
+  fi
+  AUDIO_FILE="${AUDIO_CANDIDATES[0]}"
+fi
+
+# --- Convert .m4a to .flac if needed ---
+if [[ "$AUDIO_FILE" == *.m4a ]]; then
+  TEMP_FLAC="${AUDIO_FILE%.m4a}.converted.flac"
+  echo "🔁 Converting .m4a to .flac: $TEMP_FLAC"
+  ffmpeg -y -i "$AUDIO_FILE" "$TEMP_FLAC"
+  AUDIO_FILE="$TEMP_FLAC"
+fi
+
+echo "📁 Directory: $(pwd)"
+echo "🎧 Audio:     $AUDIO_FILE"
 echo "📄 CUE:       $CUE_FILE"
 
 # --- Split ---
-echo "🔪 Splitting FLAC..."
-shnsplit -f "$CUE_FILE" -t "%n - %t" -o flac "$FLAC_FILE"
+echo "🔪 Splitting..."
+shnsplit -f "$CUE_FILE" -t "%n - %t" -o flac "$AUDIO_FILE"
 
 # --- Remove pregap if it exists ---
 if [[ -f split-track00.flac ]]; then
@@ -116,10 +124,9 @@ fi
 
 echo "🏷️  Applying tags..."
 
-# Get sorted FLACs, exclude the original FLAC album
-mapfile -t FLAC_TRACKS < <(find . -maxdepth 1 -type f -name "*.flac" ! -name "$FLAC_FILE" -print0 | sort -zV | xargs -0 -n1)
+# Find all .flac files not equal to the original album
+mapfile -t FLAC_TRACKS < <(find . -maxdepth 1 -type f -name "*.flac" ! -name "$AUDIO_FILE" -print0 | sort -zV | xargs -0 -n1)
 
-# Check that track count matches
 TRACK_COUNT=$(grep -c '^ *TRACK' "$CUE_FILE")
 FILE_COUNT=${#FLAC_TRACKS[@]}
 
@@ -130,4 +137,10 @@ fi
 cuetag.sh "$CUE_FILE" "${FLAC_TRACKS[@]}"
 
 echo "✅ Done. Tracks split and tagged in '$DIR'"
+
+# --- Clean up ---
+if [[ -n "$TEMP_FLAC" && -f "$TEMP_FLAC" ]]; then
+  echo "🧹 Cleaning up converted FLAC: $TEMP_FLAC"
+  rm "$TEMP_FLAC"
+fi
 
