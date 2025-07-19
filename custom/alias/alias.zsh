@@ -290,3 +290,4 @@ alias zse='vi ~/.zshrc'
 alias zgu='git -C $HOME/.config/zsh pull origin master || antibody update && exec zsh'
 alias zgi='wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash'
 alias zri='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash"'
+
