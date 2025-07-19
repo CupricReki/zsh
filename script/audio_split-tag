@@ -104,8 +104,8 @@ echo "🎧 Audio:     $audio_flac"
 echo "📄 CUE:       $cue_file"
 echo "🔪 Splitting..."
 
-# Split the audio file
-shnsplit -f "$cue_file" -t "%02n - %t" -o flac "$audio_flac"
+# Split the audio file, ignore pregap track
+shnsplit -f "$cue_file" -t "%02n - %t" -o flac -p none "$audio_flac"
 
 # Check if split was successful
 split_files=($(find . -maxdepth 1 -type f -name '[0-9][0-9] - *.flac' | sort))
