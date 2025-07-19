@@ -133,7 +133,11 @@ fi
 
 echo "🏷️  Applying tags..."
 
-mapfile -t FLAC_TRACKS < <(find . -maxdepth 1 -type f -name "*.flac" ! -name "$AUDIO_FILE" -print0 | sort -zV | xargs -0 -n1)
+mapfile -t FLAC_TRACKS < <(
+  find . -maxdepth 1 -type f -name "*.flac" -print0 \
+  | grep -zvF -- "$(realpath -- "$AUDIO_FILE")" \
+  | sort -zV | xargs -0 -n1
+)
 
 TRACK_COUNT=$(grep -c '^ *TRACK' "$CUE_FILE")
 FILE_COUNT=${#FLAC_TRACKS[@]}
