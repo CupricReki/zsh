@@ -117,7 +117,7 @@ fi
 echo "🏷️  Applying tags..."
 
 # Get sorted FLACs, exclude the original FLAC album
-FLAC_TRACKS=( $(ls -v *.flac | grep -vF "$FLAC_FILE") )
+mapfile -t FLAC_TRACKS < <(find . -maxdepth 1 -type f -name "*.flac" ! -name "$FLAC_FILE" -print0 | sort -zV | xargs -0 -n1)
 
 # Check that track count matches
 TRACK_COUNT=$(grep -c '^ *TRACK' "$CUE_FILE")
