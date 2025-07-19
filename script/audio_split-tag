@@ -1,132 +1,156 @@
 #!/usr/bin/env bash
-
+# audio_Split-Tag - Splits a full audio file using a .cue file and tags each track.
+# Supports FLAC, M4A, and APE input. Can inject cover art and optionally delete original file.
 set -euo pipefail
+IFS=$'\n\t'
 
-# Help message
-usage() {
+show_help() {
   cat <<EOF
-Usage: $(basename "$0") [OPTIONS]
+Usage: ${0##*/} [-d DIR] [-c CUEFILE] [-f AUDIOFILE] [--delete-original]
 
 Options:
-  -d, --directory        Target directory (default: current directory)
-  -f, --audio_file       Audio file (.flac, .m4a, .ape)
-  -c, --cue              Cue file
-      --delete-original  Delete original file after successful split
-  -h, --help             Show this help message
+  -d, --directory DIR         Target directory (default: current)
+  -c, --cue FILE              Specify .cue file
+  -f, --audio_file FILE       Specify audio file (.flac, .m4a, .ape)
+      --delete-original       Delete original file after successful split
+  -h, --help                  Show this help message
 EOF
 }
 
-# Default values
-TARGET_DIR="."
-DELETE_ORIGINAL=false
-AUDIO_FILE=""
-CUE_FILE=""
+# Defaults
+dir="."
+cue_file=""
+audio_file=""
+delete_original=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -d|--directory)
-      TARGET_DIR="$2"
-      shift 2
-      ;;
-    -f|--audio_file)
-      AUDIO_FILE="$2"
+      dir="$2"
       shift 2
       ;;
     -c|--cue)
-      CUE_FILE="$2"
+      cue_file="$2"
+      shift 2
+      ;;
+    -f|--audio_file)
+      audio_file="$2"
       shift 2
       ;;
     --delete-original)
-      DELETE_ORIGINAL=true
+      delete_original=true
       shift
       ;;
     -h|--help)
-      usage; exit 0
+      show_help
+      exit 0
       ;;
     *)
-      echo "❌ Unknown option: $1" >&2
-      usage
+      echo "❌ Unknown argument: $1"
+      show_help
       exit 1
       ;;
   esac
 done
 
-# Validate directory
-if [[ ! -d "$TARGET_DIR" ]]; then
-  echo "❌ Error: Directory not found: $TARGET_DIR" >&2
-  exit 1
-fi
-
-# Resolve audio and cue file
+# File discovery
 shopt -s nullglob
-[[ -z "$CUE_FILE" ]] && CUE_FILE=("$TARGET_DIR"/*.cue)
-[[ -z "$AUDIO_FILE" ]] && AUDIO_FILE=("$TARGET_DIR"/*.flac "$TARGET_DIR"/*.m4a "$TARGET_DIR"/*.ape)
+cd "$dir"
+[[ -z "$cue_file" ]] && cue_files=(*.cue) || cue_files=("$cue_file")
+[[ -z "$audio_file" ]] && audio_files=(*.flac *.m4a *.ape) || audio_files=("$audio_file")
+shopt -u nullglob
 
-# Disambiguate multiple matches
-if (( ${#CUE_FILE[@]} != 1 )); then
-  echo "❌ Error: Expected exactly one .cue file. Found ${#CUE_FILE[@]}." >&2
+# Sanity checks
+if [[ ${#cue_files[@]} -ne 1 ]]; then
+  echo "❌ Error: Expected exactly one .cue file. Found ${#cue_files[@]}."
   exit 1
 fi
-if (( ${#AUDIO_FILE[@]} != 1 )); then
-  echo "❌ Error: Expected exactly one .flac, .m4a, or .ape file. Found ${#AUDIO_FILE[@]}." >&2
+if [[ ${#audio_files[@]} -ne 1 ]]; then
+  echo "❌ Error: Expected exactly one .flac/.m4a/.ape file. Found ${#audio_files[@]}."
   exit 1
 fi
 
-CUE_FILE="${CUE_FILE[0]}"
-AUDIO_FILE="${AUDIO_FILE[0]}"
-
-echo "📁 Directory: $TARGET_DIR"
-echo "🎧 Audio:     $(basename "$AUDIO_FILE")"
-echo "📄 CUE:       $(basename "$CUE_FILE")"
+cue_file="${cue_files[0]}"
+input_file="${audio_files[0]}"
+input_ext="${input_file##*.}"
+base="${input_file%.*}"
 
 # Convert if necessary
-EXT="${AUDIO_FILE##*.}"
-WORK_FILE="$AUDIO_FILE"
-if [[ "$EXT" == "m4a" || "$EXT" == "ape" ]]; then
-  WORK_FILE="${AUDIO_FILE%.*}.converted.wav"
-  echo "🔁 Converting .$EXT to .wav: $(basename "$WORK_FILE")"
-  ffmpeg -y -i "$AUDIO_FILE" "$WORK_FILE"
-fi
+case "$input_ext" in
+  m4a)
+    converted_flac="${base}.converted.flac"
+    echo "🔁 Converting .m4a to .flac: $converted_flac"
+    ffmpeg -loglevel error -y -i "$input_file" "$converted_flac"
+    audio_flac="$converted_flac"
+    ;;
+  ape)
+    wav_file="${base}.decoded.wav"
+    echo "🔁 Decoding .ape to .wav: $wav_file"
+    ffmpeg -loglevel error -y -i "$input_file" "$wav_file"
+    audio_flac="$wav_file"
+    ;;
+  flac)
+    audio_flac="$input_file"
+    ;;
+  *)
+    echo "❌ Unsupported audio format: .$input_ext"
+    exit 1
+    ;;
+esac
 
-# Split audio
+echo "📁 Directory: $(pwd)"
+echo "🎧 Audio:     $audio_flac"
+echo "📄 CUE:       $cue_file"
 echo "🔪 Splitting..."
-shnsplit -f "$CUE_FILE" -t "%n - %t" -o flac "$WORK_FILE"
 
-# Tagging
-echo "🏷️  Applying tags..."
-TRACK_FILES=("$TARGET_DIR"/*.flac)
-CUE_TRACKS=$(cueprint -d '%N' "$CUE_FILE" || echo 0)
-SPLIT_TRACKS=${#TRACK_FILES[@]}
+# Split the audio file
+shnsplit -f "$cue_file" -t "%02n - %t" -o flac "$audio_flac"
 
-if (( SPLIT_TRACKS != CUE_TRACKS )); then
-  echo "⚠️  Warning: Cue sheet has $CUE_TRACKS tracks, but found $SPLIT_TRACKS split FLAC files."
+# Check if split was successful
+split_files=($(find . -maxdepth 1 -type f -name '[0-9][0-9] - *.flac' | sort))
+if [[ ${#split_files[@]} -eq 0 ]]; then
+  echo "❌ Error: No split files found."
+  exit 1
 fi
 
-cuetag.sh "$CUE_FILE" "${TRACK_FILES[@]}"
+# Get track count from cue
+track_count=$(grep -i "^ *TRACK [0-9][0-9]* AUDIO" "$cue_file" | wc -l)
 
-# Inject cover art
-echo "🖼️  Injecting cover art..."
-for art in cover front folder back edge; do
-  for ext in jpg png JPG PNG; do
-    ART_PATH="$TARGET_DIR/$art.$ext"
-    [[ -f "$ART_PATH" ]] || continue
-    for track in "${TRACK_FILES[@]}"; do
-      metaflac --import-picture-from="$ART_PATH" "$track"
-    done
+# Delete extras
+if (( ${#split_files[@]} > track_count )); then
+  echo "⚠️  Extra FLACs detected. Removing excess..."
+  for (( i=track_count; i<${#split_files[@]}; i++ )); do
+    echo "🗑️  Deleting: ${split_files[$i]}"
+    rm -f "${split_files[$i]}"
   done
+  # Refresh the list
+  split_files=($(find . -maxdepth 1 -type f -name '[0-9][0-9] - *.flac' | sort))
+fi
+
+echo "🏷️  Applying tags..."
+for ((i=1; i<=track_count; i++)); do
+  track_num=$(printf "%02d" "$i")
+  file="${split_files[$((i-1))]}"
+  [ -f "$file" ] || continue
+  cuetag.sh "$cue_file" "$file" >/dev/null 2>&1 || echo "❌ Tagging failed for $file"
 done
 
-# Delete if requested
-if $DELETE_ORIGINAL; then
-  echo "🗑️  Deleting original file..."
-  rm -f "$AUDIO_FILE"
+echo "🖼️  Injecting cover art..."
+for img in front.jpg cover.jpg cover.jpeg folder.jpg back.jpg edge.jpg *.jpg *.png; do
+  [[ -f "$img" ]] || continue
+  for f in "${split_files[@]}"; do
+    metaflac --remove --block-type=PICTURE "$f"
+    metaflac --import-picture-from="$img" "$f"
+  done
+  break
+done
+
+# Cleanup
+if $delete_original; then
+  echo "🧹 Deleting original: $input_file"
+  rm -f "$input_file"
 fi
 
-# Clean up conversion
-if [[ "$WORK_FILE" != "$AUDIO_FILE" && -f "$WORK_FILE" ]]; then
-  rm -f "$WORK_FILE"
-fi
-
-echo "✅ Done. Tracks split and tagged in '$TARGET_DIR'"
+echo "✅ Done. Tracks split and tagged in '.'"
 
