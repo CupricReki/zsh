@@ -55,7 +55,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      if [[ -z "$DIR" || "$DIR" == "." ]]; then
+      if [[ "$DIR" == "." ]]; then
         DIR="$1"
         shift
       else
@@ -102,20 +102,32 @@ echo "📄 CUE:       $CUE_FILE"
 echo "🔪 Splitting FLAC..."
 shnsplit -f "$CUE_FILE" -t "%n - %t" -o flac "$FLAC_FILE"
 
-# --- Remove pregap ---
+# --- Remove pregap if it exists ---
 if [[ -f split-track00.flac ]]; then
   echo "🗑️  Removing pregap: split-track00.flac"
   rm split-track00.flac
 fi
 
 # --- Tag files ---
-if command -v cuetag.sh >/dev/null; then
-  echo "🏷️  Applying tags..."
-  cuetag.sh "$CUE_FILE" split-track*.flac
-else
+if ! command -v cuetag.sh >/dev/null; then
   echo "❌ Error: cuetag.sh not found in PATH"
   exit 2
 fi
+
+echo "🏷️  Applying tags..."
+
+# Get sorted FLACs, exclude the original FLAC album
+FLAC_TRACKS=( $(ls -v *.flac | grep -vF "$FLAC_FILE") )
+
+# Check that track count matches
+TRACK_COUNT=$(grep -c '^ *TRACK' "$CUE_FILE")
+FILE_COUNT=${#FLAC_TRACKS[@]}
+
+if [[ "$TRACK_COUNT" -ne "$FILE_COUNT" ]]; then
+  echo "⚠️  Warning: Cue sheet has $TRACK_COUNT tracks, but found $FILE_COUNT split FLAC files."
+fi
+
+cuetag.sh "$CUE_FILE" "${FLAC_TRACKS[@]}"
 
 echo "✅ Done. Tracks split and tagged in '$DIR'"
 

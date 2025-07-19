@@ -1,5 +1,5 @@
-# ~/.bash_completion.d/split_and_tag
-_split_and_tag() {
+# ~/.bash_completion.d/splitTagFLAC
+_splitTagFLAC() {
   local cur prev opts
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
@@ -21,5 +21,5 @@ _split_and_tag() {
       ;;
   esac
 }
-complete -F _split_and_tag split_and_tag.sh
+complete -F _splitTagFLAC splitTagFLAC.sh
 
