@@ -95,10 +95,20 @@ if [[ -z "$AUDIO_FILE" ]]; then
 fi
 
 # --- Convert .m4a to .flac if needed ---
-if [[ "$AUDIO_FILE" == *.m4a ]]; then
-  TEMP_FLAC="${AUDIO_FILE%.m4a}.converted.flac"
+EXT="${AUDIO_FILE##*.}"
+EXT_LOWER=$(echo "$EXT" | tr '[:upper:]' '[:lower:]')
+
+if [[ "$EXT_LOWER" == "m4a" ]]; then
+  TEMP_FLAC="$(basename "${AUDIO_FILE%.m4a}.converted.flac")"
   echo "🔁 Converting .m4a to .flac: $TEMP_FLAC"
   ffmpeg -y -i "$AUDIO_FILE" "$TEMP_FLAC"
+
+  # Safety check
+  if [[ ! -s "$TEMP_FLAC" ]]; then
+    echo "❌ Error: Conversion failed — resulting FLAC not created or is empty."
+    exit 1
+  fi
+
   AUDIO_FILE="$TEMP_FLAC"
 fi
 
@@ -124,7 +134,6 @@ fi
 
 echo "🏷️  Applying tags..."
 
-# Find all .flac files not equal to the original album
 mapfile -t FLAC_TRACKS < <(find . -maxdepth 1 -type f -name "*.flac" ! -name "$AUDIO_FILE" -print0 | sort -zV | xargs -0 -n1)
 
 TRACK_COUNT=$(grep -c '^ *TRACK' "$CUE_FILE")
