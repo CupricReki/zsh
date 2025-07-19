@@ -6,6 +6,7 @@
 #
 
 set -euo pipefail
+shopt -s nullglob
 
 # --- Defaults ---
 DIR="."
@@ -34,7 +35,6 @@ Notes:
   - Supports both .flac and .m4a (converts to .flac for splitting)
   - Automatically detects files if exactly one .cue and one .flac/.m4a is present
   - Uses cuetag.sh to apply metadata
-
 EOF
 }
 
@@ -86,7 +86,6 @@ fi
 # --- Auto-detect audio file if not provided ---
 if [[ -z "$AUDIO_FILE" ]]; then
   AUDIO_CANDIDATES=( *.flac *.m4a )
-  AUDIO_CANDIDATES=( "${AUDIO_CANDIDATES[@]}" ) # flatten
   if [[ ${#AUDIO_CANDIDATES[@]} -ne 1 ]]; then
     echo "❌ Error: Expected exactly one .flac or .m4a file. Found ${#AUDIO_CANDIDATES[@]}."
     exit 1
