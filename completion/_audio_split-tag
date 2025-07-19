@@ -1,0 +1,13 @@
+#compdef audio_split-tag
+
+_arguments \
+  '-c[Specify the .cue file]:cue file:_files -g "*.cue"' \
+  '-f[Specify the audio file (.flac/.m4a/.ape)]:audio file:_files -g "*.(flac|m4a|ape)"' \
+  '-d[Specify directory]:directory:_files -/' \
+  '--cue[Specify the .cue file]:cue file:_files -g "*.cue"' \
+  '--audio_file[Specify the audio file (.flac/.m4a/.ape)]:audio file:_files -g "*.(flac|m4a|ape)"' \
+  '--directory[Specify directory]:directory:_files -/' \
+  '--delete-original[Delete original audio file after split (only if successful)]' \
+  '-h[Show help message]' \
+  '--help[Show help message]'
+
