@@ -10,10 +10,9 @@ fi
 # 2. antibody (This script will install if needed)
 # 3. powerline
 # 4. powerline-fonts
-# 5. fzf
-# 6. lsd (community exa - ls alternative needed for fzf)
-# 7. tree
-# 8. fd
+# 5. lsd (community exa - ls alternative needed for fzf)
+# 6. tree
+# 7. fd
 
 # Recommended
 # 1. git-delta
@@ -24,6 +23,10 @@ fi
 # 6. less: a pager
 # 7. pdftotext
 # 8. osc (go install -v github.com/theimpostor/osc@latest) - OSC 52 support (copy from terminal)
+
+# Included executables
+# 1. fzf
+
 
 # 4.1 Supported compression methods and archive formats
 #

@@ -22,6 +22,7 @@ dir="."
 cue_file=""
 audio_file=""
 delete_original=false
+wav_file=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -104,33 +105,26 @@ echo "🎧 Audio:     $audio_flac"
 echo "📄 CUE:       $cue_file"
 echo "🔪 Splitting..."
 
-# Split the audio file, ignore pregap track
-shnsplit -f "$cue_file" -t "%n - %t" -o flac  "$audio_flac"
+shnsplit -f "$cue_file" -t "%n - %t" -o flac "$audio_flac"
 
-# Check if split was successful
+# Clean up decode.wav if used
+[[ -n "${wav_file:-}" && -f "$wav_file" ]] && rm -f "$wav_file"
+
+# Get split files and expected track count
 split_files=($(find . -maxdepth 1 -type f -name '[0-9][0-9] - *.flac' | sort))
-if [[ ${#split_files[@]} -eq 0 ]]; then
-  echo "❌ Error: No split files found."
-  exit 1
-fi
-
-# Get track count from cue
 track_count=$(grep -i "^ *TRACK [0-9][0-9]* AUDIO" "$cue_file" | wc -l)
 
-# Delete extras
+# Delete extra file (likely pregap)
 if (( ${#split_files[@]} > track_count )); then
   echo "⚠️  Extra FLACs detected. Removing excess..."
-  for (( i=track_count; i<${#split_files[@]}; i++ )); do
-    echo "🗑️  Deleting: ${split_files[$i]}"
-    rm -f "${split_files[$i]}"
-  done
-  # Refresh the list
+  to_delete="${split_files[-1]}"
+  echo "🗑️  Deleting: $to_delete"
+  rm -f "$to_delete"
   split_files=($(find . -maxdepth 1 -type f -name '[0-9][0-9] - *.flac' | sort))
 fi
 
 echo "🏷️  Applying tags..."
 for ((i=1; i<=track_count; i++)); do
-  track_num=$(printf "%02d" "$i")
   file="${split_files[$((i-1))]}"
   [ -f "$file" ] || continue
   cuetag.sh "$cue_file" "$file" >/dev/null 2>&1 || echo "❌ Tagging failed for $file"
@@ -146,11 +140,9 @@ for img in front.jpg cover.jpg cover.jpeg folder.jpg back.jpg edge.jpg *.jpg *.p
   break
 done
 
-# Cleanup
 if $delete_original; then
   echo "🧹 Deleting original: $input_file"
   rm -f "$input_file"
 fi
 
 echo "✅ Done. Tracks split and tagged in '.'"
-
