@@ -100,12 +100,18 @@ track_count=$(grep -i "^ *TRACK [0-9][0-9]* AUDIO" "$cue_file" | wc -l)
 
 # Delete excess track (e.g., pregap)
 if (( ${#split_files[@]} > track_count )); then
-  extra="${split_files[-1]}"
-  echo "⚠️  Extra FLACs detected. Removing excess..."
-  echo "🗑️  Deleting: $extra"
-  rm -f "$extra"
-  split_files=("${split_files[@]:0:track_count}")
+  echo "⚠️  Extra FLACs detected. Removing pregap if present..."
+  for f in "${split_files[@]}"; do
+    if [[ "$(basename "$f")" == 00\ -*.flac ]]; then
+      echo "🗑️  Deleting pregap track: $f"
+      rm -f "$f"
+      break
+    fi
+  done
+  # Refresh the list after deletion
+  split_files=($(find "$dir" -maxdepth 1 -type f -name '[0-9]* - *.flac' | sort))
 fi
+
 
 echo "🏷️  Applying tags..."
 for ((i=1; i<=track_count; i++)); do
