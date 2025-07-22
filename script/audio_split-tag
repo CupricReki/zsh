@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # audio_Split-Tag - Splits a full audio file using a .cue file and tags each track.
 # Supports FLAC, M4A, and APE input. Can inject cover art and optionally delete original file.
+
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -22,44 +23,23 @@ dir="."
 cue_file=""
 audio_file=""
 delete_original=false
-wav_file=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -d|--directory)
-      dir="$2"
-      shift 2
-      ;;
-    -c|--cue)
-      cue_file="$2"
-      shift 2
-      ;;
-    -f|--audio_file)
-      audio_file="$2"
-      shift 2
-      ;;
-    --delete-original)
-      delete_original=true
-      shift
-      ;;
-    -h|--help)
-      show_help
-      exit 0
-      ;;
-    *)
-      echo "❌ Unknown argument: $1"
-      show_help
-      exit 1
-      ;;
+    -d|--directory) dir="$2"; shift 2 ;;
+    -c|--cue) cue_file="$2"; shift 2 ;;
+    -f|--audio_file) audio_file="$2"; shift 2 ;;
+    --delete-original) delete_original=true; shift ;;
+    -h|--help) show_help; exit 0 ;;
+    *) echo "❌ Unknown argument: $1"; show_help; exit 1 ;;
   esac
 done
 
 # File discovery
 shopt -s nullglob
-cd "$dir"
-[[ -z "$cue_file" ]] && cue_files=(*.cue) || cue_files=("$cue_file")
-[[ -z "$audio_file" ]] && audio_files=(*.flac *.m4a *.ape) || audio_files=("$audio_file")
+[[ -z "$cue_file" ]] && cue_files=("$dir"/*.cue) || cue_files=("$cue_file")
+[[ -z "$audio_file" ]] && audio_files=("$dir"/*.flac "$dir"/*.m4a "$dir"/*.ape) || audio_files=("$audio_file")
 shopt -u nullglob
 
 # Sanity checks
@@ -76,14 +56,14 @@ cue_file="${cue_files[0]}"
 input_file="${audio_files[0]}"
 input_ext="${input_file##*.}"
 base="${input_file%.*}"
+audio_flac=""
 
 # Convert if necessary
 case "$input_ext" in
   m4a)
-    converted_flac="${base}.converted.flac"
-    echo "🔁 Converting .m4a to .flac: $converted_flac"
-    ffmpeg -loglevel error -y -i "$input_file" "$converted_flac"
-    audio_flac="$converted_flac"
+    audio_flac="${base}.converted.flac"
+    echo "🔁 Converting .m4a to .flac: $audio_flac"
+    ffmpeg -loglevel error -y -i "$input_file" "$audio_flac"
     ;;
   ape)
     wav_file="${base}.decoded.wav"
@@ -100,49 +80,54 @@ case "$input_ext" in
     ;;
 esac
 
-echo "📁 Directory: $(pwd)"
+echo "📁 Directory: $dir"
 echo "🎧 Audio:     $audio_flac"
 echo "📄 CUE:       $cue_file"
 echo "🔪 Splitting..."
 
+# Split with shnsplit
 shnsplit -f "$cue_file" -t "%n - %t" -o flac "$audio_flac"
 
-# Clean up decode.wav if used
-[[ -n "${wav_file:-}" && -f "$wav_file" ]] && rm -f "$wav_file"
+# Cleanup decoded wav
+[[ "${audio_flac}" == *.wav ]] && rm -f "$audio_flac"
 
-# Get split files and expected track count
-split_files=($(find . -maxdepth 1 -type f -name '[0-9][0-9] - *.flac' | sort))
+# Collect split tracks
+split_files=($(find "$dir" -maxdepth 1 -type f -name '[0-9]* - *.flac' | sort))
+[[ ${#split_files[@]} -eq 0 ]] && echo "❌ Error: No split files found." && exit 1
+
+# Get CUE track count
 track_count=$(grep -i "^ *TRACK [0-9][0-9]* AUDIO" "$cue_file" | wc -l)
 
-# Delete extra file (likely pregap)
+# Delete excess track (e.g., pregap)
 if (( ${#split_files[@]} > track_count )); then
+  extra="${split_files[-1]}"
   echo "⚠️  Extra FLACs detected. Removing excess..."
-  to_delete="${split_files[-1]}"
-  echo "🗑️  Deleting: $to_delete"
-  rm -f "$to_delete"
-  split_files=($(find . -maxdepth 1 -type f -name '[0-9][0-9] - *.flac' | sort))
+  echo "🗑️  Deleting: $extra"
+  rm -f "$extra"
+  split_files=("${split_files[@]:0:track_count}")
 fi
 
 echo "🏷️  Applying tags..."
 for ((i=1; i<=track_count; i++)); do
   file="${split_files[$((i-1))]}"
-  [ -f "$file" ] || continue
+  [[ -f "$file" ]] || continue
   cuetag.sh "$cue_file" "$file" >/dev/null 2>&1 || echo "❌ Tagging failed for $file"
 done
 
 echo "🖼️  Injecting cover art..."
 for img in front.jpg cover.jpg cover.jpeg folder.jpg back.jpg edge.jpg *.jpg *.png; do
-  [[ -f "$img" ]] || continue
+  [[ -f "$dir/$img" ]] || continue
   for f in "${split_files[@]}"; do
     metaflac --remove --block-type=PICTURE "$f"
-    metaflac --import-picture-from="$img" "$f"
+    metaflac --import-picture-from="$dir/$img" "$f"
   done
   break
 done
 
+# Optionally delete original
 if $delete_original; then
   echo "🧹 Deleting original: $input_file"
   rm -f "$input_file"
 fi
 
-echo "✅ Done. Tracks split and tagged in '.'"
+echo "✅ Done. Tracks split and tagged in '$dir'"
