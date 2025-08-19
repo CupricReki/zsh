@@ -161,4 +161,4 @@ if $delete_original; then
   rm -f "$input_file"
 fi
 
-echo "✅ Done. Tracks split and tagged in '.'"
+echo "✅ Done. Tracks split and tagged in '$dir'"

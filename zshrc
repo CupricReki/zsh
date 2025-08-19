@@ -194,6 +194,8 @@ antibody bundle "supercrabtree/k"
 # Vi mode
 antibody bundle "ohmyzsh/ohmyzsh path:plugins/vi-mode"
 VI_MODE_SET_CURSOR=true         # Vertical bar on insert
+bindkey -M viins '^[[3~' delete-char        # Remap delete key in insert mode
+bindkey -M vicmd '^[[3~' delete-char        # Remap delete key in command mode
 
 # Initialize enhancd
 antibody bundle "b4b4r07/enhancd"
@@ -358,8 +360,9 @@ zstyle ':fzf-tab:*' fzf-bindings 'ctrl-a:toggle-all'
 # Load tmux bundle if installed
 tmux --version &>/dev/null
 if [ $? -eq 0 ]; then
-    ZSH_TMUX_AUTOSTART=true \
-    ZSH_TMUX_AUTOCONNECT=false \
+    export ZSH_TMUX_AUTOSTART=true
+    export ZSH_TMUX_AUTOCONNECT=false
+    export TMUX_OUTER_TERM="${TERM:-unknown}"
     antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"
 fi
 
