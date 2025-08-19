@@ -208,45 +208,45 @@ export ENHANCD_FILTER="fzf --preview 'eza -al --tree --level 1 --group-directori
         :peco"
 source "$ZSH_CACHE_DIR/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07-SLASH-enhancd/init.sh"
 
-# Load kubectl bundle if installed
-kubectl --version &> /dev/null
-if [ $? -eq 0 ]; then
-  # Load bundle
+# Helper: check command exists without invoking it
+has() { command -v "$1" >/dev/null 2>&1 }
+
+# Load kubectl plugin if binary exists
+if has kubectl; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/kubectl"
 fi
 
-# Load docker completions if installed
-command docker >/dev/null 2>&1 && \
-  source $ZCOMPLETION/_docker
+# Load docker completions if binary exists and file is readable
+if has docker && [[ -r $ZCOMPLETION/_docker ]]; then
+  source "$ZCOMPLETION/_docker"
+fi
 
-# Load aws bundle if installed
-aws --version &> /dev/null
-if [ $? -eq 0 ]; then
+# Load aws plugin if installed
+if has aws; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/aws"
 fi
 
-# Load ansible bundle if installed
-ansible --version &> /dev/null
-if [ $? -eq 0 ]; then
+# Load ansible plugin if installed
+if has ansible; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/ansible"
 fi
 
-# osc install
-go version &> /dev/null
-if [ $? -eq 0 ]; then
+has() { command -v "$1" >/dev/null 2>&1 }
 
+if has go; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/golang"
+
   export GOPATH="$HOME/.go"
   export PATH="$PATH:$GOPATH/bin"
 
-  # install osc if missing
-  osc version &> /dev/null
-  if [ $? -ne 0 ]; then
-    go install -v github.com/theimpostor/osc@latest
-    source $ZCOMPLETION/_osc
-    echo "osc installed"
+  if ! has osc; then
+    echo "[zshrc] osc not found. You can install it via:"
+    echo "         go install github.com/theimpostor/osc@latest"
+  elif [[ -r $ZCOMPLETION/_osc ]]; then
+    source "$ZCOMPLETION/_osc"
   fi
 fi
+
 
 # Load custom key bindings
 # source "$ZSH_CUSTOM/keybindings.zsh"
@@ -358,8 +358,7 @@ zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-flags --preview-window=do
 zstyle ':fzf-tab:*' fzf-bindings 'ctrl-a:toggle-all'
 
 # Load tmux bundle if installed
-tmux --version &>/dev/null
-if [ $? -eq 0 ]; then
+if has tmux; then
     export ZSH_TMUX_AUTOSTART=true
     export ZSH_TMUX_AUTOCONNECT=false
     export TMUX_OUTER_TERM="${TERM:-unknown}"
@@ -367,8 +366,7 @@ if [ $? -eq 0 ]; then
 fi
 
 # load pyenv if installed
-pynenv --version &>/dev/null
-if [ $? -eq 0 ]; then
+if has pynenv; then
   export PATH="$HOME/.pyenv/bin:$PATH"
   eval "$(pyenv init -)"
   eval "$(pyenv virtualenv-init -)"
@@ -383,15 +381,14 @@ antibody bundle "romkatv/powerlevel10k"
 
 
 # Use system clipboard - must go after other keybindings
-wl-copy --version &>/dev/null
-if [ $? -eq 0 ]; then
+if has wl-copy; then
   antibody bundle "kutsan/zsh-system-clipboard"
   export ZSH_SYSTEM_CLIPBOARD_METHOD="wlc"        # Use wl-clipboard with "CLIPBOARD" selection
 fi
 
 # direnv is a tool that automatically sets/unsets environment variables when you enter/leave directories (think: auto-loading .env files, but on steroids).
 # direnv hook bash outputs some shell code that integrates direnv into your shell's behavior.
-if command -v direnv >/dev/null 2>&1; then
+if has direnv; then
   eval "$(direnv hook bash)"
 fi
 
