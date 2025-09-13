@@ -359,7 +359,7 @@ zstyle ':fzf-tab:*' fzf-bindings 'ctrl-a:toggle-all'
 
 # Load tmux bundle if installed
 if has tmux; then
-    export ZSH_TMUX_AUTOSTART=true
+    export ZSH_TMUX_AUTOSTART=false
     export ZSH_TMUX_AUTOCONNECT=false
     export TMUX_OUTER_TERM="${TERM:-unknown}"
     antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"
