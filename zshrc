@@ -136,7 +136,31 @@ export ZFUNC="$ZSH_DIR/function"
 export ZSCRIPTS="$ZSH_DIR/script"
 export ZLOCAL="$ZSH_DIR/local"
 export ZBIN="$ZSH_DIR/bin"
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$HOME/bin:$HOME/.local/bin:$ZSH_DIR/bin:$ZSCRIPTS:opt/android-sdk/platform-tools:$HOME/.nix-profile/bin"
+
+# ==== Path Configuration ====
+# Ensure unique entries
+typeset -U path
+
+path=(
+    "$HOME/.npm-global/bin"            # local user npm bins
+    /usr/local/sbin
+    /usr/local/bin
+    /usr/sbin
+    /usr/bin
+    /sbin
+    /bin
+    /usr/games
+    /usr/local/games
+    "$HOME/bin"                         # local bin
+    "$HOME/.local/bin"                  # local bin
+    "$ZSH_DIR/bin"                      # zsh-config bundled bin
+    "$ZSCRIPTS"
+    "/opt/android-sdk/platform-tools"   # Android platform tools
+    "$HOME/.nix-profile/bin"
+)
+
+# Export the constructed PATH
+export PATH
 # FPATH: Contains a list of directories that the z/OS shell searches to find shell functions.
 export FPATH="$ZCOMPLETION:$ZFUNC:$ZLOCAL:$FPATH"
 
