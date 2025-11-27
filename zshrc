@@ -255,8 +255,6 @@ if has ansible; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/ansible"
 fi
 
-has() { command -v "$1" >/dev/null 2>&1 }
-
 if has go; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/golang"
 

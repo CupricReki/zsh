@@ -2,70 +2,34 @@
 
 # zsh
 # zsh setup script
-# Update 12/23/23
-# Requires zsh, git, curl, fzf, git
+# Update 11/26/25
+# This script uses the ansible local setup script to configure zsh by cloning the ansible repo.
 
-# Arch
-# powerline-fonts
-# noto-fonts-emoji
+set -e # Exit immediately if a command exits with a non-zero status.
 
-zshdir=$HOME/.config/zsh
+# --- Configuration ---
+ANSIBLE_PROJECT_REPO="https://gitlab.ogbase.net/cupric/ansible.git"
+TEMP_DIR="/tmp/ansible_bootstrap_zsh" # Use a system temp directory
 
-deb_install () {
-	sudo apt install $1 -y
-}
+# --- Main Script ---
+echo "--- Starting Zsh Local Bootstrap via Ansible Clone ---"
 
-dep_check () {
-    # Checks for required dependencies and installs if missing
-	type zsh >/dev/null 2>&1 || { deb_install "zsh"; }
-	type git >/dev/null 2>&1 || { deb_install "git"; }
-	type curl >/dev/null 2>&1 || { deb_install "curl"; }
-	type osc >/dev/null 2>&1 || { /usr/bin/go install -v github.com/theimpostor/osc@latest; }
-}
+# 1. Clean up any previous temporary directory
+rm -rf "${TEMP_DIR}"
 
-get_zsh () {
-	echo "Getting zsh configs from gitlab.ogbase.net/cupric/zsh.git"
-    mkdir -p $zshdir
-	git clone https://gitlab.ogbase.net/cupric/zsh.git $zshdir
-	rm -f $HOME/.zshrc && ln -s $zshdir/zshrc $HOME/.zshrc
-   	rm -f $HOME/.zshenv && ln -s $zshdir/zshenv $HOME/.zshenv
-}
+# 2. Clone the Ansible project
+echo "STEP 1: Cloning Ansible project from ${ANSIBLE_PROJECT_REPO} to ${TEMP_DIR}..."
+git clone "${ANSIBLE_PROJECT_REPO}" "${TEMP_DIR}"
 
-install_antibody () {
-	echo "Getting antigen plugin manager from git.io/antibody"
-	curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin
-}
+# 3. Execute the local bootstrap script from the cloned repository
+echo "STEP 2: Executing the Zsh local setup script..."
+"${TEMP_DIR}/scripts/setup_zsh_local/run.sh"
 
-install_go () {
-    echo "Installing go 1.23.0"
-    curl https://gitlab.ogbase.net/cupric/golang-tools-install-script/-/raw/master/goinstall.sh | bash -s -- --version 1.23.0
-}
+# 4. Cleanup
+echo "STEP 3: Cleaning up temporary directory..."
+rm -rf "${TEMP_DIR}"
 
-check_zsh () {
-    # Change shell if zsh was installed
-    type zsh >/dev/null 2>&1 || { chsh "-s /bin/zsh"; }
-}
+echo ""
+echo "--- Zsh Bootstrap Complete! ---"
 
-directory_clean () {
-	echo "removing zsh "
-	rm -fdr $HOME/.z* &> /dev/null
-	rm -fdr $zshdir &> /dev/null
-    rm -fdr $HOME/.cache/zsh &> /dev/null
-}
-
-install () {
-  install_go
-  sudo apt update &> /dev/null
-  dep_check
-  get_zsh
-  install_antibody
-  check_zsh
-  zsh
-}
-
-if [ "$1" = "clean" ]; then
-  directory_clean
-else
-  install
-fi
 
