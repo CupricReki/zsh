@@ -307,18 +307,12 @@ export ENHANCD_FILTER="fzf --preview 'eza -al --tree --level 1 --group-directori
 
 # ================================================
 # Additional tool-specific completions
+# Custom completion files are in $ZCOMPLETION which is in $FPATH
+# compinit automatically discovers and loads them - DO NOT source them manually
 # ================================================
 # These are custom completion files that aren't in sheldon
 
-# Docker completions (custom _docker file)
-if has docker && [[ -r $ZCOMPLETION/_docker ]]; then
-  source "$ZCOMPLETION/_docker"
-fi
 
-# OSC (OSC 52 clipboard tool) completions
-if has osc && [[ -r $ZCOMPLETION/_osc ]]; then
-  source "$ZCOMPLETION/_osc"
-fi
 
 # Tailscale completions (custom file)
 if has tailscale && [[ -r "$ZSH_CUSTOM/tailscale_zsh_completion.zsh" ]]; then
