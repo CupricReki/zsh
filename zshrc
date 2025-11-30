@@ -429,12 +429,11 @@ zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-flags --preview-window=do
 # ctrl-a to select all
 zstyle ':fzf-tab:*' fzf-bindings 'ctrl-a:toggle-all'
 
-# Load tmux bundle if installed
+# Tmux configuration (plugin is lazy-loaded via sheldon)
 if has tmux; then
     export ZSH_TMUX_AUTOSTART=false
     export ZSH_TMUX_AUTOCONNECT=false
     export TMUX_OUTER_TERM="${TERM:-unknown}"
-    # TODO: Add tmux plugin to sheldon config
 fi
 
 # load pyenv if installed
