@@ -61,7 +61,6 @@ exec zsh
 ```
 
 The `init.sh` script will:
-- Check for local Ansible directory (`~/ansible`)
 - Install Sheldon (Rust plugin manager) via cargo
 - Set up all necessary symlinks and directories
 - Initialize plugin manager and download plugins
