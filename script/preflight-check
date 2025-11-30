@@ -1,13 +1,26 @@
 #!/usr/bin/env zsh
 # Preflight checks for zsh configuration
 # Validates required tools and versions before loading config
+#
+# To disable preflight checks, set in your environment:
+#   export SKIP_PREFLIGHT_CHECK=1
+#
+# Or create flag file:
+#   touch ~/.cache/zsh/.skip-preflight-check
 
 # ================================================
 # Requirements Check with Auto-Fix
 # ================================================
 
+# Check if preflight checks are disabled
+_skip_check_flag="${ZSH_CACHE_DIR:-$HOME/.cache/zsh}/.skip-preflight-check"
+if [[ -n "$SKIP_PREFLIGHT_CHECK" ]] || [[ -f "$_skip_check_flag" ]]; then
+  return 0
+fi
+
 # Check if this is first run ever (no flag file exists)
 _first_run_flag="${ZSH_CACHE_DIR:-$HOME/.cache/zsh}/.first-run-complete"
+_failed_fixes_flag="${ZSH_CACHE_DIR:-$HOME/.cache/zsh}/.preflight-failed-fixes"
 _is_first_run=false
 
 if [[ ! -f "$_first_run_flag" ]]; then
@@ -92,8 +105,28 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
     echo "" >&2
   fi
   
-  # Only offer auto-fix on first run ever
+  # Only offer auto-fix on first run ever (or if previous fix failed and user wants retry)
+  _should_offer_fix=false
+  _failed_fixes=()
+  
   if [[ "$_is_first_run" == "true" ]]; then
+    _should_offer_fix=true
+  elif [[ -f "$_failed_fixes_flag" ]]; then
+    # Load list of previously failed fixes
+    while IFS= read -r line; do
+      _failed_fixes+=("$line")
+    done < "$_failed_fixes_flag"
+    
+    # Check if any failed fixes are still needed
+    for failed_tool in "${_failed_fixes[@]}"; do
+      if ! command -v "$failed_tool" &> /dev/null; then
+        _should_offer_fix=true
+        break
+      fi
+    done
+  fi
+  
+  if [[ "$_should_offer_fix" == "true" ]]; then
   if [[ ${#_fixable_missing[@]} -gt 0 ]] || [[ ${#_fixable_versions[@]} -gt 0 ]]; then
     echo "Would you like to automatically fix these issues? (y/n)" >&2
     read -q "REPLY?> " >&2
@@ -104,6 +137,8 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
       echo "Installing/updating tools..." >&2
       echo "" >&2
       
+      _new_failed_fixes=()
+      
       # Fix missing tools
       for fix_entry in "${_fixable_missing[@]}"; do
         IFS=':' read -r tool desc fix_cmd <<< "$fix_entry"
@@ -113,6 +148,7 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
           echo "✓ $desc installed successfully" >&2
         else
           echo "✗ Failed to install $desc" >&2
+          _new_failed_fixes+=("$tool")
         fi
         echo "" >&2
       done
@@ -126,15 +162,45 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
           echo "✓ $tool updated successfully" >&2
         else
           echo "✗ Failed to update $tool" >&2
+          _new_failed_fixes+=("$tool")
         fi
         echo "" >&2
       done
       
-      echo "Setup complete! Restart your shell: exec zsh" >&2
+      # Handle failed fixes
+      if [[ ${#_new_failed_fixes[@]} -gt 0 ]]; then
+        echo "Some installations failed." >&2
+        echo "Would you like to retry on next shell startup? (y/n)" >&2
+        read -q "RETRY?> " >&2
+        echo "" >&2
+        
+        if [[ $RETRY == "y" ]]; then
+          # Save failed tools to retry file
+          mkdir -p "$(dirname "$_failed_fixes_flag")"
+          printf '%s\n' "${_new_failed_fixes[@]}" > "$_failed_fixes_flag"
+          echo "Will prompt again on next startup." >&2
+        else
+          # User doesn't want to retry
+          rm -f "$_failed_fixes_flag"
+          echo "" >&2
+          echo "To disable preflight warnings completely:" >&2
+          echo "  export SKIP_PREFLIGHT_CHECK=1" >&2
+          echo "Or: touch ~/.cache/zsh/.skip-preflight-check" >&2
+        fi
+      else
+        # All fixes succeeded, remove retry file
+        rm -f "$_failed_fixes_flag"
+        echo "Setup complete! Restart your shell: exec zsh" >&2
+      fi
       echo "" >&2
     else
       echo "" >&2
       echo "Skipped automatic fixes." >&2
+      echo "" >&2
+      echo "To disable these warnings:" >&2
+      echo "  export SKIP_PREFLIGHT_CHECK=1" >&2
+      echo "Or: touch ~/.cache/zsh/.skip-preflight-check" >&2
+      echo "" >&2
       echo "See README.md for manual installation instructions." >&2
       echo "" >&2
     fi
@@ -143,8 +209,12 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
     echo "" >&2
   fi
   else
-    # Not first run, issues exist but no auto-fix prompt
+    # Not first run, no retry needed, just show info
     echo "See README.md for installation instructions." >&2
+    echo "" >&2
+    echo "To disable these warnings:" >&2
+    echo "  export SKIP_PREFLIGHT_CHECK=1" >&2
+    echo "Or: touch ~/.cache/zsh/.skip-preflight-check" >&2
     echo "" >&2
   fi
 fi
@@ -157,8 +227,9 @@ if [[ "$_is_first_run" == "true" ]]; then
 fi
 
 # Cleanup
-unset _first_run_flag _is_first_run _has_issues
+unset _skip_check_flag _first_run_flag _failed_fixes_flag _is_first_run _has_issues
+unset _should_offer_fix _failed_fixes _new_failed_fixes
 unset _required_tools _version_requirements _missing_required _version_warnings
 unset _fixable_missing _fixable_versions
-unset tool_entry tool desc fix_cmd fix_entry REPLY
+unset tool_entry tool desc fix_cmd fix_entry failed_tool REPLY RETRY
 unset _fzf_version _fzf_min _zsh_version _zsh_min

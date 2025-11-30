@@ -287,6 +287,20 @@ zssh  # SSH with connection management
 
 See `custom/alias/alias.zsh` for the complete list.
 
+## Disabling Preflight Checks
+
+If you want to disable the startup dependency checks:
+
+```bash
+# Option 1: Environment variable (add to ~/.zshenv)
+export SKIP_PREFLIGHT_CHECK=1
+
+# Option 2: Create skip flag file
+touch ~/.cache/zsh/.skip-preflight-check
+```
+
+Note: Preflight checks help ensure all dependencies are installed and up-to-date. Only disable if you're certain your environment is correctly configured.
+
 ## Troubleshooting
 
 ### Shell is slow
