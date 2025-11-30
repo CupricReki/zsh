@@ -2,14 +2,14 @@
 
 A fast, well-organized, and maintainable Zsh configuration optimized for performance and developer productivity.
 
-## ⚡ Performance
+## Performance
 
 - **~400ms startup time** (55% faster than baseline)
 - **<100ms perceived startup** with instant prompt and lazy loading
 - Smart completion caching that rebuilds only when needed
 - Zero plugin manager overhead with static loading
 
-## ✨ Features
+## Features
 
 - **Plugin Management:** [Sheldon](https://github.com/rossmacarthur/sheldon) with lazy loading
 - **Theme:** [Powerlevel10k](https://github.com/romkatv/powerlevel10k) with instant prompt
@@ -20,7 +20,7 @@ A fast, well-organized, and maintainable Zsh configuration optimized for perform
 - **Syntax Highlighting:** Fast highlighting with lazy loading
 - **Auto-suggestions:** History-based command suggestions
 
-## 📦 Quick Install
+## Quick Install
 
 ### One-Line Install
 
@@ -66,7 +66,7 @@ The `init.sh` script will:
 - Set up all necessary symlinks and directories
 - Initialize plugin manager and download plugins
 
-## 📁 Structure
+## Structure
 
 ```
 ~/.config/zsh/
@@ -84,7 +84,7 @@ The `init.sh` script will:
 └── zshrc                  # Main configuration
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -150,14 +150,14 @@ exec zsh
 myfunction
 ```
 
-## 📚 Documentation
+## Documentation
 
 - **[CHANGELOG.md](docs/CHANGELOG.md)** - What changed and why
 - **[PROFILING.md](docs/PROFILING.md)** - How to profile your shell startup
 - **[MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)** - Migrating between plugin managers
 - **[PLUGIN_MANAGER_COMPARISON.md](docs/PLUGIN_MANAGER_COMPARISON.md)** - Plugin manager comparison
 
-## 🔄 Updates
+## Updates
 
 ### Update Everything
 
@@ -177,7 +177,7 @@ zgu
 sheldon lock --update
 ```
 
-## 🎨 Included Plugins
+## Included Plugins
 
 ### Core (Immediate Load)
 - **git** - Git aliases and helpers
@@ -202,7 +202,7 @@ sheldon lock --update
 ### Conditional (Only if Tool Installed)
 - kubectl, aws, ansible, go, yt-dlp, docker, tailscale completions
 
-## 🛠️ Requirements
+## Requirements
 
 ### Essential
 - **zsh** >= 5.8
@@ -225,7 +225,7 @@ Install Rust:
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-## 🚀 Performance Tips
+## Performance Tips
 
 1. **Use the completion cache** - Enabled by default, rebuilds intelligently
 2. **Lazy loading is your friend** - Non-critical plugins load after prompt
@@ -233,7 +233,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 4. **Keep plugins minimal** - Only load what you actually use
 5. **Use instant prompt** - Powerlevel10k feature (enabled by default)
 
-## 🎯 Key Aliases
+## Key Aliases
 
 ### Git
 ```bash
@@ -264,7 +264,7 @@ zssh  # SSH with connection management
 
 See `custom/alias/alias.zsh` for the complete list.
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Shell is slow
 
@@ -307,18 +307,18 @@ for cmd in fzf fd rg bat eza; do
 done
 ```
 
-## 🤝 Contributing
+## Contributing
 
 This is a personal configuration, but feel free to:
 - Fork and customize for your needs
 - Submit issues for bugs
 - Suggest improvements via merge requests
 
-## 📝 License
+## License
 
 MIT License - See [LICENSE.md](LICENSE.md)
 
-## 🙏 Credits
+## Credits
 
 Built with these amazing projects:
 - [Sheldon](https://github.com/rossmacarthur/sheldon) - Fast plugin manager
@@ -327,10 +327,6 @@ Built with these amazing projects:
 - [zsh-defer](https://github.com/romkatv/zsh-defer) - Lazy loading
 - Many plugins from [Oh My Zsh](https://github.com/ohmyzsh/ohmyzsh)
 
-## 📈 Changelog
+## Changelog
 
 See [CHANGELOG.md](docs/CHANGELOG.md) for version history and improvements.
-
----
-
-**Made with ❤️ for a blazing-fast shell experience** ⚡
