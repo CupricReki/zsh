@@ -124,7 +124,7 @@ export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes
 # Only interactive-specific variables should be here
 
 # ==== Full Path Configuration ====
-# Note: Cargo handled via ~/.cargo/env sourced earlier
+# Note: Cargo/local paths added in early PATH setup, preserved via $path
 # typeset -U ensures no duplicates
 path=(
     "$HOME/.npm-global/bin"             # local user npm bins
@@ -143,6 +143,7 @@ path=(
     "$ZSCRIPTS"
     "/opt/android-sdk/platform-tools"   # Android platform tools
     "$HOME/.nix-profile/bin"
+    $path                               # preserve existing paths (cargo, etc)
 )
 
 export PATH
