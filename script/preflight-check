@@ -6,13 +6,16 @@
 # Requirements Check with Auto-Fix
 # ================================================
 
-# Check if this is first run (no flag file exists)
-_first_run_flag="${ZSH_CACHE_DIR:-$HOME/.cache/zsh}/.preflight-complete"
+# Check if this is first run ever (no flag file exists)
+_first_run_flag="${ZSH_CACHE_DIR:-$HOME/.cache/zsh}/.first-run-complete"
 _is_first_run=false
 
 if [[ ! -f "$_first_run_flag" ]]; then
   _is_first_run=true
 fi
+
+# Preflight checks always run on every shell startup
+# Auto-fix prompt only appears on first run ever
 
 # Essential tools required for full functionality
 _required_tools=(
@@ -73,7 +76,7 @@ if [[ -n "$_zsh_version" ]]; then
   fi
 fi
 
-# Display warnings and offer fixes
+# Always display warnings if issues exist (runs on every shell startup)
 _has_issues=false
 if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]]; then
   _has_issues=true
@@ -90,10 +93,9 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
     printf '%s\n' "${_version_warnings[@]}" >&2
     echo "" >&2
   fi
-fi
-
-# On first run or if issues exist, offer to fix
-if [[ "$_is_first_run" == "true" ]] && [[ "$_has_issues" == "true" ]]; then
+  
+  # Only offer auto-fix on first run ever
+  if [[ "$_is_first_run" == "true" ]]; then
   if [[ ${#_fixable_missing[@]} -gt 0 ]] || [[ ${#_fixable_versions[@]} -gt 0 ]]; then
     echo "Would you like to automatically fix these issues? (y/n)" >&2
     read -q "REPLY?> " >&2
@@ -142,13 +144,15 @@ if [[ "$_is_first_run" == "true" ]] && [[ "$_has_issues" == "true" ]]; then
     echo "Manual installation required. See README.md for instructions." >&2
     echo "" >&2
   fi
-elif [[ "$_has_issues" == "true" ]]; then
-  # Not first run, just show info
-  echo "Run with --fix to attempt automatic fixes, or see README.md" >&2
-  echo "" >&2
+  else
+    # Not first run, issues exist but no auto-fix prompt
+    echo "See README.md for installation instructions." >&2
+    echo "" >&2
+  fi
 fi
 
-# Create flag file after first run (whether fixed or not)
+# Mark first run as complete (whether fixed or not)
+# Preflight checks will still run on every startup, but won't prompt for auto-fix
 if [[ "$_is_first_run" == "true" ]]; then
   mkdir -p "$(dirname "$_first_run_flag")"
   touch "$_first_run_flag"
