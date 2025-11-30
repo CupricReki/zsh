@@ -1,0 +1,106 @@
+# backup - Create timestamped backup of file or directory
+# Usage: backup [-c|--compress] <file|directory> [destination]
+# Options:
+#   -c, --compress   Create compressed archive using best available compression
+#                    Priority: zstd > xz > bzip2 > gzip
+# Examples:
+#   backup myfile.txt                    → myfile.txt.20231130_123456.bak
+#   backup -c mydir/                     → mydir.20231130_123456.tar.zst
+#   backup mydir/ /backups/mydir.bak     → /backups/mydir.bak
+
+local compress=false src dest timestamp comp_method comp_ext comp_flag
+
+# Parse options
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -c|--compress)
+            compress=true
+            shift
+            ;;
+        -*)
+            echo "Unknown option: $1" >&2
+            echo "Usage: backup [-c|--compress] <file|directory> [destination]" >&2
+            return 1
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if [[ $# -eq 0 ]]; then
+    echo "Usage: backup [-c|--compress] <file|directory> [destination]" >&2
+    echo "Options:" >&2
+    echo "  -c, --compress   Create compressed archive (auto-detects best method)" >&2
+    return 1
+fi
+
+src="$1"
+timestamp=$(date +%Y%m%d_%H%M%S)
+
+if [[ ! -e "$src" ]]; then
+    echo "Error: '$src' does not exist" >&2
+    return 1
+fi
+
+# Detect best available compression method
+if $compress; then
+    if command -v zstd &>/dev/null; then
+        comp_method="zstd"
+        comp_ext="tar.zst"
+        comp_flag="--zstd"
+    elif command -v xz &>/dev/null; then
+        comp_method="xz"
+        comp_ext="tar.xz"
+        comp_flag="-J"
+    elif command -v bzip2 &>/dev/null; then
+        comp_method="bzip2"
+        comp_ext="tar.bz2"
+        comp_flag="-j"
+    elif command -v gzip &>/dev/null; then
+        comp_method="gzip"
+        comp_ext="tar.gz"
+        comp_flag="-z"
+    else
+        echo "Error: No compression tools found (zstd, xz, bzip2, or gzip required)" >&2
+        return 1
+    fi
+fi
+
+# Determine destination
+if [[ -n "$2" ]]; then
+    dest="$2"
+elif $compress; then
+    dest="${src%/}.${timestamp}.${comp_ext}"
+else
+    dest="${src%/}.${timestamp}.bak"
+fi
+
+# Check if destination exists
+if [[ -e "$dest" ]]; then
+    echo "Warning: '$dest' already exists" >&2
+    read -q "REPLY?Overwrite? (y/n) "
+    echo
+    [[ $REPLY != "y" ]] && return 1
+fi
+
+# Perform backup
+if $compress; then
+    echo "Backing up: $src → $dest (using $comp_method)"
+    if tar "$comp_flag" -cf "$dest" -C "$(dirname "$src")" "$(basename "$src")"; then
+        echo "✓ Compressed backup complete: $dest"
+        du -sh "$dest"
+    else
+        echo "✗ Backup failed" >&2
+        return 1
+    fi
+else
+    echo "Backing up: $src → $dest"
+    if rsync -a --info=progress2 "$src" "$dest"; then
+        echo "✓ Backup complete: $dest"
+        du -sh "$dest"
+    else
+        echo "✗ Backup failed" >&2
+        return 1
+    fi
+fi

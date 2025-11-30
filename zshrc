@@ -162,8 +162,7 @@ if [[ -d "$ZFUNC" ]]; then
   done
 fi
 
-# Autoload extract from oh-my-zsh
-autoload -Uz extract
+# Note: extract function is loaded via sheldon (ohmyzsh-extract plugin)
 
 # # Load source alias files
 if [[ -d "$ZSH_CUSTOM/alias" ]]; then

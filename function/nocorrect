@@ -1,3 +1,4 @@
-#!/bin/sh
-# exec $*
-exec "$@"
+# nocorrect - Run command without zsh autocorrect
+# Usage: nocorrect <command> [args...]
+# Note: This is different from zsh's builtin 'nocorrect' precommand modifier
+command "$@"
