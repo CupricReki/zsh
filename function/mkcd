@@ -1,4 +1,4 @@
-mkcd () {
-	mkdir -p "$*"
-	cd "$*"
-}
+# mkcd - Create directory and cd into it
+# Usage: mkcd <directory>
+mkdir -p "$*"
+cd "$*"

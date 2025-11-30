@@ -32,21 +32,35 @@ fi
 # Auto-fix prompt only appears on first run ever
 
 # Essential tools required for full functionality
+# Format: "tool:description:fix_function"
 _required_tools=(
   "git:git:false"
   "curl:curl:false"
-  "fzf:fzf:${ZSCRIPTS}/install-fzf"
+  "fzf:fzf:install_fzf"
   "fd:fd:false"
-  "cargo:cargo:curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
-  "sheldon:sheldon:cargo install sheldon"
+  "cargo:cargo:install_cargo"
+  "sheldon:sheldon:install_sheldon"
   "tree:tree:false"
 )
 
-# Version requirements (tool:min_version:fix_command)
+# Version requirements (tool:min_version:fix_function)
 _version_requirements=(
-  "fzf:0.40.0:${ZSCRIPTS}/install-fzf"
+  "fzf:0.40.0:install_fzf"
   "zsh:5.8:false"
 )
+
+# Installation functions (called instead of eval)
+install_fzf() {
+  "${ZSCRIPTS}/install-fzf"
+}
+
+install_cargo() {
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+}
+
+install_sheldon() {
+  cargo install sheldon
+}
 
 # Check for missing required tools
 _missing_required=()
@@ -142,10 +156,9 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
       
       # Fix missing tools
       for fix_entry in "${_fixable_missing[@]}"; do
-        IFS=':' read -r tool desc fix_cmd <<< "$fix_entry"
+        IFS=':' read -r tool desc fix_func <<< "$fix_entry"
         echo "Installing $desc..." >&2
-        eval "$fix_cmd"
-        if [[ $? -eq 0 ]]; then
+        if "$fix_func"; then
           echo "✓ $desc installed successfully" >&2
         else
           echo "✗ Failed to install $desc" >&2
@@ -156,10 +169,9 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
       
       # Fix version issues
       for fix_entry in "${_fixable_versions[@]}"; do
-        IFS=':' read -r tool desc fix_cmd <<< "$fix_entry"
+        IFS=':' read -r tool desc fix_func <<< "$fix_entry"
         echo "$desc..." >&2
-        eval "$fix_cmd"
-        if [[ $? -eq 0 ]]; then
+        if "$fix_func"; then
           echo "✓ $tool updated successfully" >&2
         else
           echo "✗ Failed to update $tool" >&2

@@ -46,7 +46,17 @@ alias 7='cd -7'
 alias 8='cd -8'
 alias 9='cd -9'
 alias afind='ack -il'
-alias bwe='export BW_SESSION=$( bw unlock --raw )'
+# Bitwarden unlock - converted to function for proper error handling
+bwe() {
+  local session
+  if session=$(bw unlock --raw 2>/dev/null); then
+    export BW_SESSION="$session"
+    echo "✓ Bitwarden unlocked successfully"
+  else
+    echo "✗ Failed to unlock Bitwarden" >&2
+    return 1
+  fi
+}
 alias backup='f() { rsync -a "$1" "${1}.bak"; }; f'
 alias cd=__enhancd::cd
 # alias cp='nocorrect cp'

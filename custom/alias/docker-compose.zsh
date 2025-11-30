@@ -1,15 +1,11 @@
-# Set docker-compose alias for v1
-docker-compose --version &> /dev/null
-if [ $? -eq 0 ]; then
+# Docker Compose alias - supports both standalone and docker compose
+if command -v docker-compose &> /dev/null; then
   alias dc=docker-compose
-fi
-
-# Set docker-compose alias for v2
-docker compose --version &> /dev/null
-if [ $? -eq 0 ]; then
+elif command -v docker &> /dev/null && docker compose version &> /dev/null; then
   alias dc="docker compose"
 fi
 
+# Docker Compose convenience aliases
 alias dcd='dc down'
 alias dcl='dc logs -f'
 alias dcu='dc up'

@@ -3,6 +3,9 @@
 # To see results, run: zprof | head -20
 # zmodload zsh/zprof
 
+# Guard: only continue for interactive shells
+[[ -o interactive ]] || return 0
+
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -121,15 +124,12 @@ if [[ $_needs_rebuild -eq 0 ]] && [[ -d "$ZCOMPLETION" ]]; then
   unset _comp_files
 fi
 
-# 3. Check if FPATH directories are newer than cache (new tools installed)
-if [[ $_needs_rebuild -eq 0 ]]; then
-  for _fdir in $fpath; do
-    if [[ -d "$_fdir" ]] && [[ "$_fdir" -nt "$_comp_cache" ]]; then
-      _needs_rebuild=1
-      break
-    fi
-  done
-  unset _fdir
+# 3. Check if custom completion directories are newer than cache
+# Only check ZCOMPLETION (custom completions), not all FPATH (system paths rarely change)
+if [[ $_needs_rebuild -eq 0 ]] && [[ -d "$ZCOMPLETION" ]]; then
+  if [[ "$ZCOMPLETION" -nt "$_comp_cache" ]]; then
+    _needs_rebuild=1
+  fi
 fi
 
 # Run appropriate compinit
@@ -201,10 +201,15 @@ export FPATH="$ZCOMPLETION:$ZFUNC:$ZLOCAL:$FPATH"
 
 # Set terminal colors
 # Based on https://github.com/joshjon/bliss-dircolors
-# Performance: Consider caching this output to avoid eval on every shell start
+# Cache dircolors output for performance
+_dircolors_cache="${ZSH_CACHE_DIR}/dircolors.sh"
 if [[ -f "$ZSH_CUSTOM/bliss.dircolors" ]]; then
-  eval `dircolors $ZSH_CUSTOM/bliss.dircolors`
+  if [[ ! -f "$_dircolors_cache" ]] || [[ "$ZSH_CUSTOM/bliss.dircolors" -nt "$_dircolors_cache" ]]; then
+    dircolors "$ZSH_CUSTOM/bliss.dircolors" > "$_dircolors_cache"
+  fi
+  source "$_dircolors_cache"
 fi
+unset _dircolors_cache
 
 # Autoload all custom functions from the function directory
 if [[ -d "$ZFUNC" ]]; then
@@ -249,7 +254,13 @@ has() { command -v "$1" >/dev/null 2>&1 }
 
 # Load all plugins via sheldon (configured in ~/.config/sheldon/plugins.toml)
 # This includes lazy loading for non-critical plugins
-eval "$(sheldon source)"
+if ! _sheldon_output=$(sheldon source 2>&1); then
+  echo "⚠️  Failed to load plugins via sheldon:" >&2
+  echo "$_sheldon_output" >&2
+  return 1
+fi
+eval "$_sheldon_output"
+unset _sheldon_output
 
 # ================================================
 # Conditional Plugins - Only load if tools exist
@@ -309,10 +320,7 @@ export ENHANCD_FILTER="fzf --preview 'eza -al --tree --level 1 --group-directori
 
 
 
-# Tailscale completions (custom file)
-if has tailscale && [[ -r "$ZSH_CUSTOM/tailscale_zsh_completion.zsh" ]]; then
-  source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
-fi
+# Tailscale completions are auto-discovered by compinit from $ZCOMPLETION/_tailscale
 
 # Load custom key bindings
 # source "$ZSH_CUSTOM/keybindings.zsh"
@@ -421,11 +429,16 @@ if has tmux; then
     export TMUX_OUTER_TERM="${TERM:-unknown}"
 fi
 
-# load pyenv if installed
+# Python pyenv - lazy loaded for performance (~100-200ms saved)
 if has pyenv; then
   export PATH="$HOME/.pyenv/bin:$PATH"
-  eval "$(pyenv init -)"
-  eval "$(pyenv virtualenv-init -)"
+  # Define lazy-loading wrapper function
+  pyenv() {
+    unset -f pyenv
+    eval "$(command pyenv init -)"
+    eval "$(command pyenv virtualenv-init -)"
+    pyenv "$@"
+  }
 fi
 
 # ================================================

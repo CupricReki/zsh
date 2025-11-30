@@ -1,9 +1,9 @@
- tarz() {
-     if [ -d "$1" ]; then
-         # Create the tarball in the current directory with the same name as the directory
-         tar --zstd -cvf "$(basename "${1%/}").tar.zst" -C "$(dirname "$1")" "$(basename "$1")"
-     else
-         echo "Usage: tarz <directory>"
-     fi
- }
-
+# tarz - Create a zstd-compressed tarball of a directory
+# Usage: tarz <directory>
+if [[ -d "$1" ]]; then
+  # Create the tarball in the current directory with the same name as the directory
+  tar --zstd -cvf "$(basename "${1%/}").tar.zst" -C "$(dirname "$1")" "$(basename "$1")"
+else
+  echo "Usage: tarz <directory>" >&2
+  return 1
+fi
