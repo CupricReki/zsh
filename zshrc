@@ -176,6 +176,7 @@ typeset -U path
 path=(
     "$HOME/.cargo/bin"                  # Rust cargo binaries (sheldon, etc)
     "$HOME/.npm-global/bin"            # local user npm bins
+    "$HOME/.go/bin"                     # Go binaries (GOPATH is in .zshenv)
     /usr/local/sbin
     /usr/local/bin
     /usr/sbin
@@ -279,10 +280,12 @@ if has ansible; then
   fi
 fi
 
-# Golang plugin (only if go is installed)
+# Golang - check for osc tool (only if go is installed)
 if has go; then
-  # GOPATH is set in .zshenv, just add go bin to PATH
-  export PATH="$PATH:$GOPATH/bin"
+  # GOPATH/bin is already in PATH from main config
+  if ! has osc; then
+    echo "[zshrc] osc not found. Install with: go install github.com/theimpostor/osc@latest" >&2
+  fi
 fi
 
 # yt-dlp completions (only if yt-dlp is installed)
