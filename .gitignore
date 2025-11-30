@@ -4,3 +4,4 @@ zlocal/*
 zlogin_local/*
 *.zwc
 .cache/antibody
+.zcompdump*

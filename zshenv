@@ -1,14 +1,34 @@
 # ZSH environment variables
-# XDG variables
+# This file is sourced by all instances of zsh (login, non-login, interactive, non-interactive)
+# Use for environment variables that should be available everywhere
+
+# XDG Base Directory Specification
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_DATA_HOME="$HOME/.local/share"
-#export XDG_DESKTOP_DIR="$HOME/Desktop"
-#export XDG_DOCUMENTS_DIR="$HOME/Documents"
-#export XDG_DOWNLOAD_DIR="$HOME/Downloads"
-#export XDG_MUSIC_DIR="$HOME/Music"
-#export XDG_PICTURES_DIR="$HOME/Pictures"
-#export XDG_PUBLICSHARE_DIR="$HOME/Public"
-#export XDG_TEMPLATES_DIR="$HOME/Templates"
-#export XDG_VIDEOS_DIR="$HOME/Videos"
-#export XDG_DATA_DIRS="/var/lib/flatpak/exports/share:/home/cupric/.local/share/flatpak/exports/share"
+
+# Main ZSH config directory
+export ZSH_DIR="$HOME/.config/zsh"
+
+# Customizations folder
+export ZSH_CUSTOM="$ZSH_DIR/custom"
+export ZCOMPLETION="$ZSH_DIR/completion"
+
+# Cache directory (needed for kubectl, antibody, etc.)
+export ZSH_CACHE_DIR="${XDG_CACHE_HOME}/zsh"
+
+# Functions folder
+export ZFUNC="$ZSH_DIR/function"
+export ZSCRIPTS="$ZSH_DIR/script"
+export ZLOCAL="$ZSH_DIR/local"
+export ZBIN="$ZSH_DIR/bin"
+
+# Local bin directory for user-installed binaries
+export LOCAL_BIN="${HOME}/.local/bin"
+
+# Editor configuration (if nvim exists, will be overridden in alias.zsh)
+export VISUAL="${VISUAL:-vi}"
+export EDITOR="${EDITOR:-vi}"
+
+# Go configuration (if go is installed)
+export GOPATH="$HOME/.go"

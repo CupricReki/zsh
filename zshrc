@@ -1,3 +1,8 @@
+# ==== Profiling ====
+# Uncomment to enable profiling (adds ~10ms overhead)
+# To see results, run: zprof | head -20
+# zmodload zsh/zprof
+
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -5,27 +10,23 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# Requirements
-# 1. ZSH
-# 2. antibody (This script will install if needed)
-# 3. powerline
-# 4. powerline-fonts
-# 5. lsd (community exa - ls alternative needed for fzf)
-# 6. tree
-# 7. fd
+# ================================================
+# Preflight Checks
+# ================================================
+# Run preflight checks for required tools and versions
+source "$ZSCRIPTS/preflight-check"
 
-# Recommended
-# 1. git-delta
-# 2. bat: view code
-# 3. pandoc: convert any kind of file to markdown. Any generated cache file will be store in same /tmp/zsh-fzf-tab-$USER as fzf-tab
-# 4. mdcat: render markdown
-# 5. grc: colorize the output of some commands
-# 6. less: a pager
-# 7. pdftotext
-# 8. osc (go install -v github.com/theimpostor/osc@latest) - OSC 52 support (copy from terminal)
-
-# Included executables
-# 1. fzf
+# Recommended tools (checked silently via has() function throughout config)
+# - eza/lsd: Modern ls replacement (for enhancd, fzf previews)
+# - rg (ripgrep): Fast grep (for fzf file search)
+# - bat: Syntax highlighting (for fzf previews)
+# - git-delta: Better git diffs
+# - nvim: Modern vim
+# - pandoc: Document converter
+# - mdcat: Markdown renderer
+# - grc: Colorize output
+# - pdftotext: PDF extraction
+# - osc: OSC 52 clipboard support
 
 
 # 4.1 Supported compression methods and archive formats
@@ -97,7 +98,48 @@ fi
 
 # Compdef is basically a function used by zsh for load the auto-completions.
 # The completion system needs to be activated.
-autoload -Uz compinit && compinit
+# Smart caching: Rebuild if cache is old OR completion files changed
+autoload -Uz compinit
+
+# Determine cache file location
+_comp_cache="${ZDOTDIR:-$HOME}/.zcompdump"
+
+# Check multiple conditions for rebuilding
+_needs_rebuild=0
+
+# 1. Cache doesn't exist or is older than 24 hours
+if [[ ! -f "$_comp_cache" ]] || [[ -n ${_comp_cache}(#qN.mh+24) ]]; then
+  _needs_rebuild=1
+fi
+
+# 2. Custom completion files have been modified recently
+if [[ $_needs_rebuild -eq 0 ]] && [[ -d "$ZCOMPLETION" ]]; then
+  _comp_files=($ZCOMPLETION/**/*(.Nmh-24))
+  if [[ ${#_comp_files} -gt 0 ]]; then
+    _needs_rebuild=1
+  fi
+  unset _comp_files
+fi
+
+# 3. Check if FPATH directories are newer than cache (new tools installed)
+if [[ $_needs_rebuild -eq 0 ]]; then
+  for _fdir in $fpath; do
+    if [[ -d "$_fdir" ]] && [[ "$_fdir" -nt "$_comp_cache" ]]; then
+      _needs_rebuild=1
+      break
+    fi
+  done
+  unset _fdir
+fi
+
+# Run appropriate compinit
+if [[ $_needs_rebuild -eq 1 ]]; then
+  compinit  # Full rebuild
+else
+  compinit -C  # Use cache (fast)
+fi
+
+unset _comp_cache _needs_rebuild
 
 # # The optional three formats: "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
 HIST_STAMPS="yyyy-mm-dd"
@@ -120,29 +162,17 @@ autoload -U colors && colors
 export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes, No, Abort, Edit) "
 
 # ==== Environment Variable Setup ====
-# Main ZSH config directory
-export ZSH_DIR="$HOME/.config/zsh"
-
-# Customizations folder
-export ZSH_CUSTOM="$ZSH_DIR/custom"
-export ZCOMPLETION="$ZSH_DIR/completion"
-
-# Cache directory
-# Needed for kubectl
-export ZSH_CACHE_DIR="$HOME/.cache/zsh"
-
-# Functions folder
-export ZFUNC="$ZSH_DIR/function"
-export ZSCRIPTS="$ZSH_DIR/script"
-export ZLOCAL="$ZSH_DIR/local"
-export ZBIN="$ZSH_DIR/bin"
+# Note: Most env vars are now in .zshenv to be available in all zsh instances
+# Only interactive-specific variables should be here
 
 # ==== Path Configuration ====
 # Ensure unique entries
 typeset -U path
 
 path=(
+    "$HOME/.cargo/bin"                  # Rust cargo binaries (sheldon, etc)
     "$HOME/.npm-global/bin"            # local user npm bins
+    "$HOME/.go/bin"                     # Go binaries (GOPATH is in .zshenv)
     /usr/local/sbin
     /usr/local/bin
     /usr/sbin
@@ -161,128 +191,142 @@ path=(
 
 # Export the constructed PATH
 export PATH
-# FPATH: Contains a list of directories that the z/OS shell searches to find shell functions.
+
+# FPATH: Directories zsh searches for functions and completions
+# Adding these directories makes:
+#   - Custom functions in $ZFUNC available for autoload
+#   - Custom completions in $ZCOMPLETION automatically discovered by compinit
+#   - Local overrides in $ZLOCAL take priority
 export FPATH="$ZCOMPLETION:$ZFUNC:$ZLOCAL:$FPATH"
 
 # Set terminal colors
 # Based on https://github.com/joshjon/bliss-dircolors
-eval `dircolors $ZSH_CUSTOM/bliss.dircolors`
+# Performance: Consider caching this output to avoid eval on every shell start
+if [[ -f "$ZSH_CUSTOM/bliss.dircolors" ]]; then
+  eval `dircolors $ZSH_CUSTOM/bliss.dircolors`
+fi
 
+# Autoload all custom functions from the function directory
+if [[ -d "$ZFUNC" ]]; then
+  for func in "$ZFUNC"/*(N:t); do
+    autoload -Uz "$func"
+  done
+fi
+
+# Autoload extract from oh-my-zsh
 autoload -Uz extract
-autoload -Uz sshdc
-autoload -Uz mkcd
-autoload -Uz zssh
-autoload -Uz tarz       #tar --zstd -cvf
-autoload -Uz nocorrect
 
 # # Load source alias files
-if [ "$(ls $ZSH_CUSTOM/alias)" ]; then
-  for file in $ZSH_CUSTOM/alias/*; do
+if [[ -d "$ZSH_CUSTOM/alias" ]]; then
+  for file in "$ZSH_CUSTOM/alias"/*.zsh(N); do
       source "$file"
   done
 fi
 
 # Load any local configuration
-if [ "$(ls $ZLOCAL)" ]; then
-  for file in $ZLOCAL/*; do
+if [[ -d "$ZLOCAL" ]]; then
+  for file in "$ZLOCAL"/*.zsh(N); do
       source "$file"
   done
 fi
 
-# Antibody Plug Manager
-# Check to see if it's installed (and in the path)
-type antibody >/dev/null 2>&1 || { curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin; }
-source <(antibody init)
-export ANTIBODY_HOME="$ZSH_CACHE_DIR/antibody"
-antibody bundle ohmyzsh/ohmyzsh path:plugins/git
-antibody bundle ohmyzsh/ohmyzsh path:plugins/pip
-antibody bundle ohmyzsh/ohmyzsh path:plugins/sudo
-antibody bundle ohmyzsh/ohmyzsh path:plugins/command-not-found
-antibody bundle ohmyzsh/ohmyzsh path:plugins/colored-man-pages
-antibody bundle ohmyzsh/ohmyzsh path:plugins/extract
+# ================================================
+# Plugin Manager - sheldon (fast, with lazy loading)
+# ================================================
 
-antibody bundle "supercrabtree/k"
+# Check if sheldon is available
+if ! command -v sheldon &> /dev/null; then
+    echo "" >&2
+    echo "⚠️  sheldon not found" >&2
+    echo "Install: cargo install sheldon" >&2
+    echo "Info: https://github.com/rossmacarthur/sheldon" >&2
+    echo "" >&2
+    return 1
+fi
 
-# Back directory
-# https://github.com/Tarrasch/zsh-bd
-# antibody bundle "Tarrasch/zsh-bd"
-# antibody bundle cupricreki/zsh-bw-completion
+# Helper: check command exists without invoking it
+has() { command -v "$1" >/dev/null 2>&1 }
 
-# Open command on explain-shell.com usage: explain <command>
-# antibody bundle "gmatheu/zsh-plugins explain-shell"
+# Load all plugins via sheldon (configured in ~/.config/sheldon/plugins.toml)
+# This includes lazy loading for non-critical plugins
+eval "$(sheldon source)"
 
-# Syntax highlighting bundle.
-# antibody bundle "zsh-users/zsh-syntax-highlighting"
+# ================================================
+# Conditional Plugins - Only load if tools exist
+# ================================================
 
+# kubectl plugin (only if kubectl is installed)
+if has kubectl; then
+  source <(kubectl completion zsh)
+fi
 
-# Vi mode
-antibody bundle "ohmyzsh/ohmyzsh path:plugins/vi-mode"
+# AWS CLI plugin (only if aws is installed)
+if has aws; then
+  # Load aws completions from system or oh-my-zsh
+  if [[ -f /usr/share/zsh/site-functions/_aws ]]; then
+    source /usr/share/zsh/site-functions/_aws
+  fi
+fi
+
+# Ansible plugin (only if ansible is installed)  
+if has ansible; then
+  # Ansible completions are usually in system paths
+  if [[ -f /usr/share/zsh/site-functions/_ansible ]]; then
+    source /usr/share/zsh/site-functions/_ansible
+  fi
+fi
+
+# Golang - check for osc tool (only if go is installed)
+if has go; then
+  # GOPATH/bin is already in PATH from main config
+  if ! has osc; then
+    echo "[zshrc] osc not found. Install with: go install github.com/theimpostor/osc@latest" >&2
+  fi
+fi
+
+# yt-dlp completions (only if yt-dlp is installed)
+if has yt-dlp; then
+  # yt-dlp completions are usually in system paths
+  if [[ -f /usr/share/zsh/site-functions/_yt-dlp ]]; then
+    source /usr/share/zsh/site-functions/_yt-dlp
+  fi
+fi
+
+# Vi mode configuration
 VI_MODE_SET_CURSOR=true         # Vertical bar on insert
 bindkey -M viins '^[[3~' delete-char        # Remap delete key in insert mode
 bindkey -M vicmd '^[[3~' delete-char        # Remap delete key in command mode
 
-# Initialize enhancd
-antibody bundle "b4b4r07/enhancd"
+# Initialize enhancd configuration
 export ENHANCD_DIR="$ZSH_CACHE_DIR/enhancd"
-export ENHANCD_FILTER="fzf --preview='eza --tree --group-directories-first --git-ignore --level 1 {}'"
 export ENHANCD_FILTER="fzf --preview 'eza -al --tree --level 1 --group-directories-first --git-ignore \
   --header --git --no-user --no-time --no-filesize --no-permissions {}' \
         --preview-window right,50% --height 35% --reverse --ansi \
         :fzy
         :peco"
-source "$ZSH_CACHE_DIR/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07-SLASH-enhancd/init.sh"
 
-# Helper: check command exists without invoking it
-has() { command -v "$1" >/dev/null 2>&1 }
+# ================================================
+# Additional tool-specific completions
+# ================================================
+# These are custom completion files that aren't in sheldon
 
-# Load kubectl plugin if binary exists
-if has kubectl; then
-  antibody bundle "ohmyzsh/ohmyzsh path:plugins/kubectl"
-fi
-
-# Load docker completions if binary exists and file is readable
+# Docker completions (custom _docker file)
 if has docker && [[ -r $ZCOMPLETION/_docker ]]; then
   source "$ZCOMPLETION/_docker"
 fi
 
-# Load aws plugin if installed
-if has aws; then
-  antibody bundle "ohmyzsh/ohmyzsh path:plugins/aws"
+# OSC (OSC 52 clipboard tool) completions
+if has osc && [[ -r $ZCOMPLETION/_osc ]]; then
+  source "$ZCOMPLETION/_osc"
 fi
 
-# Load ansible plugin if installed
-if has ansible; then
-  antibody bundle "ohmyzsh/ohmyzsh path:plugins/ansible"
+# Tailscale completions (custom file)
+if has tailscale && [[ -r "$ZSH_CUSTOM/tailscale_zsh_completion.zsh" ]]; then
+  source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
 fi
-
-if has go; then
-  antibody bundle "ohmyzsh/ohmyzsh path:plugins/golang"
-
-  export GOPATH="$HOME/.go"
-  export PATH="$PATH:$GOPATH/bin"
-
-  if ! has osc; then
-    echo "[zshrc] osc not found. You can install it via:"
-    echo "         go install github.com/theimpostor/osc@latest"
-  elif [[ -r $ZCOMPLETION/_osc ]]; then
-    source "$ZCOMPLETION/_osc"
-  fi
-fi
-
 
 # Load custom key bindings
 # source "$ZSH_CUSTOM/keybindings.zsh"
-
-# ================================================
-# Autocomplete
-# ================================================
-
-# Add more completions
-antibody bundle "zsh-users/zsh-completions"
-antibody bundle "sinetoami/antibody-completion"
-antibody bundle "sunlei/zsh-ssh"
-command yt-dlp >/dev/null 2>&1 && antibody bundle "clavelm/yt-dlp-omz-plugin"
-command tailscale >/dev/null 2>&1 && source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
 
 # ================================================
 # Fzf configuration
@@ -297,12 +341,14 @@ export FZF_CTRL_T_COMMAND="rg --files --hidden --follow --glob '!.git/*' 2>/dev/
 export FZF_CTRL_T_OPTS="--reverse --preview '$ZSCRIPTS/fzf-preview.sh {}'"
 export FZF_ALT_C_COMMAND="fd --type d"
 export FZF_ALT_C_OPTS="--preview 'tree -C {} | head -100'"
+# Alternative: use fzf-preview.sh for more detailed previews
 # --preview '$ZSCRIPTS/fzf-preview.sh {}'
 
-# Tab completion
-# Replace tab selection with fzf
-antibody bundle "Aloxaf/fzf-tab"
-# antibody bundle "Freed-Wu/fzf-tab-source"           # formatttin&g for fzf-preview in fzf-tab
+# ================================================
+# Tab completion with fzf
+# ================================================
+# fzf-tab replaces default tab completion with fzf interface
+# Loaded via sheldon for better plugin management
 
 # Bind rebind file search to alt+t
 # bindkey -r '^T'
@@ -379,40 +425,72 @@ zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-flags --preview-window=do
 # ctrl-a to select all
 zstyle ':fzf-tab:*' fzf-bindings 'ctrl-a:toggle-all'
 
-# Load tmux bundle if installed
+# Tmux configuration (plugin is lazy-loaded via sheldon)
 if has tmux; then
     export ZSH_TMUX_AUTOSTART=false
     export ZSH_TMUX_AUTOCONNECT=false
     export TMUX_OUTER_TERM="${TERM:-unknown}"
-    antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"
 fi
 
 # load pyenv if installed
-if has pynenv; then
+if has pyenv; then
   export PATH="$HOME/.pyenv/bin:$PATH"
   eval "$(pyenv init -)"
   eval "$(pyenv virtualenv-init -)"
 fi
 
-# These have to go after most plugins as they wrap other ones
-antibody bundle "zdharma-continuum/fast-syntax-highlighting"
-antibody bundle "zsh-users/zsh-autosuggestions"
+# ================================================
+# Syntax highlighting & autosuggestions
+# ================================================
+# These are loaded via sheldon with lazy loading (zsh-defer)
+# This means they load after the prompt appears, making startup feel instant
+# - fast-syntax-highlighting: highlights commands as you type
+# - zsh-autosuggestions: suggests commands from history
+# - powerlevel10k: theme (loads immediately for prompt)
 
-# Powerlevel 10k
-antibody bundle "romkatv/powerlevel10k"
+# SSH Agent - Only run in login shells to avoid slowdown
+# This checks if an agent is running and reuses it, or starts a new one
+if [[ -o login ]]; then
+    SSH_ENV="$HOME/.ssh/agent-environment"
 
+    function start_agent {
+        echo "Initialising new SSH agent..."
+        /usr/bin/ssh-agent | sed 's/^echo/#echo/' > "${SSH_ENV}"
+        echo succeeded
+        chmod 600 "${SSH_ENV}"
+        . "${SSH_ENV}" > /dev/null
+        /usr/bin/ssh-add
+    }
+
+    # Source SSH settings if file exists and agent is still running
+    if [[ -f "${SSH_ENV}" ]]; then
+        . "${SSH_ENV}" > /dev/null
+        # More efficient check: just test if the agent responds
+        if ! kill -0 "${SSH_AGENT_PID}" 2>/dev/null; then
+            start_agent
+        fi
+    else
+        start_agent
+    fi
+fi
 
 # Use system clipboard - must go after other keybindings
+# zsh-system-clipboard is loaded via sheldon (with lazy loading)
 if has wl-copy; then
-  antibody bundle "kutsan/zsh-system-clipboard"
   export ZSH_SYSTEM_CLIPBOARD_METHOD="wlc"        # Use wl-clipboard with "CLIPBOARD" selection
 fi
 
 # direnv is a tool that automatically sets/unsets environment variables when you enter/leave directories (think: auto-loading .env files, but on steroids).
-# direnv hook bash outputs some shell code that integrates direnv into your shell's behavior.
+# direnv hook zsh outputs some shell code that integrates direnv into your shell's behavior.
 if has direnv; then
-  eval "$(direnv hook bash)"
+  eval "$(direnv hook zsh)"
 fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
+
+# ==== Profiling Output ====
+# Uncomment to see profiling results (must also uncomment zmodload at top)
+# echo "\n==== ZSH Startup Profiling ===="
+# zprof | head -20
+

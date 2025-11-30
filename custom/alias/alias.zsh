@@ -1,24 +1,24 @@
 # To disable autocorrect for any command
 # alias foobar="nocorrect foobar"
-# updated 20211216
+# updated 20241130
+
+# Helper: check command exists without invoking it
+has() { command -v "$1" >/dev/null 2>&1 }
 
 # Check for ccat
-ccat --version &> /dev/null
-if [ $? -eq 0 ]; then
+if has ccat; then
   alias cat='ccat'
 fi
 
 # Check for bat
-bat --version &> /dev/null
-if [ $? -eq 0 ]; then
+if has bat; then
   alias cat="bat --pager=less --style=plain --wrap=character --theme='Coldark-Dark'"
   # the following breaks enhancd https://github.com/babarot/enhancd/issues/224
   # alias cat="bat --pager=less --color='always' --style=plain --wrap=character --theme='Coldark-Dark'"
 fi
 
 # Check for nvim
-nvim --version &> /dev/null
-if [ $? -eq 0 ]; then
+if has nvim; then
   alias vi='nvim'
   alias vim='nvim'
   alias nvimconf='vi $HOME/.config/nvim/init.vim'
@@ -28,8 +28,7 @@ if [ $? -eq 0 ]; then
 fi
 
 # Check for apitude
-aptitude --version &> /dev/null
-if [ $? -eq 0 ]; then
+if has aptitude; then
   alias apt='aptitude'
 fi
 
@@ -51,6 +50,7 @@ alias bwe='export BW_SESSION=$( bw unlock --raw )'
 alias backup='f() { rsync -a "$1" "${1}.bak"; }; f'
 alias cd=__enhancd::cd
 # alias cp='nocorrect cp'
+alias ca="cursor-agent"
 alias dd='dd conv=noerror status=progress'
 alias df='df -h'
 alias dgu='git -C ~/.dotfiles pull origin main'
@@ -114,8 +114,9 @@ alias gco='git checkout'
 alias gcor='git checkout --recurse-submodules'
 alias gcount='git shortlog -sn'
 alias gcp='git cherry-pick'
-alias gcpa='git cherry-pick --abort'curl -sS https://starship.rs/install.sh | sh
-alias gcpc='git cherry-pick --continue' alias gcs='git commit -S'
+alias gcpa='git cherry-pick --abort'
+alias gcpc='git cherry-pick --continue'
+alias gcs='git commit -S'
 alias gcsm='git commit -s -m'
 alias gcss='git commit -S -s'
 alias gcssm='git commit -S -s -m'
@@ -287,7 +288,7 @@ alias ug='sudo -s -u ${USER}' # Update group
 alias which-command=whence
 alias xc='xclip -selection clipboard'
 alias zse='vi ~/.zshrc'
-alias zgu='git -C $HOME/.config/zsh pull origin master || antibody update && exec zsh'
+alias zgu='git -C $HOME/.config/zsh pull origin master && sheldon lock --update && exec zsh'
 alias zgi='wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash'
 alias zri='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash"'
 alias zfslist='zfs list -o name,used,avail,refquota,compressratio,logicalused,mountpoint'
