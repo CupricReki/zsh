@@ -746,8 +746,10 @@ _rbw__unlocked_commands() {
     _describe -t commands 'rbw unlocked commands' commands "$@"
 }
 
-if [ "$funcstack[1]" = "_rbw" ]; then
-    _rbw "$@"
-else
+# Completion function registration happens automatically via #compdef directive at top
+# Don't auto-execute when sourced - this causes _arguments errors
+# if [ "$funcstack[1]" = "_rbw" ]; then
+#     _rbw "$@"
+# else
     compdef _rbw rbw
-fi
+# fi
