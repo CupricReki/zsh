@@ -16,6 +16,8 @@ export ZCOMPLETION="$ZSH_DIR/completion"
 
 # Cache directory (needed for kubectl, antibody, etc.)
 export ZSH_CACHE_DIR="${XDG_CACHE_HOME}/zsh"
+\n# Sheldon plugin manager data directory (stores cloned plugins)
+export SHELDON_DATA_DIR="${ZSH_CACHE_DIR}/sheldon"
 
 # Functions folder
 export ZFUNC="$ZSH_DIR/function"
