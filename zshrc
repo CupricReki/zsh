@@ -1,3 +1,8 @@
+# ==== Profiling ====
+# Uncomment to enable profiling (adds ~10ms overhead)
+# To see results, run: zprof | head -20
+# zmodload zsh/zprof
+
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -97,7 +102,13 @@ fi
 
 # Compdef is basically a function used by zsh for load the auto-completions.
 # The completion system needs to be activated.
-autoload -Uz compinit && compinit
+# Use cache to speed up loading (only rebuild once per day)
+autoload -Uz compinit
+if [[ -n ${ZDOTDIR}/.zcompdump(#qN.mh+24) ]]; then
+  compinit
+else
+  compinit -C
+fi
 
 # # The optional three formats: "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
 HIST_STAMPS="yyyy-mm-dd"
@@ -120,22 +131,8 @@ autoload -U colors && colors
 export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes, No, Abort, Edit) "
 
 # ==== Environment Variable Setup ====
-# Main ZSH config directory
-export ZSH_DIR="$HOME/.config/zsh"
-
-# Customizations folder
-export ZSH_CUSTOM="$ZSH_DIR/custom"
-export ZCOMPLETION="$ZSH_DIR/completion"
-
-# Cache directory
-# Needed for kubectl
-export ZSH_CACHE_DIR="$HOME/.cache/zsh"
-
-# Functions folder
-export ZFUNC="$ZSH_DIR/function"
-export ZSCRIPTS="$ZSH_DIR/script"
-export ZLOCAL="$ZSH_DIR/local"
-export ZBIN="$ZSH_DIR/bin"
+# Note: Most env vars are now in .zshenv to be available in all zsh instances
+# Only interactive-specific variables should be here
 
 # ==== Path Configuration ====
 # Ensure unique entries
@@ -166,25 +163,27 @@ export FPATH="$ZCOMPLETION:$ZFUNC:$ZLOCAL:$FPATH"
 
 # Set terminal colors
 # Based on https://github.com/joshjon/bliss-dircolors
-eval `dircolors $ZSH_CUSTOM/bliss.dircolors`
+# Performance: Consider caching this output to avoid eval on every shell start
+if [[ -f "$ZSH_CUSTOM/bliss.dircolors" ]]; then
+  eval `dircolors $ZSH_CUSTOM/bliss.dircolors`
+fi
 
 autoload -Uz extract
-autoload -Uz sshdc
 autoload -Uz mkcd
 autoload -Uz zssh
 autoload -Uz tarz       #tar --zstd -cvf
 autoload -Uz nocorrect
 
 # # Load source alias files
-if [ "$(ls $ZSH_CUSTOM/alias)" ]; then
-  for file in $ZSH_CUSTOM/alias/*; do
+if [[ -d "$ZSH_CUSTOM/alias" ]]; then
+  for file in "$ZSH_CUSTOM/alias"/*.zsh(N); do
       source "$file"
   done
 fi
 
 # Load any local configuration
-if [ "$(ls $ZLOCAL)" ]; then
-  for file in $ZLOCAL/*; do
+if [[ -d "$ZLOCAL" ]]; then
+  for file in "$ZLOCAL"/*.zsh(N); do
       source "$file"
   done
 fi
@@ -192,37 +191,44 @@ fi
 # Antibody Plug Manager
 # Check to see if it's installed (and in the path)
 type antibody >/dev/null 2>&1 || { curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin; }
+
+# Performance: Use static loading instead of dynamic for faster shell startup
+# Generate static plugin file: antibody bundle < ~/.zsh_plugins.txt > ~/.zsh_plugins.zsh
+# Then source it: source ~/.zsh_plugins.zsh
+# For now, using dynamic loading but consider switching to static for production
 source <(antibody init)
 export ANTIBODY_HOME="$ZSH_CACHE_DIR/antibody"
-antibody bundle ohmyzsh/ohmyzsh path:plugins/git
-antibody bundle ohmyzsh/ohmyzsh path:plugins/pip
-antibody bundle ohmyzsh/ohmyzsh path:plugins/sudo
-antibody bundle ohmyzsh/ohmyzsh path:plugins/command-not-found
-antibody bundle ohmyzsh/ohmyzsh path:plugins/colored-man-pages
-antibody bundle ohmyzsh/ohmyzsh path:plugins/extract
 
-antibody bundle "supercrabtree/k"
+# Helper: check command exists without invoking it
+has() { command -v "$1" >/dev/null 2>&1 }
 
-# Back directory
-# https://github.com/Tarrasch/zsh-bd
-# antibody bundle "Tarrasch/zsh-bd"
-# antibody bundle cupricreki/zsh-bw-completion
+# Core plugins - always loaded
+plugins=(
+  "ohmyzsh/ohmyzsh path:plugins/pip"
+  "ohmyzsh/ohmyzsh path:plugins/sudo"
+  "ohmyzsh/ohmyzsh path:plugins/command-not-found"
+  "ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
+  "ohmyzsh/ohmyzsh path:plugins/extract"
+  "supercrabtree/k"
+  "ohmyzsh/ohmyzsh path:plugins/vi-mode"
+  "b4b4r07/enhancd"
+  "zsh-users/zsh-completions"
+  "sinetoami/antibody-completion"
+  "sunlei/zsh-ssh"
+  "Aloxaf/fzf-tab"
+)
 
-# Open command on explain-shell.com usage: explain <command>
-# antibody bundle "gmatheu/zsh-plugins explain-shell"
+# Load core plugins
+for plugin in "${plugins[@]}"; do
+  antibody bundle "$plugin"
+done
 
-# Syntax highlighting bundle.
-# antibody bundle "zsh-users/zsh-syntax-highlighting"
-
-
-# Vi mode
-antibody bundle "ohmyzsh/ohmyzsh path:plugins/vi-mode"
+# Vi mode configuration
 VI_MODE_SET_CURSOR=true         # Vertical bar on insert
 bindkey -M viins '^[[3~' delete-char        # Remap delete key in insert mode
 bindkey -M vicmd '^[[3~' delete-char        # Remap delete key in command mode
 
-# Initialize enhancd
-antibody bundle "b4b4r07/enhancd"
+# Initialize enhancd configuration
 export ENHANCD_DIR="$ZSH_CACHE_DIR/enhancd"
 export ENHANCD_FILTER="fzf --preview='eza --tree --group-directories-first --git-ignore --level 1 {}'"
 export ENHANCD_FILTER="fzf --preview 'eza -al --tree --level 1 --group-directories-first --git-ignore \
@@ -232,33 +238,26 @@ export ENHANCD_FILTER="fzf --preview 'eza -al --tree --level 1 --group-directori
         :peco"
 source "$ZSH_CACHE_DIR/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07-SLASH-enhancd/init.sh"
 
-# Helper: check command exists without invoking it
-has() { command -v "$1" >/dev/null 2>&1 }
-
-# Load kubectl plugin if binary exists
+# Conditional plugins - only load if command exists
 if has kubectl; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/kubectl"
 fi
 
-# Load docker completions if binary exists and file is readable
 if has docker && [[ -r $ZCOMPLETION/_docker ]]; then
   source "$ZCOMPLETION/_docker"
 fi
 
-# Load aws plugin if installed
 if has aws; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/aws"
 fi
 
-# Load ansible plugin if installed
 if has ansible; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/ansible"
 fi
 
 if has go; then
   antibody bundle "ohmyzsh/ohmyzsh path:plugins/golang"
-
-  export GOPATH="$HOME/.go"
+  # GOPATH is set in .zshenv
   export PATH="$PATH:$GOPATH/bin"
 
   if ! has osc; then
@@ -269,20 +268,16 @@ if has go; then
   fi
 fi
 
+if has yt-dlp; then
+  antibody bundle "clavelm/yt-dlp-omz-plugin"
+fi
+
+if has tailscale && [[ -r "$ZSH_CUSTOM/tailscale_zsh_completion.zsh" ]]; then
+  source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
+fi
 
 # Load custom key bindings
 # source "$ZSH_CUSTOM/keybindings.zsh"
-
-# ================================================
-# Autocomplete
-# ================================================
-
-# Add more completions
-antibody bundle "zsh-users/zsh-completions"
-antibody bundle "sinetoami/antibody-completion"
-antibody bundle "sunlei/zsh-ssh"
-command yt-dlp >/dev/null 2>&1 && antibody bundle "clavelm/yt-dlp-omz-plugin"
-command tailscale >/dev/null 2>&1 && source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
 
 # ================================================
 # Fzf configuration
@@ -388,19 +383,45 @@ if has tmux; then
 fi
 
 # load pyenv if installed
-if has pynenv; then
+if has pyenv; then
   export PATH="$HOME/.pyenv/bin:$PATH"
   eval "$(pyenv init -)"
   eval "$(pyenv virtualenv-init -)"
 fi
 
 # These have to go after most plugins as they wrap other ones
+# Performance: These are loaded last as they modify other plugins' behavior
 antibody bundle "zdharma-continuum/fast-syntax-highlighting"
 antibody bundle "zsh-users/zsh-autosuggestions"
 
 # Powerlevel 10k
 antibody bundle "romkatv/powerlevel10k"
 
+# SSH Agent - Only run in login shells to avoid slowdown
+# This checks if an agent is running and reuses it, or starts a new one
+if [[ -o login ]]; then
+    SSH_ENV="$HOME/.ssh/agent-environment"
+
+    function start_agent {
+        echo "Initialising new SSH agent..."
+        /usr/bin/ssh-agent | sed 's/^echo/#echo/' > "${SSH_ENV}"
+        echo succeeded
+        chmod 600 "${SSH_ENV}"
+        . "${SSH_ENV}" > /dev/null
+        /usr/bin/ssh-add
+    }
+
+    # Source SSH settings if file exists and agent is still running
+    if [[ -f "${SSH_ENV}" ]]; then
+        . "${SSH_ENV}" > /dev/null
+        # More efficient check: just test if the agent responds
+        if ! kill -0 "${SSH_AGENT_PID}" 2>/dev/null; then
+            start_agent
+        fi
+    else
+        start_agent
+    fi
+fi
 
 # Use system clipboard - must go after other keybindings
 if has wl-copy; then
@@ -409,10 +430,16 @@ if has wl-copy; then
 fi
 
 # direnv is a tool that automatically sets/unsets environment variables when you enter/leave directories (think: auto-loading .env files, but on steroids).
-# direnv hook bash outputs some shell code that integrates direnv into your shell's behavior.
+# direnv hook zsh outputs some shell code that integrates direnv into your shell's behavior.
 if has direnv; then
-  eval "$(direnv hook bash)"
+  eval "$(direnv hook zsh)"
 fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
+
+# ==== Profiling Output ====
+# Uncomment to see profiling results (must also uncomment zmodload at top)
+# echo "\n==== ZSH Startup Profiling ===="
+# zprof | head -20
+
