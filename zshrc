@@ -158,7 +158,12 @@ path=(
 
 # Export the constructed PATH
 export PATH
-# FPATH: Contains a list of directories that the z/OS shell searches to find shell functions.
+
+# FPATH: Directories zsh searches for functions and completions
+# Adding these directories makes:
+#   - Custom functions in $ZFUNC available for autoload
+#   - Custom completions in $ZCOMPLETION automatically discovered by compinit
+#   - Local overrides in $ZLOCAL take priority
 export FPATH="$ZCOMPLETION:$ZFUNC:$ZLOCAL:$FPATH"
 
 # Set terminal colors
@@ -168,11 +173,15 @@ if [[ -f "$ZSH_CUSTOM/bliss.dircolors" ]]; then
   eval `dircolors $ZSH_CUSTOM/bliss.dircolors`
 fi
 
+# Autoload all custom functions from the function directory
+if [[ -d "$ZFUNC" ]]; then
+  for func in "$ZFUNC"/*(N:t); do
+    autoload -Uz "$func"
+  done
+fi
+
+# Autoload extract from oh-my-zsh
 autoload -Uz extract
-autoload -Uz mkcd
-autoload -Uz zssh
-autoload -Uz tarz       #tar --zstd -cvf
-autoload -Uz nocorrect
 
 # # Load source alias files
 if [[ -d "$ZSH_CUSTOM/alias" ]]; then
