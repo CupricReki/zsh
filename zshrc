@@ -284,13 +284,8 @@ if has go; then
   fi
 fi
 
-# yt-dlp completions (only if yt-dlp is installed)
-if has yt-dlp; then
-  # yt-dlp completions are usually in system paths
-  if [[ -f /usr/share/zsh/site-functions/_yt-dlp ]]; then
-    source /usr/share/zsh/site-functions/_yt-dlp
-  fi
-fi
+# yt-dlp completions are auto-discovered by compinit from system paths
+# DO NOT manually source - the file has auto-execution that causes _arguments errors
 
 # Vi mode configuration
 VI_MODE_SET_CURSOR=true         # Vertical bar on insert
