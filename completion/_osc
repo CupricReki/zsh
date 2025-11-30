@@ -206,7 +206,8 @@ _osc()
     fi
 }
 
-# don't run the completion function when being source-ed or eval-ed
-if [ "$funcstack[1]" = "_osc" ]; then
-    _osc
-fi
+# Completion function registration happens automatically via #compdef directive at top
+# Don't auto-execute when sourced
+# if [ "$funcstack[1]" = "_osc" ]; then
+#     _osc
+# fi
