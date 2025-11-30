@@ -296,7 +296,7 @@ If you want to disable the startup dependency checks:
 export SKIP_PREFLIGHT_CHECK=1
 
 # Option 2: Create skip flag file
-touch ~/.cache/zsh/.skip-preflight-check
+touch $ZSH_CACHE_DIR/.skip-preflight-check
 ```
 
 Note: Preflight checks help ensure all dependencies are installed and up-to-date. Only disable if you're certain your environment is correctly configured.

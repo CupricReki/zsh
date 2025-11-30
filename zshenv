@@ -15,13 +15,16 @@ export ZSH_CUSTOM="$ZSH_DIR/custom"
 export ZCOMPLETION="$ZSH_DIR/completion"
 
 # Cache directory (needed for kubectl, antibody, etc.)
-export ZSH_CACHE_DIR="$HOME/.cache/zsh"
+export ZSH_CACHE_DIR="${XDG_CACHE_HOME}/zsh"
 
 # Functions folder
 export ZFUNC="$ZSH_DIR/function"
 export ZSCRIPTS="$ZSH_DIR/script"
 export ZLOCAL="$ZSH_DIR/local"
 export ZBIN="$ZSH_DIR/bin"
+
+# Local bin directory for user-installed binaries
+export LOCAL_BIN="${HOME}/.local/bin"
 
 # Editor configuration (if nvim exists, will be overridden in alias.zsh)
 export VISUAL="${VISUAL:-vi}"

@@ -6,21 +6,22 @@
 #   export SKIP_PREFLIGHT_CHECK=1
 #
 # Or create flag file:
-#   touch ~/.cache/zsh/.skip-preflight-check
+#   touch $ZSH_CACHE_DIR/.skip-preflight-check
 
 # ================================================
 # Requirements Check with Auto-Fix
 # ================================================
 
 # Check if preflight checks are disabled
-_skip_check_flag="${ZSH_CACHE_DIR:-$HOME/.cache/zsh}/.skip-preflight-check"
+_cache_dir="${ZSH_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/zsh}"
+_skip_check_flag="${_cache_dir}/.skip-preflight-check"
 if [[ -n "$SKIP_PREFLIGHT_CHECK" ]] || [[ -f "$_skip_check_flag" ]]; then
   return 0
 fi
 
 # Check if this is first run ever (no flag file exists)
-_first_run_flag="${ZSH_CACHE_DIR:-$HOME/.cache/zsh}/.first-run-complete"
-_failed_fixes_flag="${ZSH_CACHE_DIR:-$HOME/.cache/zsh}/.preflight-failed-fixes"
+_first_run_flag="${_cache_dir}/.first-run-complete"
+_failed_fixes_flag="${_cache_dir}/.preflight-failed-fixes"
 _is_first_run=false
 
 if [[ ! -f "$_first_run_flag" ]]; then
@@ -185,7 +186,7 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
           echo "" >&2
           echo "To disable preflight warnings completely:" >&2
           echo "  export SKIP_PREFLIGHT_CHECK=1" >&2
-          echo "Or: touch ~/.cache/zsh/.skip-preflight-check" >&2
+          echo "Or: touch \$ZSH_CACHE_DIR/.skip-preflight-check" >&2
         fi
       else
         # All fixes succeeded, remove retry file
@@ -199,7 +200,7 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
       echo "" >&2
       echo "To disable these warnings:" >&2
       echo "  export SKIP_PREFLIGHT_CHECK=1" >&2
-      echo "Or: touch ~/.cache/zsh/.skip-preflight-check" >&2
+      echo "Or: touch \$ZSH_CACHE_DIR/.skip-preflight-check" >&2
       echo "" >&2
       echo "See README.md for manual installation instructions." >&2
       echo "" >&2
@@ -214,7 +215,7 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
     echo "" >&2
     echo "To disable these warnings:" >&2
     echo "  export SKIP_PREFLIGHT_CHECK=1" >&2
-    echo "Or: touch ~/.cache/zsh/.skip-preflight-check" >&2
+    echo "Or: touch \$ZSH_CACHE_DIR/.skip-preflight-check" >&2
     echo "" >&2
   fi
 fi
@@ -227,7 +228,7 @@ if [[ "$_is_first_run" == "true" ]]; then
 fi
 
 # Cleanup
-unset _skip_check_flag _first_run_flag _failed_fixes_flag _is_first_run _has_issues
+unset _cache_dir _skip_check_flag _first_run_flag _failed_fixes_flag _is_first_run _has_issues
 unset _should_offer_fix _failed_fixes _new_failed_fixes
 unset _required_tools _version_requirements _missing_required _version_warnings
 unset _fixable_missing _fixable_versions

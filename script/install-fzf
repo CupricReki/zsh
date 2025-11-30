@@ -5,7 +5,7 @@
 set -e
 
 FZF_VERSION="${1:-master}"
-INSTALL_DIR="${HOME}/.local/bin"
+INSTALL_DIR="${LOCAL_BIN:-${HOME}/.local/bin}"
 TMP_DIR="/tmp/fzf-install-$$"
 
 echo "Installing fzf to ${INSTALL_DIR}..."
@@ -66,8 +66,7 @@ echo ""
 # Check if install dir is in PATH
 if [[ ":$PATH:" != *":${INSTALL_DIR}:"* ]]; then
     echo "NOTE: ${INSTALL_DIR} is not in your PATH"
-    echo "Add this to your ~/.zshenv:"
-    echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+    echo "It should be added by your zshrc configuration."
     echo ""
 fi
 
