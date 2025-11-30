@@ -18,11 +18,17 @@ fi
 _required_tools=(
   "git:git"
   "curl:curl"
-  "fzf:fzf (install via package manager)"
+  "fzf:fzf (git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install)"
   "fd:fd-find or fd (install via package manager)"
   "cargo:rust and cargo (curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh)"
   "sheldon:sheldon (cargo install sheldon)"
   "tree:tree (install via package manager)"
+)
+
+# Version requirements (tool:min_version)
+_version_requirements=(
+  "fzf:0.40.0"
+  "zsh:5.8"
 )
 
 # Check for missing required tools
@@ -35,18 +41,55 @@ for tool_entry in "${_required_tools[@]}"; do
   fi
 done
 
-# Warn about missing required tools
-if [[ ${#_missing_required[@]} -gt 0 ]]; then
+# Check versions for installed tools
+_version_warnings=()
+
+# Check fzf version
+if command -v fzf &> /dev/null; then
+  _fzf_version=$(fzf --version 2>/dev/null | cut -d' ' -f1)
+  _fzf_min="0.40.0"
+  if [[ -n "$_fzf_version" ]]; then
+    # Simple version comparison (assumes semantic versioning)
+    if [[ "$(printf '%s\n' "$_fzf_min" "$_fzf_version" | sort -V | head -n1)" != "$_fzf_min" ]]; then
+      _version_warnings+=("  - fzf $_fzf_version is older than recommended $_fzf_min")
+      _version_warnings+=("    Upgrade: git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install")
+    fi
+  fi
+fi
+
+# Check zsh version
+_zsh_version="${ZSH_VERSION}"
+_zsh_min="5.8"
+if [[ -n "$_zsh_version" ]]; then
+  if [[ "$(printf '%s\n' "$_zsh_min" "$_zsh_version" | sort -V | head -n1)" != "$_zsh_min" ]]; then
+    _version_warnings+=("  - zsh $_zsh_version is older than required $_zsh_min")
+    _version_warnings+=("    Upgrade via your package manager")
+  fi
+fi
+
+# Display warnings
+if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]]; then
   echo "" >&2
-  echo "⚠️  Missing required tools:" >&2
-  printf '%s\n' "${_missing_required[@]}" >&2
-  echo "" >&2
+  
+  if [[ ${#_missing_required[@]} -gt 0 ]]; then
+    echo "WARNING: Missing required tools:" >&2
+    printf '%s\n' "${_missing_required[@]}" >&2
+    echo "" >&2
+  fi
+  
+  if [[ ${#_version_warnings[@]} -gt 0 ]]; then
+    echo "WARNING: Version issues detected:" >&2
+    printf '%s\n' "${_version_warnings[@]}" >&2
+    echo "" >&2
+  fi
+  
   echo "Some functionality may not work correctly." >&2
   echo "See README.md for installation instructions." >&2
   echo "" >&2
 fi
 
-unset _required_tools _missing_required tool_entry tool desc
+unset _required_tools _version_requirements _missing_required _version_warnings
+unset tool_entry tool desc _fzf_version _fzf_min _zsh_version _zsh_min
 
 # Recommended tools (checked silently via has() function throughout config)
 # - eza/lsd: Modern ls replacement (for enhancd, fzf previews)
