@@ -19,11 +19,11 @@ fi
 # ==== Early PATH Setup ====
 # Essential paths needed before preflight checks (e.g., cargo for sheldon)
 typeset -U path
-path=(
-    "$HOME/.cargo/bin"    # Rust cargo binaries (sheldon, etc) - needed for preflight
-    "$HOME/.local/bin"    # Local binaries
-    $path
-)
+path=("$HOME/.local/bin" $path)
+
+# Source Rust/Cargo environment (created by rustup installer)
+[[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+
 export PATH
 
 # ================================================
@@ -120,10 +120,9 @@ export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes
 # Only interactive-specific variables should be here
 
 # ==== Full Path Configuration ====
-# Note: Essential paths (cargo, local/bin) already added before preflight
+# Note: Cargo handled via ~/.cargo/env sourced earlier
 # typeset -U ensures no duplicates
 path=(
-    "$HOME/.cargo/bin"                  # Rust cargo binaries (sheldon, etc)
     "$HOME/.npm-global/bin"             # local user npm bins
     "$HOME/.go/bin"                     # Go binaries (GOPATH is in .zshenv)
     /usr/local/sbin
