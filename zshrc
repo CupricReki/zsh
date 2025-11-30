@@ -234,7 +234,7 @@ if [[ -d "$ZLOCAL" ]]; then
 fi
 
 # ================================================
-# Plugin Manager - sheldon (antibody deprecated)
+# Plugin Manager - sheldon (fast, with lazy loading)
 # ================================================
 
 # Check if sheldon is available
@@ -247,40 +247,51 @@ if ! command -v sheldon &> /dev/null; then
     return 1
 fi
 
-# TODO: Replace antibody with sheldon
-# For now, keeping antibody until migration is complete
-type antibody >/dev/null 2>&1 || { curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin; }
-
-# Performance: Use static loading instead of dynamic for faster shell startup
-# Generate static plugin file: antibody bundle < ~/.zsh_plugins.txt > ~/.zsh_plugins.zsh
-# Then source it: source ~/.zsh_plugins.zsh
-# For now, using dynamic loading but consider switching to static for production
-source <(antibody init)
-export ANTIBODY_HOME="$ZSH_CACHE_DIR/antibody"
-
 # Helper: check command exists without invoking it
 has() { command -v "$1" >/dev/null 2>&1 }
 
-# Core plugins - always loaded
-plugins=(
-  "ohmyzsh/ohmyzsh path:plugins/pip"
-  "ohmyzsh/ohmyzsh path:plugins/sudo"
-  "ohmyzsh/ohmyzsh path:plugins/command-not-found"
-  "ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
-  "ohmyzsh/ohmyzsh path:plugins/extract"
-  "supercrabtree/k"
-  "ohmyzsh/ohmyzsh path:plugins/vi-mode"
-  "b4b4r07/enhancd"
-  "zsh-users/zsh-completions"
-  "sinetoami/antibody-completion"
-  "sunlei/zsh-ssh"
-  "Aloxaf/fzf-tab"
-)
+# Load all plugins via sheldon (configured in ~/.config/sheldon/plugins.toml)
+# This includes lazy loading for non-critical plugins
+eval "$(sheldon source)"
 
-# Load core plugins
-for plugin in "${plugins[@]}"; do
-  antibody bundle "$plugin"
-done
+# ================================================
+# Conditional Plugins - Only load if tools exist
+# ================================================
+
+# kubectl plugin (only if kubectl is installed)
+if has kubectl; then
+  source <(kubectl completion zsh)
+fi
+
+# AWS CLI plugin (only if aws is installed)
+if has aws; then
+  # Load aws completions from system or oh-my-zsh
+  if [[ -f /usr/share/zsh/site-functions/_aws ]]; then
+    source /usr/share/zsh/site-functions/_aws
+  fi
+fi
+
+# Ansible plugin (only if ansible is installed)  
+if has ansible; then
+  # Ansible completions are usually in system paths
+  if [[ -f /usr/share/zsh/site-functions/_ansible ]]; then
+    source /usr/share/zsh/site-functions/_ansible
+  fi
+fi
+
+# Golang plugin (only if go is installed)
+if has go; then
+  # GOPATH is set in .zshenv, just add go bin to PATH
+  export PATH="$PATH:$GOPATH/bin"
+fi
+
+# yt-dlp completions (only if yt-dlp is installed)
+if has yt-dlp; then
+  # yt-dlp completions are usually in system paths
+  if [[ -f /usr/share/zsh/site-functions/_yt-dlp ]]; then
+    source /usr/share/zsh/site-functions/_yt-dlp
+  fi
+fi
 
 # Vi mode configuration
 VI_MODE_SET_CURSOR=true         # Vertical bar on insert
@@ -289,46 +300,19 @@ bindkey -M vicmd '^[[3~' delete-char        # Remap delete key in command mode
 
 # Initialize enhancd configuration
 export ENHANCD_DIR="$ZSH_CACHE_DIR/enhancd"
-export ENHANCD_FILTER="fzf --preview='eza --tree --group-directories-first --git-ignore --level 1 {}'"
 export ENHANCD_FILTER="fzf --preview 'eza -al --tree --level 1 --group-directories-first --git-ignore \
   --header --git --no-user --no-time --no-filesize --no-permissions {}' \
         --preview-window right,50% --height 35% --reverse --ansi \
         :fzy
         :peco"
-source "$ZSH_CACHE_DIR/antibody/https-COLON--SLASH--SLASH-github.com-SLASH-b4b4r07-SLASH-enhancd/init.sh"
 
-# Conditional plugins - only load if command exists
-if has kubectl; then
-  antibody bundle "ohmyzsh/ohmyzsh path:plugins/kubectl"
-fi
-
+# Additional completions
 if has docker && [[ -r $ZCOMPLETION/_docker ]]; then
   source "$ZCOMPLETION/_docker"
 fi
 
-if has aws; then
-  antibody bundle "ohmyzsh/ohmyzsh path:plugins/aws"
-fi
-
-if has ansible; then
-  antibody bundle "ohmyzsh/ohmyzsh path:plugins/ansible"
-fi
-
-if has go; then
-  antibody bundle "ohmyzsh/ohmyzsh path:plugins/golang"
-  # GOPATH is set in .zshenv
-  export PATH="$PATH:$GOPATH/bin"
-
-  if ! has osc; then
-    echo "[zshrc] osc not found. You can install it via:"
-    echo "         go install github.com/theimpostor/osc@latest"
-  elif [[ -r $ZCOMPLETION/_osc ]]; then
-    source "$ZCOMPLETION/_osc"
-  fi
-fi
-
-if has yt-dlp; then
-  antibody bundle "clavelm/yt-dlp-omz-plugin"
+if has osc && [[ -r $ZCOMPLETION/_osc ]]; then
+  source "$ZCOMPLETION/_osc"
 fi
 
 if has tailscale && [[ -r "$ZSH_CUSTOM/tailscale_zsh_completion.zsh" ]]; then
@@ -354,9 +338,7 @@ export FZF_ALT_C_OPTS="--preview 'tree -C {} | head -100'"
 # --preview '$ZSCRIPTS/fzf-preview.sh {}'
 
 # Tab completion
-# Replace tab selection with fzf
-antibody bundle "Aloxaf/fzf-tab"
-# antibody bundle "Freed-Wu/fzf-tab-source"           # formatttin&g for fzf-preview in fzf-tab
+# fzf-tab is loaded via sheldon
 
 # Bind rebind file search to alt+t
 # bindkey -r '^T'
@@ -438,7 +420,7 @@ if has tmux; then
     export ZSH_TMUX_AUTOSTART=false
     export ZSH_TMUX_AUTOCONNECT=false
     export TMUX_OUTER_TERM="${TERM:-unknown}"
-    antibody bundle "ohmyzsh/ohmyzsh path:plugins/tmux"
+    # TODO: Add tmux plugin to sheldon config
 fi
 
 # load pyenv if installed
@@ -448,13 +430,8 @@ if has pyenv; then
   eval "$(pyenv virtualenv-init -)"
 fi
 
-# These have to go after most plugins as they wrap other ones
-# Performance: These are loaded last as they modify other plugins' behavior
-antibody bundle "zdharma-continuum/fast-syntax-highlighting"
-antibody bundle "zsh-users/zsh-autosuggestions"
-
-# Powerlevel 10k
-antibody bundle "romkatv/powerlevel10k"
+# Syntax highlighting, autosuggestions, and powerlevel10k are loaded via sheldon
+# (with lazy loading for syntax highlighting and autosuggestions)
 
 # SSH Agent - Only run in login shells to avoid slowdown
 # This checks if an agent is running and reuses it, or starts a new one
@@ -483,8 +460,8 @@ if [[ -o login ]]; then
 fi
 
 # Use system clipboard - must go after other keybindings
+# zsh-system-clipboard is loaded via sheldon (with lazy loading)
 if has wl-copy; then
-  antibody bundle "kutsan/zsh-system-clipboard"
   export ZSH_SYSTEM_CLIPBOARD_METHOD="wlc"        # Use wl-clipboard with "CLIPBOARD" selection
 fi
 
