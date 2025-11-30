@@ -1,0 +1,61 @@
+#!/bin/bash
+# Ensure sheldon is installed
+# This script checks for sheldon and installs it if missing
+
+set -e
+
+SHELDON_VERSION="0.8.0"  # Update this as needed
+
+# Check if sheldon is already installed
+if command -v sheldon &> /dev/null; then
+    echo "✓ sheldon is already installed ($(sheldon --version))"
+    exit 0
+fi
+
+echo "Installing sheldon..."
+
+# Try different installation methods based on available tools
+if command -v cargo &> /dev/null; then
+    # Method 1: Install via cargo (Rust)
+    echo "Installing sheldon via cargo..."
+    cargo install sheldon --locked
+    
+elif command -v yay &> /dev/null; then
+    # Method 2: Install via AUR (Arch Linux)
+    echo "Installing sheldon via AUR..."
+    yay -S --noconfirm sheldon
+    
+elif command -v paru &> /dev/null; then
+    # Method 3: Install via paru (Arch Linux)
+    echo "Installing sheldon via paru..."
+    paru -S --noconfirm sheldon
+    
+else
+    # Method 4: Install binary directly
+    echo "Installing sheldon binary to ~/.local/bin..."
+    mkdir -p "$HOME/.local/bin"
+    
+    # Detect architecture
+    ARCH=$(uname -m)
+    case "$ARCH" in
+        x86_64) ARCH="x86_64" ;;
+        aarch64|arm64) ARCH="aarch64" ;;
+        *) echo "Unsupported architecture: $ARCH" && exit 1 ;;
+    esac
+    
+    # Download and install
+    curl --proto '=https' --tlsv1.2 -fsSL \
+        "https://github.com/rossmacarthur/sheldon/releases/download/${SHELDON_VERSION}/sheldon-${SHELDON_VERSION}-${ARCH}-unknown-linux-musl.tar.gz" \
+        | tar xzf - -C "$HOME/.local/bin" sheldon
+    
+    chmod +x "$HOME/.local/bin/sheldon"
+fi
+
+# Verify installation
+if command -v sheldon &> /dev/null; then
+    echo "✓ sheldon successfully installed ($(sheldon --version))"
+else
+    echo "✗ Failed to install sheldon"
+    exit 1
+fi
+

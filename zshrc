@@ -12,7 +12,7 @@ fi
 
 # Requirements
 # 1. ZSH
-# 2. antibody (This script will install if needed)
+# 2. sheldon - Fast zsh plugin manager (cargo install sheldon)
 # 3. powerline
 # 4. powerline-fonts
 # 5. lsd (community exa - ls alternative needed for fzf)
@@ -232,8 +232,25 @@ if [[ -d "$ZLOCAL" ]]; then
   done
 fi
 
-# Antibody Plug Manager
-# Check to see if it's installed (and in the path)
+# ================================================
+# Plugin Manager - sheldon (antibody deprecated)
+# ================================================
+
+# Ensure sheldon is in PATH (if installed via cargo)
+[[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"
+
+# Check if sheldon is available
+if ! command -v sheldon &> /dev/null; then
+    echo "" >&2
+    echo "⚠️  sheldon not found" >&2
+    echo "Install: cargo install sheldon" >&2
+    echo "Info: https://github.com/rossmacarthur/sheldon" >&2
+    echo "" >&2
+    return 1
+fi
+
+# TODO: Replace antibody with sheldon
+# For now, keeping antibody until migration is complete
 type antibody >/dev/null 2>&1 || { curl -sfL git.io/antibody | sudo sh -s - -b /usr/local/bin; }
 
 # Performance: Use static loading instead of dynamic for faster shell startup

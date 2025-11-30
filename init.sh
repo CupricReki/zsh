@@ -12,9 +12,34 @@ set -e # Exit immediately if a command exits with a non-zero status.
 ANSIBLE_PROJECT_REPO="https://gitlab.ogbase.net/cupric/ansible.git"
 LOCAL_ANSIBLE_DIR="$HOME/ansible"
 TEMP_DIR="/tmp/ansible_bootstrap_zsh" # Use a system temp directory
+ZSH_CONFIG_DIR="$HOME/.config/zsh"
 
 # --- Main Script ---
 echo "--- Starting Zsh Local Bootstrap via Ansible ---"
+
+# --- Preflight: Ensure sheldon is installed ---
+echo ""
+echo "Preflight: Checking dependencies..."
+
+if ! command -v sheldon &> /dev/null; then
+    echo "⚠️  sheldon is not installed"
+    echo "Installing sheldon (required for plugin management)..."
+    
+    if [[ -x "$ZSH_CONFIG_DIR/script/ensure-sheldon" ]]; then
+        "$ZSH_CONFIG_DIR/script/ensure-sheldon"
+    else
+        echo "Error: ensure-sheldon script not found at $ZSH_CONFIG_DIR/script/ensure-sheldon"
+        echo "Please install sheldon manually:"
+        echo "  cargo install sheldon"
+        echo "  OR"
+        echo "  yay -S sheldon"
+        exit 1
+    fi
+else
+    echo "✓ sheldon is installed ($(sheldon --version))"
+fi
+
+echo ""
 
 # Check if local ansible directory exists
 if [[ -d "$LOCAL_ANSIBLE_DIR" ]]; then
