@@ -84,11 +84,15 @@ _fixable_versions=()
 if command -v fzf &> /dev/null; then
   _fzf_version=$(fzf --version 2>/dev/null | cut -d' ' -f1)
   _fzf_min="0.40.0"
-  if [[ -n "$_fzf_version" ]]; then
-    if [[ "$(printf '%s\n' "$_fzf_min" "$_fzf_version" | sort -V | head -n1)" != "$_fzf_min" ]]; then
-      _version_warnings+=("  - fzf $_fzf_version is older than recommended $_fzf_min")
-      _fixable_versions+=("fzf:Upgrade fzf to $_fzf_min:${ZSCRIPTS}/install-fzf")
-    fi
+  
+  # Validate version format
+  if [[ -z "$_fzf_version" ]]; then
+    _version_warnings+=("  - fzf version could not be determined")
+  elif [[ ! "$_fzf_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+    _version_warnings+=("  - fzf version format is invalid: $_fzf_version")
+  elif [[ "$(printf '%s\n' "$_fzf_min" "$_fzf_version" | sort -V | head -n1)" != "$_fzf_min" ]]; then
+    _version_warnings+=("  - fzf $_fzf_version is older than recommended $_fzf_min")
+    _fixable_versions+=("fzf:Upgrade fzf to $_fzf_min:install_fzf")
   fi
 fi
 

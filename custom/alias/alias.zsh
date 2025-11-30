@@ -94,7 +94,20 @@ alias gb='git branch'
 alias gbD='git branch -D'
 alias gba='git branch -a'
 alias gbd='git branch -d'
-alias gbda='git branch --no-color --merged | command grep -vE "^(\+|\*|\s*($(git_main_branch)|development|develop|devel|dev)\s*$)" | command xargs -n 1 git branch -d'
+# Delete all merged git branches (except main/master/dev variants)
+# Converted from alias to function for better error handling
+gbda() {
+  local branches
+  branches=$(git branch --no-color --merged | \
+    command grep -vE "^(\+|\*|\s*($(git_main_branch)|development|develop|devel|dev)\s*$)")
+  
+  if [[ -z "$branches" ]]; then
+    echo "No merged branches to delete"
+    return 0
+  fi
+  
+  echo "$branches" | command xargs -n 1 git branch -d
+}
 alias gbl='git blame -b -w'
 alias gbnm='git branch --no-merged'
 alias gbr='git branch --remote'

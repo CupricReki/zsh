@@ -6,6 +6,9 @@
 # Guard: only continue for interactive shells
 [[ -o interactive ]] || return 0
 
+# ==== Configuration Constants ====
+typeset -g COMP_CACHE_HOURS=24  # Hours before completion cache is considered stale
+
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -30,65 +33,6 @@ source "$ZSCRIPTS/preflight-check"
 # - grc: Colorize output
 # - pdftotext: PDF extraction
 # - osc: OSC 52 clipboard support
-
-
-# 4.1 Supported compression methods and archive formats
-#
-#     gzip, compress requires gzip
-#     bzip2 requires bzip2
-#     lzma requires lzma
-#     xz requires xz
-#     zstd requires zstd
-#     brotli requires bro
-#     lz4 requires lz4
-#     tar requires optionally archive_color for coloring
-#     ar library requires bsdtar or ar
-#     zip archive requires bsdtar or unzip
-#     jar archive requires bsdtar or unzip
-#     rar archive requires bsdtar or unrar or rar
-#     7-zip archive requires 7zr
-#     lzip archive requires lzip
-#     iso images requires bsdtar or isoinfo
-#     rpm requires rpm2cpio and cpio or bsdtar
-#     Debian requires bsdtar or ar
-#     cab requires cabextract
-#
-# 4.2 List of preprocessed file types
-#
-#     directory displayed using ls -lA
-#     nroff(man) requires groff or mandoc
-#     shared library requires nm
-#     MS Word (doc) requires wvText or antiword or catdoc or libreoffice
-#     Powerpoint (ppt) requires catppt
-#     Excel (xls) requires in2csv (csvkit) or xls2csv
-#     odt requires pandoc or odt2txt or libreoffice
-#     odp requires libreoffice
-#     ods requires xlscat or libreoffice
-#     MS Word (docx) requires pandoc or docx2txt or libreoffice
-#     Powerpoint (pptx) requires pptx2md or libreoffice
-#     Excel (xlsx) requires in2csv or xlscat or excel2csv or libreoffice
-#     csv requires csvtable or csvlook or column or pandoc
-#     rtf requires unrtf or libreoffice
-#     epub requires pandoc
-#     html,xml requires w3m or lynx or elinks or html2text
-#     pdf requires pdftotext or pdftohtml
-#     perl pod requires pod2text or perldoc
-#     dvi requires dvi2tty
-#     djvu requires djvutxt
-#     ps requires ps2ascii (from the gs package)
-#     mp3 requires id3v2
-#     multimedia formats requires mediainfo or exiftools
-#     image formats requires mediainfo or exiftools or identify
-#     hdf, nc4 requires h5dump or ncdump (NetCDF format)
-#     crt, pem, csr, crl requires openssl
-#     matlab requires matdump
-#     Jupyter notebook requires pandoc
-#     markdown requires mdcat or pandoc
-#     log requires ccze
-#     java.class requires procyon
-#     MacOS X plist requires plistutil
-#     binary data requires strings
-#     json requires jq
 #     device tree blobs requires dtc (extension dtb or dts)
 
 # Suggested
@@ -110,8 +54,8 @@ _comp_cache="${ZDOTDIR:-$HOME}/.zcompdump"
 # Check multiple conditions for rebuilding
 _needs_rebuild=0
 
-# 1. Cache doesn't exist or is older than 24 hours
-if [[ ! -f "$_comp_cache" ]] || [[ -n ${_comp_cache}(#qN.mh+24) ]]; then
+# 1. Cache doesn't exist or is older than COMP_CACHE_HOURS
+if [[ ! -f "$_comp_cache" ]] || [[ -n ${_comp_cache}(#qN.mh+${COMP_CACHE_HOURS}) ]]; then
   _needs_rebuild=1
 fi
 
