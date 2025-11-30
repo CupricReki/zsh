@@ -288,7 +288,7 @@ alias ug='sudo -s -u ${USER}' # Update group
 alias which-command=whence
 alias xc='xclip -selection clipboard'
 alias zse='vi ~/.zshrc'
-alias zgu='git -C $HOME/.config/zsh pull origin master && sheldon lock --update && exec zsh'
+alias zgu='git -C $HOME/.config/zsh pull origin master && sheldon lock --update && rm -f ~/.zcompdump* && exec zsh'
 alias zgi='wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash'
 alias zri='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash"'
 alias zfslist='zfs list -o name,used,avail,refquota,compressratio,logicalused,mountpoint'

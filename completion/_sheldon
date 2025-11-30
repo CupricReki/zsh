@@ -169,8 +169,10 @@ _sheldon__version_commands() {
     _describe -t commands 'sheldon version commands' commands "$@"
 }
 
-if [ "$funcstack[1]" = "_sheldon" ]; then
-    _sheldon "$@"
-else
-    compdef _sheldon sheldon
-fi
+# Completion function registration happens automatically via #compdef directive at top
+# Don't auto-execute when sourced - this causes _arguments errors
+# if [ "$funcstack[1]" = "_sheldon" ]; then
+#     _sheldon "$@"
+# else
+compdef _sheldon sheldon
+# fi
