@@ -1,12 +1,31 @@
 # alternative using ripgrep-all (rga) combined with fzf-tmux preview
 # This requires ripgrep-all (rga) installed: https://github.com/phiresky/ripgrep-all
-# This implementation below makes use of "open" on macOS, which can be replaced by other commands if needed.
-# allows to search in PDFs, E-Books, Office documents, zip, tar.gz, etc. (see https://github.com/phiresky/ripgrep-all)
+# allows to search in PDFs, E-Books, Office documents, zip, tar.gz, etc.
 # find-in-file - usage: fif <searchTerm> or fif "string with spaces" or fif "regex"
 fif() {
-    if [ ! "$#" -gt 0 ]; then echo "Need a string to search for!"; return 1; fi
-    local file
-    file="$(rga --max-count=1 --ignore-case --files-with-matches --no-messages "$*" | fzf-tmux +m --preview="rga --ignore-case --pretty --context 10 '"$*"' {}")" && echo "opening $file" && open "$file" || return 1;
+    if [[ $# -eq 0 ]]; then 
+        echo "Usage: fif <search term>" >&2
+        return 1
+    fi
+    
+    local file opener
+    file="$(rga --max-count=1 --ignore-case --files-with-matches --no-messages "$*" | \
+            fzf-tmux +m --preview="rga --ignore-case --pretty --context 10 '$*' {}")"
+    
+    [[ -z "$file" ]] && return 1
+    
+    # Cross-platform file opener
+    if command -v xdg-open &>/dev/null; then
+        opener=xdg-open  # Linux
+    elif command -v open &>/dev/null; then
+        opener=open      # macOS
+    else
+        echo "Error: No file opener found (xdg-open or open)" >&2
+        return 1
+    fi
+    
+    echo "Opening $file..."
+    "$opener" "$file"
 }
 
 # Use fd and fzf to get the args to a command.

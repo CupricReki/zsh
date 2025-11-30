@@ -231,13 +231,19 @@ if has ansible; then
   fi
 fi
 
-# Golang - check for osc tool (only if go is installed)
-if has go; then
-  # GOPATH/bin is already in PATH from main config
-  if ! has osc; then
-    echo "[zshrc] osc not found. Install with: go install github.com/theimpostor/osc@latest" >&2
+# Tmux plugin (only if inside tmux session)
+if has tmux && [[ -n "$TMUX" ]]; then
+  # Only load tmux plugin if actually in tmux session
+  _tmux_plugin="${SHELDON_DATA_DIR}/repos/github.com/ohmyzsh/ohmyzsh/plugins/tmux/tmux.plugin.zsh"
+  if [[ -f "$_tmux_plugin" ]]; then
+    zsh-defer source "$_tmux_plugin"
   fi
+  unset _tmux_plugin
 fi
+
+# Golang - GOPATH/bin is already in PATH from main config
+# Note: To install osc (OSC 52 clipboard tool):
+#   go install github.com/theimpostor/osc@latest
 
 # yt-dlp completions are auto-discovered by compinit from system paths
 # DO NOT manually source - the file has auto-execution that causes _arguments errors
