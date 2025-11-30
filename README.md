@@ -207,21 +207,32 @@ sheldon lock --update
 - **zsh** >= 5.8
 - **git**
 - **curl**
+- **fzf** - Fuzzy finder (required for fzf-tab plugin)
+- **fd** - Fast find alternative (used by fzf)
+- **cargo** (Rust) - Required for Sheldon plugin manager
+- **sheldon** - Fast plugin manager (`cargo install sheldon`)
+- **tree** - Directory tree viewer
+- **eza** or **lsd** - Modern ls replacement (used by enhancd, fzf previews)
 
 ### Recommended
-- **fzf** - Fuzzy finder
-- **fd** - Fast find alternative
-- **rg** (ripgrep) - Fast grep alternative
-- **bat** - Better cat with syntax highlighting
-- **eza** - Modern ls replacement
+- **rg** (ripgrep) - Fast grep alternative (fzf file search)
+- **bat** - Better cat with syntax highlighting (fzf previews)
+- **git-delta** - Better git diffs
 - **nvim** - Modern vim
+- **pandoc** - Universal document converter
+- **mdcat** - Markdown renderer
+- **grc** - Colorize command output
+- **pdftotext** - PDF text extraction
+- **osc** - OSC 52 terminal clipboard support (`go install github.com/theimpostor/osc@latest`)
 
-### For Plugin Manager
-- **cargo** (Rust) - Required for Sheldon
+### Install Rust and Sheldon
 
-Install Rust:
 ```bash
+# Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Install Sheldon
+cargo install sheldon
 ```
 
 ## Performance Tips

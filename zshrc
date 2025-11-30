@@ -10,27 +10,55 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# Requirements
-# 1. ZSH
-# 2. sheldon - Fast zsh plugin manager (cargo install sheldon)
-# 3. powerline
-# 4. powerline-fonts
-# 5. lsd (community exa - ls alternative needed for fzf)
-# 6. tree
-# 7. fd
+# ================================================
+# Requirements Check
+# ================================================
 
-# Recommended
-# 1. git-delta
-# 2. bat: view code
-# 3. pandoc: convert any kind of file to markdown. Any generated cache file will be store in same /tmp/zsh-fzf-tab-$USER as fzf-tab
-# 4. mdcat: render markdown
-# 5. grc: colorize the output of some commands
-# 6. less: a pager
-# 7. pdftotext
-# 8. osc (go install -v github.com/theimpostor/osc@latest) - OSC 52 support (copy from terminal)
+# Essential tools required for full functionality
+_required_tools=(
+  "git:git"
+  "curl:curl"
+  "fzf:fzf (install via package manager)"
+  "fd:fd-find or fd (install via package manager)"
+  "cargo:rust and cargo (curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh)"
+  "sheldon:sheldon (cargo install sheldon)"
+  "tree:tree (install via package manager)"
+)
 
-# Included executables
-# 1. fzf
+# Check for missing required tools
+_missing_required=()
+for tool_entry in "${_required_tools[@]}"; do
+  tool="${tool_entry%%:*}"
+  desc="${tool_entry#*:}"
+  if ! command -v "$tool" &> /dev/null; then
+    _missing_required+=("  - $desc")
+  fi
+done
+
+# Warn about missing required tools
+if [[ ${#_missing_required[@]} -gt 0 ]]; then
+  echo "" >&2
+  echo "⚠️  Missing required tools:" >&2
+  printf '%s\n' "${_missing_required[@]}" >&2
+  echo "" >&2
+  echo "Some functionality may not work correctly." >&2
+  echo "See README.md for installation instructions." >&2
+  echo "" >&2
+fi
+
+unset _required_tools _missing_required tool_entry tool desc
+
+# Recommended tools (checked silently via has() function throughout config)
+# - eza/lsd: Modern ls replacement (for enhancd, fzf previews)
+# - rg (ripgrep): Fast grep (for fzf file search)
+# - bat: Syntax highlighting (for fzf previews)
+# - git-delta: Better git diffs
+# - nvim: Modern vim
+# - pandoc: Document converter
+# - mdcat: Markdown renderer
+# - grc: Colorize output
+# - pdftotext: PDF extraction
+# - osc: OSC 52 clipboard support
 
 
 # 4.1 Supported compression methods and archive formats
