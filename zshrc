@@ -21,8 +21,12 @@ fi
 typeset -U path
 path=("$HOME/.local/bin" $path)
 
-# Source Rust/Cargo environment (created by rustup installer)
-[[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+# Rust/Cargo: source env file if exists, otherwise add bin directly
+if [[ -f "$HOME/.cargo/env" ]]; then
+  source "$HOME/.cargo/env"
+elif [[ -d "$HOME/.cargo/bin" ]]; then
+  path=("$HOME/.cargo/bin" $path)
+fi
 
 export PATH
 
