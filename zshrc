@@ -102,13 +102,48 @@ fi
 
 # Compdef is basically a function used by zsh for load the auto-completions.
 # The completion system needs to be activated.
-# Use cache to speed up loading (only rebuild once per day)
+# Smart caching: Rebuild if cache is old OR completion files changed
 autoload -Uz compinit
-if [[ -n ${ZDOTDIR}/.zcompdump(#qN.mh+24) ]]; then
-  compinit
-else
-  compinit -C
+
+# Determine cache file location
+_comp_cache="${ZDOTDIR:-$HOME}/.zcompdump"
+
+# Check multiple conditions for rebuilding
+_needs_rebuild=0
+
+# 1. Cache doesn't exist or is older than 24 hours
+if [[ ! -f "$_comp_cache" ]] || [[ -n ${_comp_cache}(#qN.mh+24) ]]; then
+  _needs_rebuild=1
 fi
+
+# 2. Custom completion files have been modified recently
+if [[ $_needs_rebuild -eq 0 ]] && [[ -d "$ZCOMPLETION" ]]; then
+  _comp_files=($ZCOMPLETION/**/*(.Nmh-24))
+  if [[ ${#_comp_files} -gt 0 ]]; then
+    _needs_rebuild=1
+  fi
+  unset _comp_files
+fi
+
+# 3. Check if FPATH directories are newer than cache (new tools installed)
+if [[ $_needs_rebuild -eq 0 ]]; then
+  for _fdir in $fpath; do
+    if [[ -d "$_fdir" ]] && [[ "$_fdir" -nt "$_comp_cache" ]]; then
+      _needs_rebuild=1
+      break
+    fi
+  done
+  unset _fdir
+fi
+
+# Run appropriate compinit
+if [[ $_needs_rebuild -eq 1 ]]; then
+  compinit  # Full rebuild
+else
+  compinit -C  # Use cache (fast)
+fi
+
+unset _comp_cache _needs_rebuild
 
 # # The optional three formats: "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
 HIST_STAMPS="yyyy-mm-dd"
