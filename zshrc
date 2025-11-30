@@ -16,6 +16,16 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
+# ==== Early PATH Setup ====
+# Essential paths needed before preflight checks (e.g., cargo for sheldon)
+typeset -U path
+path=(
+    "$HOME/.cargo/bin"    # Rust cargo binaries (sheldon, etc) - needed for preflight
+    "$HOME/.local/bin"    # Local binaries
+    $path
+)
+export PATH
+
 # ================================================
 # Preflight Checks
 # ================================================
@@ -109,13 +119,12 @@ export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes
 # Note: Most env vars are now in .zshenv to be available in all zsh instances
 # Only interactive-specific variables should be here
 
-# ==== Path Configuration ====
-# Ensure unique entries
-typeset -U path
-
+# ==== Full Path Configuration ====
+# Note: Essential paths (cargo, local/bin) already added before preflight
+# typeset -U ensures no duplicates
 path=(
     "$HOME/.cargo/bin"                  # Rust cargo binaries (sheldon, etc)
-    "$HOME/.npm-global/bin"            # local user npm bins
+    "$HOME/.npm-global/bin"             # local user npm bins
     "$HOME/.go/bin"                     # Go binaries (GOPATH is in .zshenv)
     /usr/local/sbin
     /usr/local/bin
@@ -133,7 +142,6 @@ path=(
     "$HOME/.nix-profile/bin"
 )
 
-# Export the constructed PATH
 export PATH
 
 # FPATH: Directories zsh searches for functions and completions
