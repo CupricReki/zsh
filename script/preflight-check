@@ -3,48 +3,62 @@
 # Validates required tools and versions before loading config
 
 # ================================================
-# Requirements Check
+# Requirements Check with Auto-Fix
 # ================================================
+
+# Check if this is first run (no flag file exists)
+_first_run_flag="${ZSH_CACHE_DIR:-$HOME/.cache/zsh}/.preflight-complete"
+_is_first_run=false
+
+if [[ ! -f "$_first_run_flag" ]]; then
+  _is_first_run=true
+fi
 
 # Essential tools required for full functionality
 _required_tools=(
-  "git:git"
-  "curl:curl"
-  "fzf:fzf (git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install)"
-  "fd:fd-find or fd (install via package manager)"
-  "cargo:rust and cargo (curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh)"
-  "sheldon:sheldon (cargo install sheldon)"
-  "tree:tree (install via package manager)"
+  "git:git:false"
+  "curl:curl:false"
+  "fzf:fzf:git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install"
+  "fd:fd:false"
+  "cargo:cargo:curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+  "sheldon:sheldon:cargo install sheldon"
+  "tree:tree:false"
 )
 
-# Version requirements (tool:min_version)
+# Version requirements (tool:min_version:fix_command)
 _version_requirements=(
-  "fzf:0.40.0"
-  "zsh:5.8"
+  "fzf:0.40.0:cd ~/.fzf && git pull && ./install"
+  "zsh:5.8:false"
 )
 
 # Check for missing required tools
 _missing_required=()
+_fixable_missing=()
+
 for tool_entry in "${_required_tools[@]}"; do
-  tool="${tool_entry%%:*}"
-  desc="${tool_entry#*:}"
+  IFS=':' read -r tool desc fix_cmd <<< "$tool_entry"
   if ! command -v "$tool" &> /dev/null; then
     _missing_required+=("  - $desc")
+    if [[ "$fix_cmd" != "false" ]]; then
+      _fixable_missing+=("$tool:$desc:$fix_cmd")
+    fi
   fi
 done
 
 # Check versions for installed tools
 _version_warnings=()
+_fixable_versions=()
 
 # Check fzf version
 if command -v fzf &> /dev/null; then
   _fzf_version=$(fzf --version 2>/dev/null | cut -d' ' -f1)
   _fzf_min="0.40.0"
   if [[ -n "$_fzf_version" ]]; then
-    # Simple version comparison (assumes semantic versioning)
     if [[ "$(printf '%s\n' "$_fzf_min" "$_fzf_version" | sort -V | head -n1)" != "$_fzf_min" ]]; then
       _version_warnings+=("  - fzf $_fzf_version is older than recommended $_fzf_min")
-      _version_warnings+=("    Upgrade: git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install")
+      if [[ -d ~/.fzf ]]; then
+        _fixable_versions+=("fzf:Upgrade fzf to $_fzf_min:cd ~/.fzf && git pull && ./install")
+      fi
     fi
   fi
 fi
@@ -55,12 +69,14 @@ _zsh_min="5.8"
 if [[ -n "$_zsh_version" ]]; then
   if [[ "$(printf '%s\n' "$_zsh_min" "$_zsh_version" | sort -V | head -n1)" != "$_zsh_min" ]]; then
     _version_warnings+=("  - zsh $_zsh_version is older than required $_zsh_min")
-    _version_warnings+=("    Upgrade via your package manager")
+    _version_warnings+=("    Manual upgrade required via package manager")
   fi
 fi
 
-# Display warnings
+# Display warnings and offer fixes
+_has_issues=false
 if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]]; then
+  _has_issues=true
   echo "" >&2
   
   if [[ ${#_missing_required[@]} -gt 0 ]]; then
@@ -74,13 +90,73 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
     printf '%s\n' "${_version_warnings[@]}" >&2
     echo "" >&2
   fi
-  
-  echo "Some functionality may not work correctly." >&2
-  echo "See README.md for installation instructions." >&2
+fi
+
+# On first run or if issues exist, offer to fix
+if [[ "$_is_first_run" == "true" ]] && [[ "$_has_issues" == "true" ]]; then
+  if [[ ${#_fixable_missing[@]} -gt 0 ]] || [[ ${#_fixable_versions[@]} -gt 0 ]]; then
+    echo "Would you like to automatically fix these issues? (y/n)" >&2
+    read -q "REPLY?> " >&2
+    echo "" >&2
+    
+    if [[ $REPLY == "y" ]]; then
+      echo "" >&2
+      echo "Installing/updating tools..." >&2
+      echo "" >&2
+      
+      # Fix missing tools
+      for fix_entry in "${_fixable_missing[@]}"; do
+        IFS=':' read -r tool desc fix_cmd <<< "$fix_entry"
+        echo "Installing $desc..." >&2
+        eval "$fix_cmd"
+        if [[ $? -eq 0 ]]; then
+          echo "✓ $desc installed successfully" >&2
+        else
+          echo "✗ Failed to install $desc" >&2
+        fi
+        echo "" >&2
+      done
+      
+      # Fix version issues
+      for fix_entry in "${_fixable_versions[@]}"; do
+        IFS=':' read -r tool desc fix_cmd <<< "$fix_entry"
+        echo "$desc..." >&2
+        eval "$fix_cmd"
+        if [[ $? -eq 0 ]]; then
+          echo "✓ $tool updated successfully" >&2
+        else
+          echo "✗ Failed to update $tool" >&2
+        fi
+        echo "" >&2
+      done
+      
+      echo "Setup complete! Restart your shell: exec zsh" >&2
+      echo "" >&2
+    else
+      echo "" >&2
+      echo "Skipped automatic fixes." >&2
+      echo "See README.md for manual installation instructions." >&2
+      echo "" >&2
+    fi
+  else
+    echo "Manual installation required. See README.md for instructions." >&2
+    echo "" >&2
+  fi
+elif [[ "$_has_issues" == "true" ]]; then
+  # Not first run, just show info
+  echo "Run with --fix to attempt automatic fixes, or see README.md" >&2
   echo "" >&2
 fi
 
-# Cleanup
-unset _required_tools _version_requirements _missing_required _version_warnings
-unset tool_entry tool desc _fzf_version _fzf_min _zsh_version _zsh_min
+# Create flag file after first run (whether fixed or not)
+if [[ "$_is_first_run" == "true" ]]; then
+  mkdir -p "$(dirname "$_first_run_flag")"
+  touch "$_first_run_flag"
+fi
 
+# Cleanup
+unset _first_run_flag _is_first_run _has_issues
+unset _required_tools _version_requirements _missing_required _version_warnings
+unset _fixable_missing _fixable_versions
+unset tool_entry tool desc fix_cmd fix_entry REPLY
+unset _fzf_version _fzf_min _zsh_version _zsh_min
