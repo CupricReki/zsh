@@ -21,7 +21,7 @@ fi
 _required_tools=(
   "git:git:false"
   "curl:curl:false"
-  "fzf:fzf:git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install"
+  "fzf:fzf:${ZSCRIPTS}/install-fzf"
   "fd:fd:false"
   "cargo:cargo:curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
   "sheldon:sheldon:cargo install sheldon"
@@ -30,7 +30,7 @@ _required_tools=(
 
 # Version requirements (tool:min_version:fix_command)
 _version_requirements=(
-  "fzf:0.40.0:cd ~/.fzf && git pull && ./install"
+  "fzf:0.40.0:${ZSCRIPTS}/install-fzf"
   "zsh:5.8:false"
 )
 
@@ -59,9 +59,7 @@ if command -v fzf &> /dev/null; then
   if [[ -n "$_fzf_version" ]]; then
     if [[ "$(printf '%s\n' "$_fzf_min" "$_fzf_version" | sort -V | head -n1)" != "$_fzf_min" ]]; then
       _version_warnings+=("  - fzf $_fzf_version is older than recommended $_fzf_min")
-      if [[ -d ~/.fzf ]]; then
-        _fixable_versions+=("fzf:Upgrade fzf to $_fzf_min:cd ~/.fzf && git pull && ./install")
-      fi
+      _fixable_versions+=("fzf:Upgrade fzf to $_fzf_min:${ZSCRIPTS}/install-fzf")
     fi
   fi
 fi

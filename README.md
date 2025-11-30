@@ -234,13 +234,19 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # Install Sheldon
 cargo install sheldon
 
-# Install fzf (latest version from source)
-git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
-~/.fzf/install
+# Install fzf (latest version)
+# Uses custom installer that installs to ~/.local/bin
+~/.config/zsh/script/install-fzf
 
 # Update fzf to latest
-cd ~/.fzf && git pull && ./install
+~/.config/zsh/script/install-fzf
 ```
+
+The custom fzf installer:
+- Builds/downloads latest fzf binary
+- Installs to `~/.local/bin/fzf` (standard location)
+- Does NOT modify your shell config files
+- Works with existing fzf integration in zshrc
 
 ## Performance Tips
 
