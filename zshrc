@@ -174,6 +174,7 @@ export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes
 typeset -U path
 
 path=(
+    "$HOME/.cargo/bin"                  # Rust cargo binaries (sheldon, etc)
     "$HOME/.npm-global/bin"            # local user npm bins
     /usr/local/sbin
     /usr/local/bin
@@ -235,9 +236,6 @@ fi
 # ================================================
 # Plugin Manager - sheldon (antibody deprecated)
 # ================================================
-
-# Ensure sheldon is in PATH (if installed via cargo)
-[[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"
 
 # Check if sheldon is available
 if ! command -v sheldon &> /dev/null; then
