@@ -309,15 +309,22 @@ export ENHANCD_FILTER="fzf --preview 'eza -al --tree --level 1 --group-directori
         :fzy
         :peco"
 
-# Additional completions
+# ================================================
+# Additional tool-specific completions
+# ================================================
+# These are custom completion files that aren't in sheldon
+
+# Docker completions (custom _docker file)
 if has docker && [[ -r $ZCOMPLETION/_docker ]]; then
   source "$ZCOMPLETION/_docker"
 fi
 
+# OSC (OSC 52 clipboard tool) completions
 if has osc && [[ -r $ZCOMPLETION/_osc ]]; then
   source "$ZCOMPLETION/_osc"
 fi
 
+# Tailscale completions (custom file)
 if has tailscale && [[ -r "$ZSH_CUSTOM/tailscale_zsh_completion.zsh" ]]; then
   source "$ZSH_CUSTOM/tailscale_zsh_completion.zsh"
 fi
@@ -338,10 +345,14 @@ export FZF_CTRL_T_COMMAND="rg --files --hidden --follow --glob '!.git/*' 2>/dev/
 export FZF_CTRL_T_OPTS="--reverse --preview '$ZSCRIPTS/fzf-preview.sh {}'"
 export FZF_ALT_C_COMMAND="fd --type d"
 export FZF_ALT_C_OPTS="--preview 'tree -C {} | head -100'"
+# Alternative: use fzf-preview.sh for more detailed previews
 # --preview '$ZSCRIPTS/fzf-preview.sh {}'
 
-# Tab completion
-# fzf-tab is loaded via sheldon
+# ================================================
+# Tab completion with fzf
+# ================================================
+# fzf-tab replaces default tab completion with fzf interface
+# Loaded via sheldon for better plugin management
 
 # Bind rebind file search to alt+t
 # bindkey -r '^T'
@@ -433,8 +444,14 @@ if has pyenv; then
   eval "$(pyenv virtualenv-init -)"
 fi
 
-# Syntax highlighting, autosuggestions, and powerlevel10k are loaded via sheldon
-# (with lazy loading for syntax highlighting and autosuggestions)
+# ================================================
+# Syntax highlighting & autosuggestions
+# ================================================
+# These are loaded via sheldon with lazy loading (zsh-defer)
+# This means they load after the prompt appears, making startup feel instant
+# - fast-syntax-highlighting: highlights commands as you type
+# - zsh-autosuggestions: suggests commands from history
+# - powerlevel10k: theme (loads immediately for prompt)
 
 # SSH Agent - Only run in login shells to avoid slowdown
 # This checks if an agent is running and reuses it, or starts a new one
