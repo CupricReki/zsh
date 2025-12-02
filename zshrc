@@ -16,8 +16,13 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
+# ==== Source Environment Variables ====
+# Load environment variables (PATH setup is below, before preflight checks)
+source "${HOME}/.config/zsh/zshenv"
+
 # ==== Early PATH Setup ====
 # Essential paths needed before preflight checks (e.g., cargo for sheldon)
+# This must be here, not in zshenv, to ensure preflight checks can find tools
 typeset -U path
 path=("$HOME/.local/bin" $path)
 

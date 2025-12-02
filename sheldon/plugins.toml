@@ -1,0 +1,108 @@
+# Sheldon plugin configuration
+# Fast plugin manager with lazy loading support
+# Docs: https://sheldon.cli.rs/
+
+shell = "zsh"
+
+# ============================================================================
+# Lazy loading helper - MUST load first
+# ============================================================================
+
+[plugins.zsh-defer]
+github = "romkatv/zsh-defer"
+
+# ============================================================================
+# Core plugins - Load immediately (essential for shell functionality)
+# ============================================================================
+
+[plugins.ohmyzsh-pip]
+github = "ohmyzsh/ohmyzsh"
+dir = "plugins/pip"
+
+[plugins.ohmyzsh-sudo]
+github = "ohmyzsh/ohmyzsh"
+dir = "plugins/sudo"
+
+[plugins.ohmyzsh-command-not-found]
+github = "ohmyzsh/ohmyzsh"
+dir = "plugins/command-not-found"
+
+[plugins.ohmyzsh-colored-man-pages]
+github = "ohmyzsh/ohmyzsh"
+dir = "plugins/colored-man-pages"
+
+[plugins.ohmyzsh-extract]
+github = "ohmyzsh/ohmyzsh"
+dir = "plugins/extract"
+
+[plugins.ohmyzsh-vi-mode]
+github = "ohmyzsh/ohmyzsh"
+dir = "plugins/vi-mode"
+
+# ============================================================================
+# Completion plugins - Load immediately (needed for tab completion)
+# ============================================================================
+
+[plugins.zsh-completions]
+github = "zsh-users/zsh-completions"
+
+[plugins.zsh-ssh]
+github = "sunlei/zsh-ssh"
+
+[plugins.fzf-tab]
+github = "Aloxaf/fzf-tab"
+
+# ============================================================================
+# Deferred plugins - Lazy load (load after prompt, faster startup)
+# ============================================================================
+
+[plugins.k]
+github = "supercrabtree/k"
+apply = ["defer"]
+
+[plugins.enhancd]
+github = "b4b4r07/enhancd"
+apply = ["defer"]
+
+[plugins.fast-syntax-highlighting]
+github = "zdharma-continuum/fast-syntax-highlighting"
+apply = ["defer"]
+
+[plugins.zsh-autosuggestions]
+github = "zsh-users/zsh-autosuggestions"
+apply = ["defer"]
+
+[plugins.zsh-system-clipboard]
+github = "kutsan/zsh-system-clipboard"
+apply = ["defer"]
+
+# ============================================================================
+# Theme - Load last
+# ============================================================================
+
+[plugins.powerlevel10k]
+github = "romkatv/powerlevel10k"
+
+# ============================================================================
+# Templates for lazy loading
+# ============================================================================
+
+[templates]
+defer = """
+{% for file in files %}
+zsh-defer source "{{ file }}"
+{% endfor %}
+"""
+
+# ============================================================================
+# Git plugin - Essential for git aliases and functions
+# ============================================================================
+
+[plugins.ohmyzsh-git]
+github = "ohmyzsh/ohmyzsh"
+dir = "plugins/git"
+
+# ============================================================================
+# Tmux plugin - Conditionally loaded in zshrc based on session
+# ============================================================================
+# Note: Removed from here, loaded conditionally in zshrc only when in tmux session

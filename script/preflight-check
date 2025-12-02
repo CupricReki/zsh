@@ -84,11 +84,11 @@ _fixable_versions=()
 if command -v fzf &> /dev/null; then
   _fzf_version=$(fzf --version 2>/dev/null | cut -d' ' -f1)
   _fzf_min="0.40.0"
-  
+
   # Validate version format
   if [[ -z "$_fzf_version" ]]; then
     _version_warnings+=("  - fzf version could not be determined")
-  elif [[ ! "$_fzf_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+  elif [[ ! "$_fzf_version" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)? ]]; then
     _version_warnings+=("  - fzf version format is invalid: $_fzf_version")
   elif [[ "$(printf '%s\n' "$_fzf_min" "$_fzf_version" | sort -V | head -n1)" != "$_fzf_min" ]]; then
     _version_warnings+=("  - fzf $_fzf_version is older than recommended $_fzf_min")
@@ -111,23 +111,23 @@ _has_issues=false
 if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]]; then
   _has_issues=true
   echo "" >&2
-  
+
   if [[ ${#_missing_required[@]} -gt 0 ]]; then
     echo "WARNING: Missing required tools:" >&2
     printf '%s\n' "${_missing_required[@]}" >&2
     echo "" >&2
   fi
-  
+
   if [[ ${#_version_warnings[@]} -gt 0 ]]; then
     echo "WARNING: Version issues detected:" >&2
     printf '%s\n' "${_version_warnings[@]}" >&2
     echo "" >&2
   fi
-  
+
   # Only offer auto-fix on first run ever (or if previous fix failed and user wants retry)
   _should_offer_fix=false
   _failed_fixes=()
-  
+
   if [[ "$_is_first_run" == "true" ]]; then
     _should_offer_fix=true
   elif [[ -f "$_failed_fixes_flag" ]]; then
@@ -135,7 +135,7 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
     while IFS= read -r line; do
       _failed_fixes+=("$line")
     done < "$_failed_fixes_flag"
-    
+
     # Check if any failed fixes are still needed
     for failed_tool in "${_failed_fixes[@]}"; do
       if ! command -v "$failed_tool" &> /dev/null; then
@@ -144,20 +144,20 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
       fi
     done
   fi
-  
+
   if [[ "$_should_offer_fix" == "true" ]]; then
   if [[ ${#_fixable_missing[@]} -gt 0 ]] || [[ ${#_fixable_versions[@]} -gt 0 ]]; then
     echo "Would you like to automatically fix these issues? (y/n)" >&2
     read -q "REPLY?> " >&2
     echo "" >&2
-    
+
     if [[ $REPLY == "y" ]]; then
       echo "" >&2
       echo "Installing/updating tools..." >&2
       echo "" >&2
-      
+
       _new_failed_fixes=()
-      
+
       # Fix missing tools
       for fix_entry in "${_fixable_missing[@]}"; do
         IFS=':' read -r tool desc fix_func <<< "$fix_entry"
@@ -170,7 +170,7 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
         fi
         echo "" >&2
       done
-      
+
       # Fix version issues
       for fix_entry in "${_fixable_versions[@]}"; do
         IFS=':' read -r tool desc fix_func <<< "$fix_entry"
@@ -183,14 +183,14 @@ if [[ ${#_missing_required[@]} -gt 0 ]] || [[ ${#_version_warnings[@]} -gt 0 ]];
         fi
         echo "" >&2
       done
-      
+
       # Handle failed fixes
       if [[ ${#_new_failed_fixes[@]} -gt 0 ]]; then
         echo "Some installations failed." >&2
         echo "Would you like to retry on next shell startup? (y/n)" >&2
         read -q "RETRY?> " >&2
         echo "" >&2
-        
+
         if [[ $RETRY == "y" ]]; then
           # Save failed tools to retry file
           mkdir -p "$(dirname "$_failed_fixes_flag")"
