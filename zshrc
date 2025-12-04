@@ -321,7 +321,8 @@ bindkey '^[t' fzf-file-widget
 # bindkey '^r' fzf-history-widget
 
 # Auto-completion case-insensitive
-zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
+# zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*' # Original: makes completion case-insensitive to all letters
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}' 'r:|=*' 'l:|=* r:|=*' # Fix: makes completion case-insensitive for lowercase patterns, but case-sensitive for uppercase patterns (so all-caps files can be matched with a capital letter)
 # disable sort when completing `git checkout`
 zstyle ':completion:*:git-checkout:*' sort false
 # set descriptions format to enable group support
