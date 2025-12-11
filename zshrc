@@ -16,24 +16,6 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# ==== Source Environment Variables ====
-# Load environment variables (PATH setup is below, before preflight checks)
-source "${HOME}/.config/zsh/zshenv"
-
-# ==== Early PATH Setup ====
-# Essential paths needed before preflight checks (e.g., cargo for sheldon)
-# This must be here, not in zshenv, to ensure preflight checks can find tools
-typeset -U path
-path=("$HOME/.local/bin" $path)
-
-# Rust/Cargo: source env file if exists, otherwise add bin directly
-if [[ -f "$HOME/.cargo/env" ]]; then
-  source "$HOME/.cargo/env"
-elif [[ -d "$HOME/.cargo/bin" ]]; then
-  path=("$HOME/.cargo/bin" $path)
-fi
-
-export PATH
 
 # ================================================
 # Preflight Checks
@@ -41,7 +23,7 @@ export PATH
 # Run preflight checks for required tools and versions
 source "$ZSCRIPTS/preflight-check"
 
-# Recommended tools (checked silently via has() function throughout config)
+# Recommended tools (checked silently via command_exists() function throughout config)
 # - eza/lsd: Modern ls replacement (for enhancd, fzf previews)
 # - rg (ripgrep): Fast grep (for fzf file search)
 # - bat: Syntax highlighting (for fzf previews)
@@ -52,6 +34,7 @@ source "$ZSCRIPTS/preflight-check"
 # - grc: Colorize output
 # - pdftotext: PDF extraction
 # - osc: OSC 52 clipboard support
+# - xdg-open (Linux) or open (macOS): File opener (for fzf_functions.zsh)
 #     device tree blobs requires dtc (extension dtb or dts)
 
 # Suggested
@@ -74,12 +57,12 @@ _comp_cache="${ZDOTDIR:-$HOME}/.zcompdump"
 _needs_rebuild=0
 
 # 1. Cache doesn't exist or is older than COMP_CACHE_HOURS
-if [[ ! -f "$_comp_cache" ]] || [[ -n ${_comp_cache}(#qN.mh+${COMP_CACHE_HOURS}) ]]; then
+if ! file_exists "$_comp_cache" || [[ -n ${_comp_cache}(#qN.mh+${COMP_CACHE_HOURS}) ]]; then
   _needs_rebuild=1
 fi
 
 # 2. Custom completion files have been modified recently
-if [[ $_needs_rebuild -eq 0 ]] && [[ -d "$ZCOMPLETION" ]]; then
+if [[ $_needs_rebuild -eq 0 ]] && dir_exists "$ZCOMPLETION"; then
   _comp_files=($ZCOMPLETION/**/*(.Nmh-24))
   if [[ ${#_comp_files} -gt 0 ]]; then
     _needs_rebuild=1
@@ -89,7 +72,7 @@ fi
 
 # 3. Check if custom completion directories are newer than cache
 # Only check ZCOMPLETION (custom completions), not all FPATH (system paths rarely change)
-if [[ $_needs_rebuild -eq 0 ]] && [[ -d "$ZCOMPLETION" ]]; then
+if [[ $_needs_rebuild -eq 0 ]] && dir_exists "$ZCOMPLETION"; then
   if [[ "$ZCOMPLETION" -nt "$_comp_cache" ]]; then
     _needs_rebuild=1
   fi
@@ -120,52 +103,17 @@ setopt correct
 # Custom environmental  variables
 # Local environment variables should go into $ZDOTDIR/.zshenv where $ZDOTDIR is home unless specified
 
-# Better questions
+# Better spelling correction prompt
 autoload -U colors && colors
-export SPROMPT="Correct $fg[red]%R$reset_color to $fg[green]%r?$reset_color (Yes, No, Abort, Edit) "
+export SPROMPT="Correct $fg[red]%R$reset_color → $fg[green]%r$reset_color? [(y)es/(N)o/(a)bort/(e)dit]: "
 
-# ==== Environment Variable Setup ====
-# Note: Most env vars are now in .zshenv to be available in all zsh instances
-# Only interactive-specific variables should be here
-
-# ==== Full Path Configuration ====
-# Note: Cargo/local paths added in early PATH setup, preserved via $path
-# typeset -U ensures no duplicates
-path=(
-    "$HOME/.npm-global/bin"             # local user npm bins
-    "$HOME/.go/bin"                     # Go binaries (GOPATH is in .zshenv)
-    /usr/local/sbin
-    /usr/local/bin
-    /usr/sbin
-    /usr/bin
-    /sbin
-    /bin
-    /usr/games
-    /usr/local/games
-    "$HOME/bin"                         # local bin
-    "$HOME/.local/bin"                  # local bin
-    "$ZSH_DIR/bin"                      # zsh-config bundled bin
-    "$ZSCRIPTS"
-    "/opt/android-sdk/platform-tools"   # Android platform tools
-    "$HOME/.nix-profile/bin"
-    $path                               # preserve existing paths (cargo, etc)
-)
-
-export PATH
-
-# FPATH: Directories zsh searches for functions and completions
-# Adding these directories makes:
-#   - Custom functions in $ZFUNC available for autoload
-#   - Custom completions in $ZCOMPLETION automatically discovered by compinit
-#   - Local overrides in $ZLOCAL take priority
-export FPATH="$ZCOMPLETION:$ZFUNC:$ZLOCAL:$FPATH"
 
 # Set terminal colors
 # Based on https://github.com/joshjon/bliss-dircolors
 # Cache dircolors output for performance
 _dircolors_cache="${ZSH_CACHE_DIR}/dircolors.sh"
-if [[ -f "$ZSH_CUSTOM/bliss.dircolors" ]]; then
-  if [[ ! -f "$_dircolors_cache" ]] || [[ "$ZSH_CUSTOM/bliss.dircolors" -nt "$_dircolors_cache" ]]; then
+if file_exists "$ZSH_CUSTOM/bliss.dircolors"; then
+  if ! file_exists "$_dircolors_cache" || [[ "$ZSH_CUSTOM/bliss.dircolors" -nt "$_dircolors_cache" ]]; then
     dircolors "$ZSH_CUSTOM/bliss.dircolors" > "$_dircolors_cache"
   fi
   source "$_dircolors_cache"
@@ -173,7 +121,7 @@ fi
 unset _dircolors_cache
 
 # Autoload all custom functions from the function directory
-if [[ -d "$ZFUNC" ]]; then
+if dir_exists "$ZFUNC"; then
   for func in "$ZFUNC"/*(N:t); do
     autoload -Uz "$func"
   done
@@ -182,14 +130,14 @@ fi
 # Note: extract function is loaded via sheldon (ohmyzsh-extract plugin)
 
 # # Load source alias files
-if [[ -d "$ZSH_CUSTOM/alias" ]]; then
+if dir_exists "$ZSH_CUSTOM/alias"; then
   for file in "$ZSH_CUSTOM/alias"/*.zsh(N); do
       source "$file"
   done
 fi
 
 # Load any local configuration
-if [[ -d "$ZLOCAL" ]]; then
+if dir_exists "$ZLOCAL"; then
   for file in "$ZLOCAL"/*.zsh(N); do
       source "$file"
   done
@@ -200,22 +148,20 @@ fi
 # ================================================
 
 # Check if sheldon is available
-if ! command -v sheldon &> /dev/null; then
+if ! command_exists sheldon; then
     echo "" >&2
-    echo "⚠️  sheldon not found" >&2
+    log warning "sheldon not found"
     echo "Install: cargo install sheldon" >&2
     echo "Info: https://github.com/rossmacarthur/sheldon" >&2
     echo "" >&2
     return 1
 fi
 
-# Helper: check command exists without invoking it
-has() { command -v "$1" >/dev/null 2>&1 }
 
 # Load all plugins via sheldon (configured in ~/.config/sheldon/plugins.toml)
 # This includes lazy loading for non-critical plugins
 if ! _sheldon_output=$(sheldon source 2>&1); then
-  echo "⚠️  Failed to load plugins via sheldon:" >&2
+  log warning "Failed to load plugins via sheldon:"
   echo "$_sheldon_output" >&2
   return 1
 fi
@@ -227,31 +173,19 @@ unset _sheldon_output
 # ================================================
 
 # kubectl plugin (only if kubectl is installed)
-if has kubectl; then
+if command_exists kubectl; then
   source <(kubectl completion zsh)
 fi
 
-# AWS CLI plugin (only if aws is installed)
-if has aws; then
-  # Load aws completions from system or oh-my-zsh
-  if [[ -f /usr/share/zsh/site-functions/_aws ]]; then
-    source /usr/share/zsh/site-functions/_aws
-  fi
-fi
-
-# Ansible plugin (only if ansible is installed)  
-if has ansible; then
-  # Ansible completions are usually in system paths
-  if [[ -f /usr/share/zsh/site-functions/_ansible ]]; then
-    source /usr/share/zsh/site-functions/_ansible
-  fi
-fi
+# AWS CLI and Ansible completions
+# These are auto-discovered by compinit from /usr/share/zsh/site-functions (in FPATH)
+# No manual sourcing needed - compinit handles them automatically
 
 # Tmux plugin (only if inside tmux session)
-if has tmux && [[ -n "$TMUX" ]]; then
+if command_exists tmux && [[ -n "$TMUX" ]]; then
   # Only load tmux plugin if actually in tmux session
   _tmux_plugin="${SHELDON_DATA_DIR}/repos/github.com/ohmyzsh/ohmyzsh/plugins/tmux/tmux.plugin.zsh"
-  if [[ -f "$_tmux_plugin" ]]; then
+  if file_exists "$_tmux_plugin"; then
     zsh-defer source "$_tmux_plugin"
   fi
   unset _tmux_plugin
@@ -390,14 +324,14 @@ zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-flags --preview-window=do
 zstyle ':fzf-tab:*' fzf-bindings 'ctrl-a:toggle-all'
 
 # Tmux configuration (plugin is lazy-loaded via sheldon)
-if has tmux; then
+if command_exists tmux; then
     export ZSH_TMUX_AUTOSTART=false
     export ZSH_TMUX_AUTOCONNECT=false
     export TMUX_OUTER_TERM="${TERM:-unknown}"
 fi
 
 # Python pyenv - lazy loaded for performance (~100-200ms saved)
-if has pyenv; then
+if command_exists pyenv; then
   export PATH="$HOME/.pyenv/bin:$PATH"
   # Define lazy-loading wrapper function
   pyenv() {
@@ -432,7 +366,7 @@ if [[ -o login ]]; then
     }
 
     # Source SSH settings if file exists and agent is still running
-    if [[ -f "${SSH_ENV}" ]]; then
+    if file_exists "${SSH_ENV}"; then
         . "${SSH_ENV}" > /dev/null
         # More efficient check: just test if the agent responds
         if ! kill -0 "${SSH_AGENT_PID}" 2>/dev/null; then
@@ -445,21 +379,30 @@ fi
 
 # Use system clipboard - must go after other keybindings
 # zsh-system-clipboard is loaded via sheldon (with lazy loading)
-if has wl-copy; then
+if command_exists wl-copy; then
   export ZSH_SYSTEM_CLIPBOARD_METHOD="wlc"        # Use wl-clipboard with "CLIPBOARD" selection
 fi
 
-# direnv is a tool that automatically sets/unsets environment variables when you enter/leave directories (think: auto-loading .env files, but on steroids).
-# direnv hook zsh outputs some shell code that integrates direnv into your shell's behavior.
-if has direnv; then
-  eval "$(direnv hook zsh)"
-fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f $ZSH_CUSTOM/p10k.zsh ]] || source $ZSH_CUSTOM/p10k.zsh
+file_exists "$ZSH_CUSTOM/p10k.zsh" && source "$ZSH_CUSTOM/p10k.zsh"
+
+# ==== Cleanup Initialization Helpers ====
+# Remove helper functions after initialization (only those not used by interactive functions)
+# Note: log and command_exists are kept because they're used by interactive functions:
+#   - log: used by bwe() and backup() in custom/alias/alias.zsh
+#   - command_exists: used by fif() in custom/fzf_functions.zsh
+unfunction dir_exists file_exists 2>/dev/null
 
 # ==== Profiling Output ====
 # Uncomment to see profiling results (must also uncomment zmodload at top)
 # echo "\n==== ZSH Startup Profiling ===="
 # zprof | head -20
 
+
+# Ollama ROCm GPU support
+export HSA_OVERRIDE_GFX_VERSION=10.3.0  # For Navi 21 (RX 6800/6900 XT)
+export HIP_VISIBLE_DEVICES=0
+export ROCM_PATH=/opt/rocm
+export PATH=$PATH:/opt/rocm/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/rocm/lib

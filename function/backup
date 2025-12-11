@@ -8,6 +8,9 @@
 #   backup -c mydir/                     → mydir.20231130_123456.tar.zst
 #   backup mydir/ /backups/mydir.bak     → /backups/mydir.bak
 
+# Load colors if not already loaded
+[[ -z "${fg[green]:-}" ]] && autoload -U colors && colors
+
 local compress=false src dest timestamp comp_method comp_ext comp_flag
 
 # Parse options
@@ -18,7 +21,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -*)
-            echo "Unknown option: $1" >&2
+            echo "$fg[red][X]$reset_color Unknown option: $1" >&2
             echo "Usage: backup [-c|--compress] <file|directory> [destination]" >&2
             return 1
             ;;
@@ -39,7 +42,7 @@ src="$1"
 timestamp=$(date +%Y%m%d_%H%M%S)
 
 if [[ ! -e "$src" ]]; then
-    echo "Error: '$src' does not exist" >&2
+    echo "$fg[red][X]$reset_color '$src' does not exist" >&2
     return 1
 fi
 
@@ -62,7 +65,7 @@ if $compress; then
         comp_ext="tar.gz"
         comp_flag="-z"
     else
-        echo "Error: No compression tools found (zstd, xz, bzip2, or gzip required)" >&2
+        echo "$fg[red][X]$reset_color No compression tools found (zstd, xz, bzip2, or gzip required)" >&2
         return 1
     fi
 fi
@@ -78,7 +81,7 @@ fi
 
 # Check if destination exists
 if [[ -e "$dest" ]]; then
-    echo "Warning: '$dest' already exists" >&2
+    echo "$fg[yellow][!]$reset_color '$dest' already exists" >&2
     read -q "REPLY?Overwrite? (y/n) "
     echo
     [[ $REPLY != "y" ]] && return 1
@@ -86,21 +89,21 @@ fi
 
 # Perform backup
 if $compress; then
-    echo "Backing up: $src → $dest (using $comp_method)"
+    echo "$fg[blue][i]$reset_color Backing up: $src → $dest (using $comp_method)"
     if tar "$comp_flag" -cf "$dest" -C "$(dirname "$src")" "$(basename "$src")"; then
-        echo "✓ Compressed backup complete: $dest"
+        echo "$fg[green]Compressed backup complete: $dest$reset_color"
         du -sh "$dest"
     else
-        echo "✗ Backup failed" >&2
+        echo "$fg[red][X]$reset_color Backup failed" >&2
         return 1
     fi
 else
-    echo "Backing up: $src → $dest"
+    echo "$fg[blue][i]$reset_color Backing up: $src → $dest"
     if rsync -a --info=progress2 "$src" "$dest"; then
-        echo "✓ Backup complete: $dest"
+        echo "$fg[green]Backup complete: $dest$reset_color"
         du -sh "$dest"
     else
-        echo "✗ Backup failed" >&2
+        echo "$fg[red][X]$reset_color Backup failed" >&2
         return 1
     fi
 fi

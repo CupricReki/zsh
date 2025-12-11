@@ -221,6 +221,7 @@ sheldon lock --update
 ### Recommended
 - **rg** (ripgrep) - Fast grep alternative (fzf file search)
 - **bat** - Better cat with syntax highlighting (fzf previews)
+- **zoxide** - Smart cd replacement (alternative to enhancd)
 - **git-delta** - Better git diffs
 - **nvim** - Modern vim
 - **pandoc** - Universal document converter
@@ -228,6 +229,7 @@ sheldon lock --update
 - **grc** - Colorize command output
 - **pdftotext** - PDF text extraction
 - **osc** - OSC 52 terminal clipboard support (`go install github.com/theimpostor/osc@latest`)
+- **xdg-open** (Linux) or **open** (macOS) - File opener (for fzf_functions.zsh file opening)
 
 ### Install Required Tools
 

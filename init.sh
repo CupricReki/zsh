@@ -14,6 +14,39 @@ LOCAL_ANSIBLE_DIR="$HOME/ansible"
 TEMP_DIR="/tmp/ansible_bootstrap_zsh" # Use a system temp directory
 ZSH_CONFIG_DIR="$HOME/.config/zsh"
 
+# --- Logging Function (bash-compatible) ---
+# Unified logging function for consistent colored output
+# Usage: log <level> <message>
+log() {
+    local level="$1"
+    shift
+    local message="$*"
+    
+    case "$level" in
+        success)
+            echo -e "\033[0;32m${message}\033[0m" >&2
+            ;;
+        error)
+            echo -e "\033[0;31m[X]\033[0m ${message}" >&2
+            ;;
+        warning)
+            echo -e "\033[0;33m[!]\033[0m ${message}" >&2
+            ;;
+        info)
+            echo -e "\033[0;34m[i]\033[0m ${message}" >&2
+            ;;
+        debug)
+            [[ -n "${DEBUG:-}" ]] && echo -e "\033[0;90m[DEBUG]\033[0m ${message}" >&2
+            ;;
+        notice)
+            echo -e "\033[0;36m[~]\033[0m ${message}" >&2
+            ;;
+        *)
+            echo "$message" >&2
+            ;;
+    esac
+}
+
 # --- Main Script ---
 echo "--- Starting Zsh Local Bootstrap via Ansible ---"
 
@@ -22,13 +55,13 @@ echo ""
 echo "Preflight: Checking dependencies..."
 
 if ! command -v sheldon &> /dev/null; then
-    echo "⚠️  sheldon is not installed"
+    log warning "sheldon is not installed"
     echo "Installing sheldon (required for plugin management)..."
     
     if [[ -x "$ZSH_CONFIG_DIR/script/ensure-sheldon" ]]; then
         "$ZSH_CONFIG_DIR/script/ensure-sheldon"
     else
-        echo "Error: ensure-sheldon script not found at $ZSH_CONFIG_DIR/script/ensure-sheldon"
+        log error "ensure-sheldon script not found at $ZSH_CONFIG_DIR/script/ensure-sheldon"
         echo "Please install sheldon manually:"
         echo "  cargo install sheldon"
         echo "  OR"
@@ -36,36 +69,36 @@ if ! command -v sheldon &> /dev/null; then
         exit 1
     fi
 else
-    echo "✓ sheldon is installed ($(sheldon --version))"
+    log success "sheldon is installed ($(sheldon --version))"
 fi
 
 echo ""
 
 # Check if local ansible directory exists
 if [[ -d "$LOCAL_ANSIBLE_DIR" ]]; then
-    echo "STEP 1: Found local Ansible directory at ${LOCAL_ANSIBLE_DIR}"
-    echo "STEP 2: Executing the Zsh local setup script..."
+    log info "Found local Ansible directory at ${LOCAL_ANSIBLE_DIR}"
+    log info "Executing the Zsh local setup script..."
     "${LOCAL_ANSIBLE_DIR}/scripts/setup_zsh_local/run.sh"
 else
-    echo "STEP 1: Local Ansible directory not found, cloning from ${ANSIBLE_PROJECT_REPO}..."
+    log info "Local Ansible directory not found, cloning from ${ANSIBLE_PROJECT_REPO}..."
     
     # 1. Clean up any previous temporary directory
     rm -rf "${TEMP_DIR}"
 
     # 2. Clone the Ansible project
-    echo "STEP 2: Cloning Ansible project to ${TEMP_DIR}..."
+    log info "Cloning Ansible project to ${TEMP_DIR}..."
     git clone "${ANSIBLE_PROJECT_REPO}" "${TEMP_DIR}"
 
     # 3. Execute the local bootstrap script from the cloned repository
-    echo "STEP 3: Executing the Zsh local setup script..."
+    log info "Executing the Zsh local setup script..."
     "${TEMP_DIR}/scripts/setup_zsh_local/run.sh"
 
     # 4. Cleanup
-    echo "STEP 4: Cleaning up temporary directory..."
+    log info "Cleaning up temporary directory..."
     rm -rf "${TEMP_DIR}"
 fi
 
 echo ""
-echo "--- Zsh Bootstrap Complete! ---"
+log success "Zsh Bootstrap Complete!"
 
 

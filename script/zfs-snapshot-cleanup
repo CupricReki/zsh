@@ -1,0 +1,349 @@
+#!/usr/bin/env bash
+# ZFS Snapshot Cleanup Script
+# Deletes ZFS snapshots older than a specified date
+# Usage: zfs-snapshot-cleanup [OPTIONS] <days|date> [pool|dataset]
+
+set -e
+
+# ANSI color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+RESET='\033[0m'
+
+# Default values
+DRY_RUN=true
+DAYS=""
+POOL=""
+SHOW_SPACE=true
+
+# Logging function
+log() {
+    local level="$1"
+    shift
+    local message="$*"
+    
+    case "$level" in
+        success)
+            echo -e "${GREEN}${message}${RESET}" >&2
+            ;;
+        error)
+            echo -e "${RED}[X]${RESET} ${message}" >&2
+            ;;
+        warning)
+            echo -e "${YELLOW}[!]${RESET} ${message}" >&2
+            ;;
+        info)
+            echo -e "${BLUE}[i]${RESET} ${message}" >&2
+            ;;
+        notice)
+            echo -e "${CYAN}[~]${RESET} ${message}" >&2
+            ;;
+        *)
+            echo "$message" >&2
+            ;;
+    esac
+}
+
+# Show help
+show_help() {
+    cat << EOF
+Usage: $0 [OPTIONS] <days|date> [pool|dataset]
+
+Delete ZFS snapshots older than a specified date.
+
+Arguments:
+  days|date              Number of days (e.g., 30) or date (YYYY-MM-DD)
+  pool|dataset           Optional: specific pool or dataset (default: all)
+
+Options:
+  --execute, --force     Actually delete snapshots (default: dry-run)
+  --no-space            Don't calculate/show saved space
+  -h, --help            Show this help message
+
+Examples:
+  $0 30                 # Dry-run: show snapshots older than 30 days
+  $0 30 --execute       # Delete snapshots older than 30 days
+  $0 2024-01-01         # Dry-run: show snapshots older than Jan 1, 2024
+  $0 7 tank             # Dry-run: show snapshots older than 7 days in 'tank' pool
+  $0 30 tank/dataset --execute  # Delete snapshots older than 30 days in tank/dataset
+
+Note: This script requires root/sudo privileges to destroy snapshots.
+EOF
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --execute|--force)
+            DRY_RUN=false
+            shift
+            ;;
+        --no-space)
+            SHOW_SPACE=false
+            shift
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -*)
+            log error "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
+        *)
+            if [[ -z "$DAYS" ]]; then
+                DAYS="$1"
+            elif [[ -z "$POOL" ]]; then
+                POOL="$1"
+            else
+                log error "Too many arguments"
+                show_help
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Check if days/date is provided
+if [[ -z "$DAYS" ]]; then
+    log error "Days or date must be specified"
+    show_help
+    exit 1
+fi
+
+# Check if zfs command exists
+if ! command -v zfs &> /dev/null; then
+    log error "zfs command not found. ZFS must be installed."
+    exit 1
+fi
+
+# Determine cutoff date
+CUTOFF_DATE=""
+if [[ "$DAYS" =~ ^[0-9]+$ ]]; then
+    # Number of days
+    if [[ "$(uname)" == "Darwin" ]]; then
+        # macOS date command
+        CUTOFF_DATE=$(date -v-${DAYS}d +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$(date -v-${DAYS}d +%Y-%m-%d)" +%s)
+    else
+        # Linux date command
+        CUTOFF_DATE=$(date -d "${DAYS} days ago" +%s)
+    fi
+else
+    # Date string (YYYY-MM-DD)
+    if [[ "$(uname)" == "Darwin" ]]; then
+        CUTOFF_DATE=$(date -j -f "%Y-%m-%d" "$DAYS" +%s 2>/dev/null)
+    else
+        CUTOFF_DATE=$(date -d "$DAYS" +%s 2>/dev/null)
+    fi
+    if [[ -z "$CUTOFF_DATE" ]]; then
+        log error "Invalid date format: $DAYS (expected YYYY-MM-DD or number of days)"
+        exit 1
+    fi
+fi
+
+# Format cutoff date for display
+if [[ "$(uname)" == "Darwin" ]]; then
+    CUTOFF_DISPLAY=$(date -r "$CUTOFF_DATE" +"%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "$DAYS days ago")
+else
+    CUTOFF_DISPLAY=$(date -d "@$CUTOFF_DATE" +"%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "$DAYS days ago")
+fi
+
+# Build zfs list command
+ZFS_LIST_CMD="zfs list -t snapshot -H -o name,creation,used"
+if [[ -n "$POOL" ]]; then
+    ZFS_LIST_CMD="$ZFS_LIST_CMD -r $POOL"
+fi
+
+# Collect snapshots to delete (store all data from first query to avoid re-fetching)
+SNAPSHOTS_TO_DELETE=()
+SNAPSHOT_DETAILS=()
+TOTAL_USED_BYTES=0
+
+log info "Finding snapshots older than: $CUTOFF_DISPLAY"
+if [[ -n "$POOL" ]]; then
+    log info "Pool/Dataset: $POOL"
+fi
+echo ""
+
+# Parse zfs list output - collect all data in one pass
+while IFS=$'\t' read -r name creation used; do
+    # Skip empty lines
+    [[ -z "$name" ]] && continue
+    
+    # Parse creation date
+    if [[ "$(uname)" == "Darwin" ]]; then
+        SNAPSHOT_DATE=$(date -j -f "%a %b %d %H:%M %Y" "$creation" +%s 2>/dev/null || \
+                       date -j -f "%Y-%m-%d %H:%M:%S" "$creation" +%s 2>/dev/null || \
+                       echo "")
+    else
+        SNAPSHOT_DATE=$(date -d "$creation" +%s 2>/dev/null || echo "")
+    fi
+    
+    # Skip if we couldn't parse the date
+    if [[ -z "$SNAPSHOT_DATE" ]]; then
+        log warning "Could not parse date for snapshot: $name"
+        continue
+    fi
+    
+    # Check if snapshot is older than cutoff
+    if [[ "$SNAPSHOT_DATE" -lt "$CUTOFF_DATE" ]]; then
+        SNAPSHOTS_TO_DELETE+=("$name")
+        
+        # Store details for later display (already have the data, no need to re-fetch)
+        SNAPSHOT_DETAILS+=("$name|$creation|$used")
+        
+        # Calculate total space if showing space
+        if [[ "$SHOW_SPACE" == "true" ]] && [[ -n "$used" ]] && [[ "$used" != "0" ]] && [[ "$used" != "-" ]]; then
+            SIZE_NUM=$(echo "$used" | sed 's/[^0-9.]//g')
+            SIZE_UNIT=$(echo "$used" | sed 's/[0-9.]//g' | tr '[:lower:]' '[:upper:]')
+            
+            if [[ -n "$SIZE_NUM" ]] && [[ "$SIZE_NUM" != "0" ]]; then
+                case "$SIZE_UNIT" in
+                    K|KB) MULTIPLIER=1024 ;;
+                    M|MB) MULTIPLIER=1048576 ;;
+                    G|GB) MULTIPLIER=1073741824 ;;
+                    T|TB) MULTIPLIER=1099511627776 ;;
+                    *) MULTIPLIER=1 ;;
+                esac
+                
+                BYTES=$(awk "BEGIN {printf \"%.0f\", $SIZE_NUM * $MULTIPLIER}")
+                TOTAL_USED_BYTES=$((TOTAL_USED_BYTES + BYTES))
+            fi
+        fi
+    fi
+done < <($ZFS_LIST_CMD 2>/dev/null || true)
+
+# Check if any snapshots were found
+if [[ ${#SNAPSHOTS_TO_DELETE[@]} -eq 0 ]]; then
+    log success "No snapshots found older than $CUTOFF_DISPLAY"
+    exit 0
+fi
+
+# Display snapshots to be deleted
+log notice "Found ${#SNAPSHOTS_TO_DELETE[@]} snapshot(s) to delete:"
+echo ""
+
+# Display snapshot details in compact table format
+if [[ "$SHOW_SPACE" == "true" ]]; then
+    # Header with size column
+    printf "  %-50s  %-16s  %s\n" "SNAPSHOT" "CREATED" "SIZE"
+    printf "  %s  %s  %s\n" "$(printf '%.0s-' {1..50})" "$(printf '%.0s-' {1..16})" "$(printf '%.0s-' {1..10})"
+else
+    # Header without size column
+    printf "  %-50s  %s\n" "SNAPSHOT" "CREATED"
+    printf "  %s  %s\n" "$(printf '%.0s-' {1..50})" "$(printf '%.0s-' {1..16})"
+fi
+
+for detail in "${SNAPSHOT_DETAILS[@]}"; do
+    IFS='|' read -r name created used <<< "$detail"
+    
+    # Format date more compactly (YYYY-MM-DD HH:MM)
+    if [[ "$created" != "unknown" ]]; then
+        if [[ "$(uname)" == "Darwin" ]]; then
+            if date_str=$(date -j -f "%a %b %d %H:%M %Y" "$created" +"%Y-%m-%d %H:%M" 2>/dev/null) || \
+               date_str=$(date -j -f "%Y-%m-%d %H:%M:%S" "$created" +"%Y-%m-%d %H:%M" 2>/dev/null); then
+                created="$date_str"
+            fi
+        else
+            if date_str=$(date -d "$created" +"%Y-%m-%d %H:%M" 2>/dev/null); then
+                created="$date_str"
+            fi
+        fi
+    fi
+    
+    # Single line format: name, date, size (if shown)
+    if [[ "$SHOW_SPACE" == "true" ]]; then
+        printf "  %-50s  %-16s  %s\n" "$name" "$created" "${used:-N/A}"
+    else
+        printf "  %-50s  %s\n" "$name" "$created"
+    fi
+done
+echo ""
+
+# Show total space if calculated
+if [[ "$SHOW_SPACE" == "true" ]] && [[ $TOTAL_USED_BYTES -gt 0 ]]; then
+    if command -v numfmt &> /dev/null; then
+        TOTAL_HUMAN=$(numfmt --to=iec-i --suffix=B "$TOTAL_USED_BYTES")
+    else
+        if [[ $TOTAL_USED_BYTES -ge 1099511627776 ]]; then
+            TOTAL_HUMAN=$(awk "BEGIN {printf \"%.2fT\", $TOTAL_USED_BYTES / 1099511627776}")
+        elif [[ $TOTAL_USED_BYTES -ge 1073741824 ]]; then
+            TOTAL_HUMAN=$(awk "BEGIN {printf \"%.2fG\", $TOTAL_USED_BYTES / 1073741824}")
+        elif [[ $TOTAL_USED_BYTES -ge 1048576 ]]; then
+            TOTAL_HUMAN=$(awk "BEGIN {printf \"%.2fM\", $TOTAL_USED_BYTES / 1048576}")
+        elif [[ $TOTAL_USED_BYTES -ge 1024 ]]; then
+            TOTAL_HUMAN=$(awk "BEGIN {printf \"%.2fK\", $TOTAL_USED_BYTES / 1024}")
+        else
+            TOTAL_HUMAN="${TOTAL_USED_BYTES}B"
+        fi
+    fi
+    
+    log notice "Total space that would be freed: $TOTAL_HUMAN"
+    echo ""
+fi
+
+# Show what would be done
+if [[ "$DRY_RUN" == "true" ]]; then
+    log warning "DRY RUN MODE - No snapshots will be deleted"
+    echo ""
+    log info "To actually delete these snapshots, run with --execute flag:"
+    echo "  $0 $DAYS ${POOL:+"$POOL "}--execute"
+    echo ""
+else
+    # Check for sudo if needed
+    if [[ $EUID -ne 0 ]] && ! sudo -n true 2>/dev/null; then
+        log error "This operation requires root privileges"
+        log info "Please run with sudo or as root"
+        exit 1
+    fi
+    
+    # Confirm deletion
+    log warning "About to delete ${#SNAPSHOTS_TO_DELETE[@]} snapshot(s)"
+    if [[ -t 0 ]]; then
+        read -p "Continue? (y/N): " -r CONFIRM
+        if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+            log info "Cancelled"
+            exit 0
+        fi
+    fi
+    
+    echo ""
+    log info "Deleting snapshots..."
+    
+    # Delete snapshots
+    DELETED=0
+    FAILED=0
+    for snapshot in "${SNAPSHOTS_TO_DELETE[@]}"; do
+        if [[ $EUID -eq 0 ]]; then
+            if zfs destroy "$snapshot" 2>/dev/null; then
+                log success "Deleted: $snapshot"
+                ((DELETED++))
+            else
+                log error "Failed to delete: $snapshot"
+                ((FAILED++))
+            fi
+        else
+            if sudo zfs destroy "$snapshot" 2>/dev/null; then
+                log success "Deleted: $snapshot"
+                ((DELETED++))
+            else
+                log error "Failed to delete: $snapshot"
+                ((FAILED++))
+            fi
+        fi
+    done
+    
+    echo ""
+    if [[ $FAILED -eq 0 ]]; then
+        log success "Successfully deleted $DELETED snapshot(s)"
+    else
+        log warning "Deleted $DELETED snapshot(s), $FAILED failed"
+        exit 1
+    fi
+fi
+

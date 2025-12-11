@@ -15,9 +15,10 @@ fif() {
     [[ -z "$file" ]] && return 1
     
     # Cross-platform file opener
-    if command -v xdg-open &>/dev/null; then
+    # Note: command_exists is defined in zshenv
+    if command_exists xdg-open; then
         opener=xdg-open  # Linux
-    elif command -v open &>/dev/null; then
+    elif command_exists open; then
         opener=open      # macOS
     else
         echo "Error: No file opener found (xdg-open or open)" >&2

@@ -1,0 +1,463 @@
+#!/usr/bin/env bash
+# Find Large Files
+# Quickly scans the drive for large files, skipping system locations and network mounts
+# Usage: find-large-files [OPTIONS]
+
+# Initialize variables before set -u
+INTERRUPTED=false
+FILES_FOUND=0
+FILES_CHECKED=0
+
+# Use -e but allow some commands to fail gracefully
+set -eo pipefail
+# Note: We use || true on commands that might fail but shouldn't stop execution
+
+# Interrupt handling
+cleanup_on_interrupt() {
+    INTERRUPTED=true
+    echo "" >&2
+    if [[ ${FILES_FOUND:-0} -gt 0 ]]; then
+        echo -e "\033[0;36m[~]\033[0m Interrupted. Found $FILES_FOUND large file(s) before cancellation." >&2
+    else
+        echo -e "\033[0;36m[~]\033[0m Interrupted. No large files found yet." >&2
+    fi
+    exit 130
+}
+
+trap cleanup_on_interrupt INT TERM
+
+# ANSI color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+RESET='\033[0m'
+
+# Logging function
+log() {
+    local level="$1"
+    shift
+    local message="$*"
+    
+    case "$level" in
+        success) echo -e "${GREEN}${message}${RESET}" >&2 ;;
+        error) echo -e "${RED}[X]${RESET} ${message}" >&2 ;;
+        warning) echo -e "${YELLOW}[!]${RESET} ${message}" >&2 ;;
+        info) echo -e "${BLUE}[i]${RESET} ${message}" >&2 ;;
+        notice) echo -e "${CYAN}[~]${RESET} ${message}" >&2 ;;
+        *) echo "$message" >&2 ;;
+    esac
+}
+
+# Default values
+SIZE_THRESHOLD="100M"
+SCAN_DIRS=()
+SHOW_DIRS=false
+TOP_N=50
+EXCLUDE_PATTERNS=()
+SHOW_PROGRESS=true
+STREAM_RESULTS=true
+
+# System directories to skip
+SYSTEM_EXCLUDES=(
+    "/proc"
+    "/sys"
+    "/dev"
+    "/run"
+    "/snap"
+    "/boot/efi"
+    "/boot/grub"
+    "/lost+found"
+    "/.snapshots"
+    "/.zfs"
+)
+
+# Network mount types to skip
+NETWORK_FS_TYPES=(
+    "nfs" "nfs4" "cifs" "smb" "smbfs"
+    "sshfs" "fuse.sshfs" "glusterfs" "ceph"
+)
+
+show_help() {
+    cat << EOF
+Usage: $0 [OPTIONS]
+
+Find large files on the system, skipping system directories and network mounts.
+
+Options:
+  -s, --size SIZE          Minimum file size (default: 100M)
+                          Supports: K, M, G, T (e.g., 500M, 1G)
+  -d, --dir DIR            Specific directory to scan (default: common locations)
+                          Can be specified multiple times
+  -D, --directories        Show directory sizes instead of individual files
+  -n, --top N              Show top N results (default: 50)
+  -e, --exclude PATTERN    Additional exclude pattern (can be used multiple times)
+  --no-stream              Collect all results before displaying (non-streaming)
+  --no-progress           Disable progress indicators
+  -h, --help               Show this help message
+
+Examples:
+  $0                                    # Find files >100M in common locations
+  $0 -s 500M                            # Find files >500M
+  $0 -d /home -s 1G                     # Find files >1G in /home
+  $0 -D -s 100M                         # Show directory sizes >100M
+  $0 -d /var/log -s 10M                 # Find large log files
+
+Performance:
+  - Uses 'dua' (if available) for fastest directory scanning
+  - Uses 'dust' (if available) for intuitive directory visualization
+  - Uses 'fd' (if available) for fast file finding
+  - Falls back to traditional tools if modern tools unavailable
+
+Install modern tools for better performance:
+  - dua: cargo install dua-cli
+  - dust: cargo install du-dust
+  - fd: cargo install fd-find
+EOF
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -s|--size) SIZE_THRESHOLD="$2"; shift 2 ;;
+        -d|--dir) SCAN_DIRS+=("$2"); shift 2 ;;
+        -D|--directories) SHOW_DIRS=true; shift ;;
+        -n|--top) TOP_N="$2"; shift 2 ;;
+        -e|--exclude) EXCLUDE_PATTERNS+=("$2"); shift 2 ;;
+        --no-stream) STREAM_RESULTS=false; shift ;;
+        --no-progress) SHOW_PROGRESS=false; shift ;;
+        -h|--help) show_help; exit 0 ;;
+        *) log error "Unknown option: $1"; show_help; exit 1 ;;
+    esac
+done
+
+# Get network mount points
+get_network_mounts() {
+    local network_mounts=()
+    
+    if [[ -f /proc/mounts ]]; then
+        while IFS= read -r line; do
+            local mount_point=$(echo "$line" | awk '{print $2}')
+            local fs_type=$(echo "$line" | awk '{print $3}')
+            
+            for net_fs in "${NETWORK_FS_TYPES[@]}"; do
+                if [[ "$fs_type" == "$net_fs" ]] || [[ "$fs_type" == "$net_fs"* ]]; then
+                    network_mounts+=("$mount_point")
+                    break
+                fi
+            done
+        done < /proc/mounts
+    fi
+    
+    if command -v findmnt &> /dev/null; then
+        while IFS= read -r mount_point; do
+            [[ -n "$mount_point" ]] && network_mounts+=("$mount_point")
+        done < <(findmnt -t "${NETWORK_FS_TYPES[@]}" -n -o TARGET 2>/dev/null || true)
+    fi
+    
+    printf '%s\n' "${network_mounts[@]}" | sort -u
+}
+
+# Check if path should be excluded
+should_exclude() {
+    local path="$1"
+    
+    # Never exclude paths that are explicitly in SCAN_DIRS (user-specified)
+    for explicit_dir in "${EXPLICIT_DIRS[@]}"; do
+        if [[ "$path" == "$explicit_dir" ]] || [[ "$path" == "$explicit_dir"/* ]]; then
+            return 1  # Don't exclude explicitly specified directories
+        fi
+    done
+    
+    # Check system excludes
+    for exclude in "${SYSTEM_EXCLUDES[@]}"; do
+        if [[ "$path" == "$exclude" ]] || [[ "$path" == "$exclude"/* ]]; then
+            return 0
+        fi
+    done
+    
+    # Check network mounts (but only if not explicitly specified)
+    while IFS= read -r mount_point; do
+        if [[ -n "$mount_point" ]] && ([[ "$path" == "$mount_point" ]] || [[ "$path" == "$mount_point"/* ]]); then
+            return 0
+        fi
+    done < <(get_network_mounts)
+    
+    return 1
+}
+
+# Convert size to bytes
+size_to_bytes() {
+    local size="$1"
+    local num="${size%[KMGTPkmgtp]}"
+    local unit="${size:${#num}}"
+    
+    case "${unit^^}" in
+        K) echo $((num * 1024)) ;;
+        M) echo $((num * 1048576)) ;;
+        G) echo $((num * 1073741824)) ;;
+        T) echo $((num * 1099511627776)) ;;
+        P) echo $((num * 1125899906842624)) ;;
+        *) echo $((num * 1048576)) ;; # Default to MB
+    esac
+}
+
+# Track explicitly specified directories (user-specified, not defaults)
+EXPLICIT_DIRS=("${SCAN_DIRS[@]}")
+
+# Determine scan directories
+if [[ ${#SCAN_DIRS[@]} -eq 0 ]]; then
+    SCAN_DIRS=(
+        "/home"
+        "/root"
+        "/tmp"
+        "/var/log"
+        "/var/cache"
+        "/var/tmp"
+        "/opt"
+        "/usr/local"
+        "/srv"
+    )
+    
+    # Filter out non-existent directories and network mounts (for defaults only)
+    network_mounts=$(get_network_mounts)
+    filtered_dirs=()
+    
+    for dir in "${SCAN_DIRS[@]}"; do
+        if [[ -d "$dir" ]]; then
+            is_network=false
+            while IFS= read -r mount; do
+                if [[ "$dir" == "$mount"* ]]; then
+                    is_network=true
+                    break
+                fi
+            done < <(echo "$network_mounts")
+            
+            if [[ "$is_network" == "false" ]]; then
+                filtered_dirs+=("$dir")
+            fi
+        fi
+    done
+    
+    SCAN_DIRS=("${filtered_dirs[@]}")
+else
+    # User explicitly specified directories - warn about network mounts but allow them
+    network_mounts=$(get_network_mounts)
+    for dir in "${SCAN_DIRS[@]}"; do
+        if [[ -d "$dir" ]]; then
+            while IFS= read -r mount; do
+                if [[ -n "$mount" ]] && ([[ "$dir" == "$mount" ]] || [[ "$dir" == "$mount"/* ]]); then
+                    log warning "Network mount detected: $dir"
+                    log info "Scanning network mount (default behavior overridden)"
+                    break
+                fi
+            done < <(echo "$network_mounts")
+        fi
+    done
+fi
+
+# Check for modern tools (only for directory mode)
+USE_DUA=false
+USE_DUST=false
+
+if command -v dua &> /dev/null 2>&1; then
+    USE_DUA=true
+elif command -v dust &> /dev/null 2>&1; then
+    USE_DUST=true
+fi
+
+# Offer to install missing tools if running interactively (for directory mode only)
+if [[ -t 0 ]] && [[ "$SHOW_DIRS" == "true" ]]; then
+    if [[ "$USE_DUA" == "false" ]] && [[ "$USE_DUST" == "false" ]]; then
+        if command -v cargo &> /dev/null; then
+            echo "" >&2
+            log warning "dua or dust recommended for directory scanning"
+            log info "Install: cargo install dua-cli"
+            echo "" >&2
+            
+            read -p "Install dua now? (y/N) " INSTALL_TOOLS
+            if [[ "${INSTALL_TOOLS,,}" == "y" ]]; then
+                echo "" >&2
+                log info "Installing dua..."
+                if cargo install dua-cli 2>&1; then
+                    USE_DUA=true
+                    log success "dua installed successfully"
+                else
+                    log warning "dua installation failed"
+                fi
+                echo "" >&2
+                hash -r 2>/dev/null || true
+            fi
+        fi
+    fi
+fi
+
+log info "Scanning for files larger than $SIZE_THRESHOLD..."
+log info "Scanning directories: ${SCAN_DIRS[*]}"
+echo ""
+
+THRESHOLD_BYTES=$(size_to_bytes "$SIZE_THRESHOLD")
+
+# Find large files or directories
+if [[ "$SHOW_DIRS" == "true" ]]; then
+    # Directory mode
+    log notice "Finding large directories..."
+    echo ""
+    
+    if [[ "$USE_DUA" == "true" ]]; then
+        # Use dua aggregate for directory scanning
+        dua_ignores=()
+        for exclude in "${SYSTEM_EXCLUDES[@]}"; do
+            dua_ignores+=("$exclude")
+        done
+        
+        while IFS= read -r mount_point; do
+            [[ -n "$mount_point" ]] && dua_ignores+=("$mount_point")
+        done < <(get_network_mounts)
+        
+        echo "  SIZE         PATH"
+        echo "  $(printf '%.0s-' {1..12})  $(printf '%.0s-' {1..60})"
+        
+        for dir in "${SCAN_DIRS[@]}"; do
+            if [[ -d "$dir" ]] && ! should_exclude "$dir"; then
+                # dua aggregate outputs: size path (space-separated, not tab)
+                dua aggregate --ignore-dirs "${dua_ignores[@]}" "$dir" 2>/dev/null | while IFS= read -r line; do
+                    [[ -z "$line" ]] && continue
+                    
+                    # Parse dua output: "1.2G /path/to/dir" (space-separated)
+                    size=$(echo "$line" | awk '{print $1}')
+                    path=$(echo "$line" | awk '{$1=""; print $0}' | xargs) # Remove size, trim whitespace
+                    
+                    [[ -z "$size" ]] || [[ -z "$path" ]] && continue
+                    
+                    # Parse dua output (e.g., "1.2G", "500M")
+                    size_num=$(echo "$size" | sed 's/[^0-9.]//g')
+                    size_unit=$(echo "$size" | sed 's/[0-9.]//g' | tr '[:lower:]' '[:upper:]')
+                    size_bytes=0
+                    case "$size_unit" in
+                        K|KB) size_bytes=$(awk "BEGIN {printf \"%.0f\", $size_num * 1024}") ;;
+                        M|MB) size_bytes=$(awk "BEGIN {printf \"%.0f\", $size_num * 1048576}") ;;
+                        G|GB) size_bytes=$(awk "BEGIN {printf \"%.0f\", $size_num * 1073741824}") ;;
+                        T|TB) size_bytes=$(awk "BEGIN {printf \"%.0f\", $size_num * 1099511627776}") ;;
+                        *) size_bytes=$size_num ;;
+                    esac
+                    
+                    # Filter by threshold and only show directories
+                    if [[ $size_bytes -ge $THRESHOLD_BYTES ]] && [[ -d "$path" ]]; then
+                        printf "  %-12s  %s\n" "$size" "$path"
+                    fi
+                done
+            fi
+        done | sort -hr | head -n "$TOP_N"
+        
+    elif [[ "$USE_DUST" == "true" ]]; then
+        # Use dust for directory visualization
+        dust_excludes=()
+        for exclude in "${SYSTEM_EXCLUDES[@]}"; do
+            dust_excludes+=("-x" "$exclude")
+        done
+        
+        while IFS= read -r mount_point; do
+            [[ -n "$mount_point" ]] && dust_excludes+=("-x" "$mount_point")
+        done < <(get_network_mounts)
+        
+        for dir in "${SCAN_DIRS[@]}"; do
+            if [[ -d "$dir" ]] && ! should_exclude "$dir"; then
+                dust -d 1 -n "$TOP_N" "${dust_excludes[@]}" "$dir" 2>/dev/null || true
+            fi
+        done
+    else
+        log error "dua or dust required for directory mode. Install: cargo install dua-cli"
+        exit 1
+    fi
+    
+else
+    # File mode - use find with native size filtering (most reliable)
+    log notice "Finding large files..."
+    echo ""
+    
+    # Convert size threshold to find format (e.g., 100M -> +100M)
+    FIND_SIZE="+${SIZE_THRESHOLD}"
+    
+    # Display header
+    echo "  SIZE         PATH"
+    echo "  $(printf '%.0s-' {1..12})  $(printf '%.0s-' {1..60})"
+    
+    # Build find exclude arguments
+    find_excludes=()
+    for exclude in "${SYSTEM_EXCLUDES[@]}"; do
+        find_excludes+=(-path "$exclude" -prune -o)
+    done
+    
+    # Add network mount excludes
+    while IFS= read -r mount_point; do
+        [[ -n "$mount_point" ]] && find_excludes+=(-path "$mount_point" -prune -o)
+    done < <(get_network_mounts)
+    
+    # Add user-specified excludes
+    for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+        find_excludes+=(-name "$pattern" -prune -o)
+    done
+    
+    # Find files using find with native size filtering
+    for dir in "${SCAN_DIRS[@]}"; do
+        if [[ -d "$dir" ]]; then
+            if [[ "${DEBUG:-}" == "true" ]]; then
+                log debug "Searching in: $dir"
+            fi
+            
+            # Use find with -size for efficient filtering at filesystem level
+            # Use process substitution to keep loop in main shell (preserves variable updates)
+            while IFS= read -r file; do
+                # Skip empty lines
+                [[ -z "$file" ]] && continue
+                
+                # Check if interrupted
+                if [[ "$INTERRUPTED" == "true" ]]; then
+                    break
+                fi
+                
+                ((FILES_CHECKED++)) || true
+                
+                # Get file size for display
+                if stat -c%s "$file" &>/dev/null 2>&1; then
+                    size_bytes=$(stat -c%s "$file" 2>/dev/null)
+                elif stat -f%z "$file" &>/dev/null 2>&1; then
+                    size_bytes=$(stat -f%z "$file" 2>/dev/null)
+                else
+                    size_bytes=0
+                fi
+                
+                # Convert to human-readable
+                if command -v numfmt &> /dev/null; then
+                    size_human=$(numfmt --to=iec-i --suffix=B "$size_bytes" 2>/dev/null || echo "???")
+                else
+                    if [[ $size_bytes -ge 1073741824 ]]; then
+                        size_human=$(awk "BEGIN {printf \"%.1fG\", $size_bytes / 1073741824}")
+                    elif [[ $size_bytes -ge 1048576 ]]; then
+                        size_human=$(awk "BEGIN {printf \"%.1fM\", $size_bytes / 1048576}")
+                    else
+                        size_human=$(awk "BEGIN {printf \"%.1fK\", $size_bytes / 1024}")
+                    fi
+                fi
+                
+                printf "  %-12s  %s\n" "$size_human" "$file"
+                ((FILES_FOUND++)) || true
+            done < <(find "$dir" "${find_excludes[@]}" -type f -size "$FIND_SIZE" -print 2>/dev/null || true)
+        fi
+    done
+    
+    echo ""
+    if [[ $FILES_FOUND -gt 0 ]]; then
+        log notice "Scan complete. Found $FILES_FOUND large file(s)"
+    else
+        log notice "Scan complete. No files found matching size threshold ($SIZE_THRESHOLD)"
+    fi
+fi
+
+echo ""
+log success "Scan complete"
+
+# Remove trap on normal exit
+trap - INT TERM

@@ -2,23 +2,21 @@
 # alias foobar="nocorrect foobar"
 # updated 20241130
 
-# Helper: check command exists without invoking it
-has() { command -v "$1" >/dev/null 2>&1 }
 
 # Check for ccat
-if has ccat; then
+if command_exists ccat; then
   alias cat='ccat'
 fi
 
 # Check for bat
-if has bat; then
+if command_exists bat; then
   alias cat="bat --pager=less --style=plain --wrap=character --theme='Coldark-Dark'"
   # the following breaks enhancd https://github.com/babarot/enhancd/issues/224
   # alias cat="bat --pager=less --color='always' --style=plain --wrap=character --theme='Coldark-Dark'"
 fi
 
 # Check for nvim
-if has nvim; then
+if command_exists nvim; then
   alias vi='nvim'
   alias vim='nvim'
   alias nvimconf='vi $HOME/.config/nvim/init.vim'
@@ -28,7 +26,7 @@ if has nvim; then
 fi
 
 # Check for apitude
-if has aptitude; then
+if command_exists aptitude; then
   alias apt='aptitude'
 fi
 
@@ -51,9 +49,9 @@ bwe() {
   local session
   if session=$(bw unlock --raw 2>/dev/null); then
     export BW_SESSION="$session"
-    echo "✓ Bitwarden unlocked successfully"
+    log success "Bitwarden unlocked successfully"
   else
-    echo "✗ Failed to unlock Bitwarden" >&2
+    log error "Failed to unlock Bitwarden"
     return 1
   fi
 }
@@ -86,10 +84,10 @@ backup() {
     
     echo "Backing up: $src → $dest"
     if rsync -a --info=progress2 "$src" "$dest"; then
-        echo "✓ Backup complete: $dest"
+        log success "Backup complete: $dest"
         du -sh "$dest"
     else
-        echo "✗ Backup failed" >&2
+        log error "Backup failed"
         return 1
     fi
 }

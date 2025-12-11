@@ -5,3 +5,8 @@ zlogin_local/*
 *.zwc
 .cache/antibody
 .zcompdump*
+
+# Nix build artifacts
+result
+result-*
+.direnv

@@ -1,31 +1,121 @@
 #!/usr/bin/env bash
 # Custom fzf installer
 # Builds and installs fzf binary without modifying shell config
+# Usage: install-fzf [--system|--system-wide]
 
 set -e
 
+# ANSI color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+RESET='\033[0m'
+
+# Parse arguments
+INSTALL_SYSTEM_WIDE=false
+for arg in "$@"; do
+  case "$arg" in
+    --system|--system-wide)
+      INSTALL_SYSTEM_WIDE=true
+      shift
+      ;;
+    -h|--help)
+      echo "Usage: $0 [--system|--system-wide] [--prebuilt|--pre-built]"
+      echo ""
+      echo "Options:"
+      echo "  --system, --system-wide    Install system-wide (requires sudo)"
+      echo "  --prebuilt, --pre-built    Use pre-built binary instead of building from source"
+      echo "  -h, --help                 Show this help message"
+      exit 0
+      ;;
+    *)
+      # Unknown argument, ignore (for backwards compatibility)
+      ;;
+  esac
+done
+
+# Determine install directory
+if [[ "$INSTALL_SYSTEM_WIDE" == "true" ]]; then
+  if ! command -v sudo &> /dev/null; then
+    echo -e "${RED}[X]${RESET} sudo not found. Cannot install system-wide." >&2
+    exit 1
+  fi
+  INSTALL_DIR="/usr/local/bin"
+  SUDO_CMD="sudo"
+else
+  # Offer system-wide installation if sudo is available
+  if command -v sudo &> /dev/null && [[ -t 0 ]]; then
+    echo -e "${BLUE}[i]${RESET} Install location options:"
+    echo "  1) User directory: ${HOME}/.local/bin (default, no sudo required)"
+    echo "  2) System-wide: /usr/local/bin (requires sudo)"
+    echo ""
+    read -p "Choose installation type [1/2] (default: 1): " install_choice
+    if [[ "${install_choice:-1}" == "2" ]]; then
+      INSTALL_SYSTEM_WIDE=true
+      INSTALL_DIR="/usr/local/bin"
+      SUDO_CMD="sudo"
+    else
+      INSTALL_DIR="${LOCAL_BIN:-${HOME}/.local/bin}"
+      SUDO_CMD=""
+    fi
+  else
+    INSTALL_DIR="${LOCAL_BIN:-${HOME}/.local/bin}"
+    SUDO_CMD=""
+  fi
+fi
+
 FZF_VERSION="${1:-master}"
-INSTALL_DIR="${LOCAL_BIN:-${HOME}/.local/bin}"
 TMP_DIR="/tmp/fzf-install-$$"
 
-echo "Installing fzf to ${INSTALL_DIR}..."
+echo -e "${BLUE}[i]${RESET} Installing fzf to ${INSTALL_DIR}..."
 
 # Create install directory if it doesn't exist
-mkdir -p "$INSTALL_DIR"
+if [[ -n "$SUDO_CMD" ]]; then
+  $SUDO_CMD mkdir -p "$INSTALL_DIR"
+else
+  mkdir -p "$INSTALL_DIR"
+fi
 
 # Clone fzf repository to temp directory
-echo "Cloning fzf repository..."
+echo -e "${BLUE}[i]${RESET} Cloning fzf repository..."
 git clone --depth 1 https://github.com/junegunn/fzf.git "$TMP_DIR"
 cd "$TMP_DIR"
 
 # Build binary
-echo "Building fzf binary..."
-if command -v go &> /dev/null; then
-    # Build from source if Go is available
-    go build -o fzf
-else
-    # Download pre-built binary
-    echo "Go not found, downloading pre-built binary..."
+_build_succeeded=false
+# Check for --prebuilt flag to skip building from source
+_use_prebuilt=false
+for arg in "$@"; do
+  case "$arg" in
+    --prebuilt|--pre-built)
+      _use_prebuilt=true
+      ;;
+  esac
+done
+
+if command -v go &> /dev/null && [[ "$_use_prebuilt" != "true" ]]; then
+    echo -e "${BLUE}[i]${RESET} Building fzf binary from source (Go detected)..."
+    # Set GOMODCACHE to user-writable location to avoid permission issues
+    export GOMODCACHE="${HOME}/.cache/go-mod"
+    mkdir -p "$GOMODCACHE"
+    # Temporarily disable set -e to handle build failure gracefully
+    set +e
+    go build -o fzf 2>&1
+    _build_status=$?
+    set -e
+    if [[ $_build_status -eq 0 ]] && [[ -f fzf ]]; then
+        _build_succeeded=true
+        echo -e "${GREEN}Build succeeded${RESET}"
+    else
+        echo -e "${YELLOW}[!]${RESET} Go build failed, falling back to pre-built binary..."
+        unset GOMODCACHE
+    fi
+fi
+
+# Use pre-built binary if Go build failed or Go not available
+if [[ "$_build_succeeded" != "true" ]]; then
+    echo -e "${BLUE}[i]${RESET} Downloading pre-built binary..."
     
     # Detect OS and architecture
     OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -35,7 +125,7 @@ else
         x86_64) ARCH="amd64" ;;
         aarch64|arm64) ARCH="arm64" ;;
         armv7l) ARCH="armv7" ;;
-        *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
+        *) echo -e "${RED}[X]${RESET} Unsupported architecture: $ARCH"; exit 1 ;;
     esac
     
     # Get latest release version
@@ -43,33 +133,59 @@ else
     
     # Download binary
     DOWNLOAD_URL="https://github.com/junegunn/fzf/releases/download/${LATEST_VERSION}/fzf-${LATEST_VERSION}-${OS}_${ARCH}.tar.gz"
-    echo "Downloading from: $DOWNLOAD_URL"
+    echo -e "${BLUE}[i]${RESET} Downloading from: $DOWNLOAD_URL"
     
     curl -sL "$DOWNLOAD_URL" | tar xz
 fi
 
 # Install binary
-echo "Installing binary to ${INSTALL_DIR}/fzf..."
-cp fzf "$INSTALL_DIR/"
-chmod +x "$INSTALL_DIR/fzf"
+echo -e "${BLUE}[i]${RESET} Installing binary to ${INSTALL_DIR}/fzf..."
+if [[ -n "$SUDO_CMD" ]]; then
+  $SUDO_CMD cp fzf "$INSTALL_DIR/"
+  $SUDO_CMD chmod +x "$INSTALL_DIR/fzf"
+else
+  cp fzf "$INSTALL_DIR/"
+  chmod +x "$INSTALL_DIR/fzf"
+fi
 
 # Cleanup
 cd /
 rm -rf "$TMP_DIR"
 
 echo ""
-echo "✓ fzf installed successfully to ${INSTALL_DIR}/fzf"
+echo -e "${GREEN}fzf installed successfully to ${INSTALL_DIR}/fzf${RESET}"
 echo ""
 echo "Version: $(${INSTALL_DIR}/fzf --version)"
 echo ""
 
+# Offer to clean up local installation if installing system-wide
+if [[ "$INSTALL_SYSTEM_WIDE" == "true" ]]; then
+  _local_bin="${LOCAL_BIN:-${HOME}/.local/bin}"
+  _local_fzf="${_local_bin}/fzf"
+  if [[ -f "$_local_fzf" ]]; then
+    echo -e "${YELLOW}[!]${RESET} Found existing local installation at $_local_fzf"
+    if [[ -t 0 ]]; then
+      read -p "Remove local installation? (y/N) " CLEANUP
+      if [[ "${CLEANUP,,}" == "y" ]]; then
+        rm -f "$_local_fzf"
+        echo -e "${GREEN}Local installation removed${RESET}"
+      else
+        echo -e "${BLUE}[i]${RESET} Local installation kept at $_local_fzf"
+        echo -e "${YELLOW}[!]${RESET} Note: System-wide installation at ${INSTALL_DIR}/fzf will take precedence if both are in PATH"
+      fi
+    else
+      echo -e "${BLUE}[i]${RESET} Local installation found at $_local_fzf (not removed in non-interactive mode)"
+    fi
+    echo ""
+  fi
+fi
+
 # Check if install dir is in PATH
 if [[ ":$PATH:" != *":${INSTALL_DIR}:"* ]]; then
-    echo "NOTE: ${INSTALL_DIR} is not in your PATH"
+    echo -e "${YELLOW}[!]${RESET} ${INSTALL_DIR} is not in your PATH"
     echo "It should be added by your zshrc configuration."
     echo ""
 fi
 
-echo "fzf shell integration is already configured in your zshrc"
-echo "Key bindings available: Ctrl+T, Ctrl+R, Alt+C"
+echo -e "${BLUE}[i]${RESET} fzf shell integration is defined in zsh configuration"
 

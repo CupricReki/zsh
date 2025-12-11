@@ -4,6 +4,39 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+# --- Logging Function (bash-compatible) ---
+# Unified logging function for consistent colored output
+# Usage: log <level> <message>
+log() {
+    local level="$1"
+    shift
+    local message="$*"
+    
+    case "$level" in
+        success)
+            echo -e "\033[0;32m${message}\033[0m" >&2
+            ;;
+        error)
+            echo -e "\033[0;31m[X]\033[0m ${message}" >&2
+            ;;
+        warning)
+            echo -e "\033[0;33m[!]\033[0m ${message}" >&2
+            ;;
+        info)
+            echo -e "\033[0;34m[i]\033[0m ${message}" >&2
+            ;;
+        debug)
+            [[ -n "${DEBUG:-}" ]] && echo -e "\033[0;90m[DEBUG]\033[0m ${message}" >&2
+            ;;
+        notice)
+            echo -e "\033[0;36m[~]\033[0m ${message}" >&2
+            ;;
+        *)
+            echo "$message" >&2
+            ;;
+    esac
+}
+
 show_help() {
   cat <<EOF
 Usage: ${0##*/} [-d DIR] [-c CUEFILE] [-f AUDIOFILE] [--delete-original]
@@ -47,7 +80,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      echo "❌ Unknown argument: $1"
+      log error "Unknown argument: $1"
       show_help
       exit 1
       ;;
@@ -63,11 +96,11 @@ shopt -u nullglob
 
 # Sanity checks
 if [[ ${#cue_files[@]} -ne 1 ]]; then
-  echo "❌ Error: Expected exactly one .cue file. Found ${#cue_files[@]}."
+  log error "Expected exactly one .cue file. Found ${#cue_files[@]}."
   exit 1
 fi
 if [[ ${#audio_files[@]} -ne 1 ]]; then
-  echo "❌ Error: Expected exactly one .flac/.m4a/.ape file. Found ${#audio_files[@]}."
+  log error "Expected exactly one .flac/.m4a/.ape file. Found ${#audio_files[@]}."
   exit 1
 fi
 
@@ -80,13 +113,13 @@ base="${input_file%.*}"
 case "$input_ext" in
   m4a)
     converted_flac="${base}.converted.flac"
-    echo "🔁 Converting .m4a to .flac: $converted_flac"
+    log info "Converting .m4a to .flac: $converted_flac"
     ffmpeg -loglevel error -y -i "$input_file" "$converted_flac"
     audio_flac="$converted_flac"
     ;;
   ape)
     wav_file="${base}.decoded.wav"
-    echo "🔁 Decoding .ape to .wav: $wav_file"
+    log info "Decoding .ape to .wav: $wav_file"
     ffmpeg -loglevel error -y -i "$input_file" "$wav_file"
     audio_flac="$wav_file"
     ;;
@@ -94,15 +127,15 @@ case "$input_ext" in
     audio_flac="$input_file"
     ;;
   *)
-    echo "❌ Unsupported audio format: .$input_ext"
+    log error "Unsupported audio format: .$input_ext"
     exit 1
     ;;
 esac
 
-echo "📁 Directory: $(pwd)"
-echo "🎧 Audio:     $audio_flac"
-echo "📄 CUE:       $cue_file"
-echo "🔪 Splitting..."
+log info "Directory: $(pwd)"
+log info "Audio:     $audio_flac"
+log info "CUE:       $cue_file"
+log info "Splitting..."
 
 # Split the audio file
 shnsplit -f "$cue_file" -t "%n - %t" -o flac "$audio_flac"
@@ -115,7 +148,7 @@ split_files=($(find . -maxdepth 1 -type f -name '[0-9]* - *.flac' | sort))
 
 # Check if split was successful
 if [[ ${#split_files[@]} -eq 0 ]]; then
-  echo "❌ Error: No split files found."
+  log error "No split files found."
   exit 1
 fi
 
@@ -125,7 +158,7 @@ track_count=$(grep -i "^ *TRACK [0-9][0-9]* AUDIO" "$cue_file" | wc -l)
 # Delete pregap track if present
 pregap_file=$(find . -maxdepth 1 -type f -name '00 - *.flac' | head -n1)
 if [[ -n "$pregap_file" ]]; then
-  echo "🗑️  Deleting pregap track: $pregap_file"
+  log info "Deleting pregap track: $pregap_file"
   rm -f "$pregap_file"
 fi
 
@@ -134,18 +167,18 @@ split_files=($(find . -maxdepth 1 -type f -name '[0-9]* - *.flac' | sort))
 
 # Warn if still more files than expected
 if (( ${#split_files[@]} > track_count )); then
-  echo "⚠️  Warning: Still too many split files (${#split_files[@]} > $track_count)"
+  log warning "Still too many split files (${#split_files[@]} > $track_count)"
 fi
 
-echo "🏷️  Applying tags..."
+log info "Applying tags..."
 for ((i=1; i<=track_count; i++)); do
   track_num=$(printf "%02d" "$i")
   file="${split_files[$((i-1))]}"
   [ -f "$file" ] || continue
-  cuetag.sh "$cue_file" "$file" >/dev/null 2>&1 || echo "❌ Tagging failed for $file"
+  cuetag.sh "$cue_file" "$file" >/dev/null 2>&1 || log error "Tagging failed for $file"
 done
 
-echo "🖼️  Injecting cover art..."
+log info "Injecting cover art..."
 for img in front.jpg cover.jpg cover.jpeg folder.jpg back.jpg edge.jpg *.jpg *.png; do
   [[ -f "$img" ]] || continue
   for f in "${split_files[@]}"; do
@@ -157,8 +190,8 @@ done
 
 # Cleanup
 if $delete_original; then
-  echo "🧹 Deleting original: $input_file"
+  log info "Deleting original: $input_file"
   rm -f "$input_file"
 fi
 
-echo "✅ Done. Tracks split and tagged in '$dir'"
+log success "Done. Tracks split and tagged in '$dir'"

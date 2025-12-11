@@ -1,7 +1,8 @@
 # Docker Compose alias - supports both standalone and docker compose
-if command -v docker-compose &> /dev/null; then
+# Note: command_exists is defined in zshenv
+if command_exists docker-compose; then
   alias dc=docker-compose
-elif command -v docker &> /dev/null && docker compose version &> /dev/null; then
+elif command_exists docker && docker compose version &> /dev/null; then
   alias dc="docker compose"
 fi
 
