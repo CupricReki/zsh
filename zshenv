@@ -30,8 +30,10 @@ log() {
   shift
   local message="$*"
   
-  # Load colors if not already loaded
-  [[ -z "${fg[green]:-}" ]] && autoload -U colors && colors
+  # Load colors if not already loaded (only in interactive shells)
+  if [[ -z "${fg[green]:-}" ]] && [[ -o interactive ]]; then
+    autoload -U colors && colors
+  fi
   
   case "$level" in
     success)
