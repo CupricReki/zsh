@@ -3,6 +3,7 @@ antigen/*
 zlocal/*
 zlogin_local/*
 *.zwc
+custom/keymap/keybindings.gen.zsh
 .cache/antibody
 .zcompdump*
 

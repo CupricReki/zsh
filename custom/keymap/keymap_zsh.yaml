@@ -1,0 +1,43 @@
+# Zsh Keybindings
+# Interpreted at shell startup via interpret_zsh.py (mtime-gated).
+# See cheat/example/keybindings_zsh.yaml for format reference.
+# See cheat/example/zsh_notation.yaml for the full key notation reference.
+#
+# shortcut      = universal notation: C-x, M-x, C-<Space>, etc.
+# description   = human-readable label shown in the cheatsheet
+# action        = zsh widget name (passed to bindkey)
+# raw           = true → shortcut is a literal bindkey sequence; skip conversion
+#                 (use for terminal-specific sequences, e.g. "^[[A" for Up arrow)
+# display_only  = true → shown in cheatsheet but NOT emitted by interpreter
+#                 (use for bindings set elsewhere or built-in defaults)
+
+# ── Metadata ─────────────────────────────────────────────────────────────────
+_tool_name: Zsh
+_section_order: [completion, fzf, navigation, editing]
+# Uncomment to override cheatsheet display defaults:
+# _modifiers: { C: Ctrl, M: Meta, A: Alt }
+# ─────────────────────────────────────────────────────────────────────────────
+
+completion:
+  - shortcut: C-<Space>
+    description: Accept autosuggestion
+    action: autosuggest-accept
+
+fzf:
+  - shortcut: M-t
+    description: FZF file search (Alt+T)
+    action: fzf-file-widget
+
+navigation:
+  - shortcut: M-f
+    description: Forward word
+    action: forward-word
+
+  - shortcut: M-b
+    description: Backward word
+    action: backward-word
+
+editing:
+  - shortcut: M-d
+    description: Kill word forward
+    action: kill-word

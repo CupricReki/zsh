@@ -222,8 +222,8 @@ export ENHANCD_FILTER="fzf --preview 'eza -al --tree --level 1 --group-directori
 
 # Tailscale completions are auto-discovered by compinit from $ZCOMPLETION/_tailscale
 
-# Load custom key bindings
-# source "$ZSH_CUSTOM/keybindings.zsh"
+# Load custom key bindings (sources keymap/keybindings.gen.zsh via mtime-gated interpreter)
+source "$ZSH_CUSTOM/keybindings.zsh"
 
 # ================================================
 # Fzf configuration
@@ -247,10 +247,10 @@ export FZF_ALT_C_OPTS="--preview 'tree -C {} | head -100'"
 # fzf-tab replaces default tab completion with fzf interface
 # Loaded via sheldon for better plugin management
 
-# Bind rebind file search to alt+t
+# Bind rebind file search to alt+t — now defined in keymap/keymap_zsh.yaml
 # bindkey -r '^T'
 # bindkey -r '^[t'
-bindkey '^[t' fzf-file-widget
+# bindkey '^[t' fzf-file-widget
 # bindkey -r '^r'
 # bindkey '^r' fzf-history-widget
 

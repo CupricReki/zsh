@@ -65,23 +65,23 @@ backup() {
         echo "         backup mydir/ /backups/mydir.bak" >&2
         return 1
     fi
-    
+
     local src="$1"
     local timestamp=$(date +%Y%m%d_%H%M%S)
     local dest="${2:-${src%/}.${timestamp}.bak}"
-    
+
     if [[ ! -e "$src" ]]; then
         echo "Error: '$src' does not exist" >&2
         return 1
     fi
-    
+
     if [[ -e "$dest" ]]; then
         echo "Warning: '$dest' already exists" >&2
         read -q "REPLY?Overwrite? (y/n) "
         echo
         [[ $REPLY != "y" ]] && return 1
     fi
-    
+
     echo "Backing up: $src → $dest"
     if rsync -a --info=progress2 "$src" "$dest"; then
         log success "Backup complete: $dest"
@@ -133,12 +133,12 @@ gbda() {
   local branches
   branches=$(git branch --no-color --merged | \
     command grep -vE "^(\+|\*|\s*($(git_main_branch)|development|develop|devel|dev)\s*$)")
-  
+
   if [[ -z "$branches" ]]; then
     echo "No merged branches to delete"
     return 0
   fi
-  
+
   echo "$branches" | command xargs -n 1 git branch -d
 }
 alias gbl='git blame -b -w'
@@ -342,6 +342,7 @@ alias subl=/opt/sublime_text/sublime_text
 alias sudo='sudo '
 alias ug='sudo -s -u ${USER}' # Update group
 alias which-command=whence
+alias wlc='wl-copy'
 alias xc='xclip -selection clipboard'
 alias zse='vi ~/.zshrc'
 alias zgu='git -C $HOME/.config/zsh pull origin master && sheldon lock --update && rm -f ~/.zcompdump* 2>/dev/null; exec zsh'

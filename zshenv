@@ -29,12 +29,12 @@ log() {
   local level="$1"
   shift
   local message="$*"
-  
+
   # Load colors if not already loaded (only in interactive shells)
   if [[ -z "${fg[green]:-}" ]] && [[ -o interactive ]]; then
     autoload -U colors && colors
   fi
-  
+
   case "$level" in
     success)
       echo "$fg[green]$message$reset_color" >&2
@@ -95,6 +95,9 @@ export LOCAL_BIN="${HOME}/.local/bin"
 # Editor configuration (if nvim exists, will be overridden in alias.zsh)
 export VISUAL="${VISUAL:-vi}"
 export EDITOR="${EDITOR:-vi}"
+
+# libvirsh
+export LIBVIRT_DEFAULT_URI="qemu:///system"
 
 # Go configuration (if go is installed)
 export GOPATH="/usr/local/go-packages"
