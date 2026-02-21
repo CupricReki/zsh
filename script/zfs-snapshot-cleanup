@@ -1,349 +1,269 @@
-#!/usr/bin/env bash
-# ZFS Snapshot Cleanup Script
-# Deletes ZFS snapshots older than a specified date
-# Usage: zfs-snapshot-cleanup [OPTIONS] <days|date> [pool|dataset]
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["typer", "rich"]
+# ///
+"""Delete ZFS snapshots older than a specified age."""
 
-set -e
+from __future__ import annotations
 
-# ANSI color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-RESET='\033[0m'
+import re
+import subprocess
+from datetime import datetime, timedelta, timezone
+from typing import Annotated, Optional
 
-# Default values
-DRY_RUN=true
-DAYS=""
-POOL=""
-SHOW_SPACE=true
+import typer
+from rich.console import Console
+from rich.prompt import Confirm
+from rich.table import Table
 
-# Logging function
-log() {
-    local level="$1"
-    shift
-    local message="$*"
-    
-    case "$level" in
-        success)
-            echo -e "${GREEN}${message}${RESET}" >&2
-            ;;
-        error)
-            echo -e "${RED}[X]${RESET} ${message}" >&2
-            ;;
-        warning)
-            echo -e "${YELLOW}[!]${RESET} ${message}" >&2
-            ;;
-        info)
-            echo -e "${BLUE}[i]${RESET} ${message}" >&2
-            ;;
-        notice)
-            echo -e "${CYAN}[~]${RESET} ${message}" >&2
-            ;;
-        *)
-            echo "$message" >&2
-            ;;
-    esac
-}
+console = Console(stderr=True)
 
-# Show help
-show_help() {
-    cat << EOF
-Usage: $0 [OPTIONS] <days|date> [pool|dataset]
+app = typer.Typer(
+    name="zfs-snapshot-cleanup",
+    help="Delete ZFS snapshots older than a specified age.",
+    no_args_is_help=True,
+    add_completion=False,
+)
 
-Delete ZFS snapshots older than a specified date.
+_AGE_RE = re.compile(r"^(\d+)(mo|m|h|d|w|y)$")
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
-Arguments:
-  days|date              Number of days (e.g., 30) or date (YYYY-MM-DD)
-  pool|dataset           Optional: specific pool or dataset (default: all)
 
-Options:
-  --execute, --force     Actually delete snapshots (default: dry-run)
-  --no-space            Don't calculate/show saved space
-  -h, --help            Show this help message
+def parse_age(age_str: str) -> datetime:
+    """Parse a flexible age string into a UTC cutoff datetime.
 
-Examples:
-  $0 30                 # Dry-run: show snapshots older than 30 days
-  $0 30 --execute       # Delete snapshots older than 30 days
-  $0 2024-01-01         # Dry-run: show snapshots older than Jan 1, 2024
-  $0 7 tank             # Dry-run: show snapshots older than 7 days in 'tank' pool
-  $0 30 tank/dataset --execute  # Delete snapshots older than 30 days in tank/dataset
+    Accepts:
+      - Duration suffixes: 30m, 4h, 7d, 2w, 3mo, 1y
+      - Absolute date:     YYYY-MM-DD
+    """
+    now = datetime.now(tz=timezone.utc)
 
-Note: This script requires root/sudo privileges to destroy snapshots.
-EOF
-}
+    if _DATE_RE.match(age_str):
+        try:
+            return datetime.strptime(age_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
+            console.print(f"[red][X][/red] Invalid date: [bold]{age_str!r}[/bold] (expected YYYY-MM-DD)")
+            raise typer.Exit(1)
 
-# Parse arguments
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --execute|--force)
-            DRY_RUN=false
-            shift
-            ;;
-        --no-space)
-            SHOW_SPACE=false
-            shift
-            ;;
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        -*)
-            log error "Unknown option: $1"
-            show_help
-            exit 1
-            ;;
-        *)
-            if [[ -z "$DAYS" ]]; then
-                DAYS="$1"
-            elif [[ -z "$POOL" ]]; then
-                POOL="$1"
-            else
-                log error "Too many arguments"
-                show_help
-                exit 1
-            fi
-            shift
-            ;;
-    esac
-done
+    m = _AGE_RE.match(age_str)
+    if not m:
+        console.print(
+            f"[red][X][/red] Invalid age: [bold]{age_str!r}[/bold]. "
+            "Use <N>(m|h|d|w|mo|y), e.g. [bold]30m[/bold], [bold]4h[/bold], "
+            "[bold]7d[/bold], [bold]2w[/bold], [bold]3mo[/bold], [bold]1y[/bold]"
+        )
+        raise typer.Exit(1)
 
-# Check if days/date is provided
-if [[ -z "$DAYS" ]]; then
-    log error "Days or date must be specified"
-    show_help
-    exit 1
-fi
+    value, unit = int(m.group(1)), m.group(2)
+    delta_map: dict[str, timedelta] = {
+        "m":  timedelta(minutes=value),
+        "h":  timedelta(hours=value),
+        "d":  timedelta(days=value),
+        "w":  timedelta(weeks=value),
+        "mo": timedelta(days=value * 30),
+        "y":  timedelta(days=value * 365),
+    }
+    return now - delta_map[unit]
 
-# Check if zfs command exists
-if ! command -v zfs &> /dev/null; then
-    log error "zfs command not found. ZFS must be installed."
-    exit 1
-fi
 
-# Determine cutoff date
-CUTOFF_DATE=""
-if [[ "$DAYS" =~ ^[0-9]+$ ]]; then
-    # Number of days
-    if [[ "$(uname)" == "Darwin" ]]; then
-        # macOS date command
-        CUTOFF_DATE=$(date -v-${DAYS}d +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$(date -v-${DAYS}d +%Y-%m-%d)" +%s)
-    else
-        # Linux date command
-        CUTOFF_DATE=$(date -d "${DAYS} days ago" +%s)
-    fi
-else
-    # Date string (YYYY-MM-DD)
-    if [[ "$(uname)" == "Darwin" ]]; then
-        CUTOFF_DATE=$(date -j -f "%Y-%m-%d" "$DAYS" +%s 2>/dev/null)
-    else
-        CUTOFF_DATE=$(date -d "$DAYS" +%s 2>/dev/null)
-    fi
-    if [[ -z "$CUTOFF_DATE" ]]; then
-        log error "Invalid date format: $DAYS (expected YYYY-MM-DD or number of days)"
-        exit 1
-    fi
-fi
+def zfs_prefix(remote: Optional[str]) -> list[str]:
+    """Return an SSH prefix list for remote execution, or empty for local."""
+    return ["ssh", remote] if remote else []
 
-# Format cutoff date for display
-if [[ "$(uname)" == "Darwin" ]]; then
-    CUTOFF_DISPLAY=$(date -r "$CUTOFF_DATE" +"%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "$DAYS days ago")
-else
-    CUTOFF_DISPLAY=$(date -d "@$CUTOFF_DATE" +"%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "$DAYS days ago")
-fi
 
-# Build zfs list command
-ZFS_LIST_CMD="zfs list -t snapshot -H -o name,creation,used"
-if [[ -n "$POOL" ]]; then
-    ZFS_LIST_CMD="$ZFS_LIST_CMD -r $POOL"
-fi
+def list_snapshots(
+    pool: Optional[str],
+    remote: Optional[str],
+) -> list[tuple[str, datetime, int]]:
+    """Query ZFS and return (name, creation_utc, used_bytes) for every snapshot."""
+    cmd = zfs_prefix(remote) + [
+        "zfs", "list",
+        "-t", "snapshot",
+        "-H",        # no header, tab-separated output
+        "-p",        # parseable: timestamps as Unix epoch, sizes as raw bytes
+        "-o", "name,creation,used",
+    ]
+    if pool and pool not in ("-", "all"):
+        cmd += ["-r", pool]
 
-# Collect snapshots to delete (store all data from first query to avoid re-fetching)
-SNAPSHOTS_TO_DELETE=()
-SNAPSHOT_DETAILS=()
-TOTAL_USED_BYTES=0
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        msg = result.stderr.strip() or "unknown error"
+        console.print(f"[red][X][/red] zfs list failed: {msg}")
+        raise typer.Exit(1)
 
-log info "Finding snapshots older than: $CUTOFF_DISPLAY"
-if [[ -n "$POOL" ]]; then
-    log info "Pool/Dataset: $POOL"
-fi
-echo ""
+    snapshots: list[tuple[str, datetime, int]] = []
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split("\t")
+        if len(parts) != 3:
+            continue
+        name, creation_raw, used_raw = parts
+        try:
+            creation = datetime.fromtimestamp(int(creation_raw), tz=timezone.utc)
+            used = int(used_raw)
+        except ValueError:
+            console.print(f"[yellow][!][/yellow] Could not parse data for snapshot: [dim]{name}[/dim]")
+            continue
+        snapshots.append((name, creation, used))
 
-# Parse zfs list output - collect all data in one pass
-while IFS=$'\t' read -r name creation used; do
-    # Skip empty lines
-    [[ -z "$name" ]] && continue
-    
-    # Parse creation date
-    if [[ "$(uname)" == "Darwin" ]]; then
-        SNAPSHOT_DATE=$(date -j -f "%a %b %d %H:%M %Y" "$creation" +%s 2>/dev/null || \
-                       date -j -f "%Y-%m-%d %H:%M:%S" "$creation" +%s 2>/dev/null || \
-                       echo "")
-    else
-        SNAPSHOT_DATE=$(date -d "$creation" +%s 2>/dev/null || echo "")
-    fi
-    
-    # Skip if we couldn't parse the date
-    if [[ -z "$SNAPSHOT_DATE" ]]; then
-        log warning "Could not parse date for snapshot: $name"
-        continue
-    fi
-    
-    # Check if snapshot is older than cutoff
-    if [[ "$SNAPSHOT_DATE" -lt "$CUTOFF_DATE" ]]; then
-        SNAPSHOTS_TO_DELETE+=("$name")
-        
-        # Store details for later display (already have the data, no need to re-fetch)
-        SNAPSHOT_DETAILS+=("$name|$creation|$used")
-        
-        # Calculate total space if showing space
-        if [[ "$SHOW_SPACE" == "true" ]] && [[ -n "$used" ]] && [[ "$used" != "0" ]] && [[ "$used" != "-" ]]; then
-            SIZE_NUM=$(echo "$used" | sed 's/[^0-9.]//g')
-            SIZE_UNIT=$(echo "$used" | sed 's/[0-9.]//g' | tr '[:lower:]' '[:upper:]')
-            
-            if [[ -n "$SIZE_NUM" ]] && [[ "$SIZE_NUM" != "0" ]]; then
-                case "$SIZE_UNIT" in
-                    K|KB) MULTIPLIER=1024 ;;
-                    M|MB) MULTIPLIER=1048576 ;;
-                    G|GB) MULTIPLIER=1073741824 ;;
-                    T|TB) MULTIPLIER=1099511627776 ;;
-                    *) MULTIPLIER=1 ;;
-                esac
-                
-                BYTES=$(awk "BEGIN {printf \"%.0f\", $SIZE_NUM * $MULTIPLIER}")
-                TOTAL_USED_BYTES=$((TOTAL_USED_BYTES + BYTES))
-            fi
-        fi
-    fi
-done < <($ZFS_LIST_CMD 2>/dev/null || true)
+    return snapshots
 
-# Check if any snapshots were found
-if [[ ${#SNAPSHOTS_TO_DELETE[@]} -eq 0 ]]; then
-    log success "No snapshots found older than $CUTOFF_DISPLAY"
-    exit 0
-fi
 
-# Display snapshots to be deleted
-log notice "Found ${#SNAPSHOTS_TO_DELETE[@]} snapshot(s) to delete:"
-echo ""
+def format_bytes(n: int) -> str:
+    for unit, threshold in [("TiB", 2**40), ("GiB", 2**30), ("MiB", 2**20), ("KiB", 2**10)]:
+        if n >= threshold:
+            return f"{n / threshold:.2f} {unit}"
+    return f"{n} B"
 
-# Display snapshot details in compact table format
-if [[ "$SHOW_SPACE" == "true" ]]; then
-    # Header with size column
-    printf "  %-50s  %-16s  %s\n" "SNAPSHOT" "CREATED" "SIZE"
-    printf "  %s  %s  %s\n" "$(printf '%.0s-' {1..50})" "$(printf '%.0s-' {1..16})" "$(printf '%.0s-' {1..10})"
-else
-    # Header without size column
-    printf "  %-50s  %s\n" "SNAPSHOT" "CREATED"
-    printf "  %s  %s\n" "$(printf '%.0s-' {1..50})" "$(printf '%.0s-' {1..16})"
-fi
 
-for detail in "${SNAPSHOT_DETAILS[@]}"; do
-    IFS='|' read -r name created used <<< "$detail"
-    
-    # Format date more compactly (YYYY-MM-DD HH:MM)
-    if [[ "$created" != "unknown" ]]; then
-        if [[ "$(uname)" == "Darwin" ]]; then
-            if date_str=$(date -j -f "%a %b %d %H:%M %Y" "$created" +"%Y-%m-%d %H:%M" 2>/dev/null) || \
-               date_str=$(date -j -f "%Y-%m-%d %H:%M:%S" "$created" +"%Y-%m-%d %H:%M" 2>/dev/null); then
-                created="$date_str"
-            fi
-        else
-            if date_str=$(date -d "$created" +"%Y-%m-%d %H:%M" 2>/dev/null); then
-                created="$date_str"
-            fi
-        fi
-    fi
-    
-    # Single line format: name, date, size (if shown)
-    if [[ "$SHOW_SPACE" == "true" ]]; then
-        printf "  %-50s  %-16s  %s\n" "$name" "$created" "${used:-N/A}"
-    else
-        printf "  %-50s  %s\n" "$name" "$created"
-    fi
-done
-echo ""
+def display_table(snapshots: list[tuple[str, datetime, int]], show_space: bool) -> None:
+    table = Table(show_header=True, header_style="bold cyan", show_edge=False, pad_edge=False)
+    table.add_column("Snapshot", style="white", no_wrap=False, min_width=30)
+    table.add_column("Created", style="dim", min_width=16)
+    if show_space:
+        table.add_column("Used", style="yellow", justify="right")
 
-# Show total space if calculated
-if [[ "$SHOW_SPACE" == "true" ]] && [[ $TOTAL_USED_BYTES -gt 0 ]]; then
-    if command -v numfmt &> /dev/null; then
-        TOTAL_HUMAN=$(numfmt --to=iec-i --suffix=B "$TOTAL_USED_BYTES")
-    else
-        if [[ $TOTAL_USED_BYTES -ge 1099511627776 ]]; then
-            TOTAL_HUMAN=$(awk "BEGIN {printf \"%.2fT\", $TOTAL_USED_BYTES / 1099511627776}")
-        elif [[ $TOTAL_USED_BYTES -ge 1073741824 ]]; then
-            TOTAL_HUMAN=$(awk "BEGIN {printf \"%.2fG\", $TOTAL_USED_BYTES / 1073741824}")
-        elif [[ $TOTAL_USED_BYTES -ge 1048576 ]]; then
-            TOTAL_HUMAN=$(awk "BEGIN {printf \"%.2fM\", $TOTAL_USED_BYTES / 1048576}")
-        elif [[ $TOTAL_USED_BYTES -ge 1024 ]]; then
-            TOTAL_HUMAN=$(awk "BEGIN {printf \"%.2fK\", $TOTAL_USED_BYTES / 1024}")
-        else
-            TOTAL_HUMAN="${TOTAL_USED_BYTES}B"
-        fi
-    fi
-    
-    log notice "Total space that would be freed: $TOTAL_HUMAN"
-    echo ""
-fi
+    for name, creation, used in snapshots:
+        created_str = creation.strftime("%Y-%m-%d %H:%M")
+        if show_space:
+            table.add_row(name, created_str, format_bytes(used))
+        else:
+            table.add_row(name, created_str)
 
-# Show what would be done
-if [[ "$DRY_RUN" == "true" ]]; then
-    log warning "DRY RUN MODE - No snapshots will be deleted"
-    echo ""
-    log info "To actually delete these snapshots, run with --execute flag:"
-    echo "  $0 $DAYS ${POOL:+"$POOL "}--execute"
-    echo ""
-else
-    # Check for sudo if needed
-    if [[ $EUID -ne 0 ]] && ! sudo -n true 2>/dev/null; then
-        log error "This operation requires root privileges"
-        log info "Please run with sudo or as root"
-        exit 1
-    fi
-    
-    # Confirm deletion
-    log warning "About to delete ${#SNAPSHOTS_TO_DELETE[@]} snapshot(s)"
-    if [[ -t 0 ]]; then
-        read -p "Continue? (y/N): " -r CONFIRM
-        if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
-            log info "Cancelled"
-            exit 0
-        fi
-    fi
-    
-    echo ""
-    log info "Deleting snapshots..."
-    
-    # Delete snapshots
-    DELETED=0
-    FAILED=0
-    for snapshot in "${SNAPSHOTS_TO_DELETE[@]}"; do
-        if [[ $EUID -eq 0 ]]; then
-            if zfs destroy "$snapshot" 2>/dev/null; then
-                log success "Deleted: $snapshot"
-                ((DELETED++))
-            else
-                log error "Failed to delete: $snapshot"
-                ((FAILED++))
-            fi
-        else
-            if sudo zfs destroy "$snapshot" 2>/dev/null; then
-                log success "Deleted: $snapshot"
-                ((DELETED++))
-            else
-                log error "Failed to delete: $snapshot"
-                ((FAILED++))
-            fi
-        fi
-    done
-    
-    echo ""
-    if [[ $FAILED -eq 0 ]]; then
-        log success "Successfully deleted $DELETED snapshot(s)"
-    else
-        log warning "Deleted $DELETED snapshot(s), $FAILED failed"
-        exit 1
-    fi
-fi
+    console.print(table)
 
+    if show_space:
+        total = sum(u for _, _, u in snapshots)
+        console.print(
+            f"\n  [cyan][~][/cyan] Total space that would be freed: "
+            f"[yellow bold]{format_bytes(total)}[/yellow bold]"
+        )
+
+    console.print()
+
+
+def destroy_snapshots(snapshots: list[tuple[str, datetime, int]], remote: Optional[str]) -> None:
+    deleted = 0
+    failed = 0
+
+    for name, _, _ in snapshots:
+        cmd = zfs_prefix(remote) + ["zfs", "destroy", name]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            console.print(f"  [green]✓[/green] Deleted: {name}")
+            deleted += 1
+        else:
+            err = result.stderr.strip() or "unknown error"
+            console.print(f"  [red][X][/red] Failed: {name} — {err}")
+            failed += 1
+
+    console.print()
+    if failed == 0:
+        console.print(f"[green]Successfully deleted {deleted} snapshot(s)[/green]")
+    else:
+        console.print(f"[yellow][!][/yellow] Deleted {deleted} snapshot(s), {failed} failed")
+        raise typer.Exit(1)
+
+
+@app.command()
+def main(
+    pool: Annotated[
+        str,
+        typer.Argument(
+            help='Pool or dataset to target. Use [bold]-[/bold] or [bold]all[/bold] for all pools.',
+            show_default=False,
+        ),
+    ],
+    age: Annotated[
+        str,
+        typer.Argument(
+            help="Age threshold: [bold]30m[/bold], [bold]4h[/bold], [bold]7d[/bold], "
+                 "[bold]2w[/bold], [bold]3mo[/bold], [bold]1y[/bold], or [bold]YYYY-MM-DD[/bold]",
+            show_default=False,
+        ),
+    ],
+    execute: Annotated[
+        bool,
+        typer.Option(
+            "--execute", "--force",
+            help="Actually destroy snapshots. Default is dry-run.",
+        ),
+    ] = False,
+    yes: Annotated[
+        bool,
+        typer.Option("--yes", "-y", help="Skip confirmation prompt."),
+    ] = False,
+    no_space: Annotated[
+        bool,
+        typer.Option("--no-space", help="Skip used-space reporting."),
+    ] = False,
+    remote: Annotated[
+        Optional[str],
+        typer.Option(
+            "--remote", "-r",
+            help="SSH host to run zfs commands on.",
+            metavar="HOST",
+        ),
+    ] = None,
+) -> None:
+    cutoff = parse_age(age)
+    pool_display = pool if pool not in ("-", "all") else "(all pools)"
+
+    console.print(
+        f"  [blue][i][/blue] Cutoff:       [bold]{cutoff.strftime('%Y-%m-%d %H:%M:%S UTC')}[/bold]"
+    )
+    console.print(f"  [blue][i][/blue] Pool/Dataset: [bold]{pool_display}[/bold]")
+    if remote:
+        console.print(f"  [blue][i][/blue] Remote host:  [bold]{remote}[/bold]")
+    console.print()
+
+    all_snapshots = list_snapshots(pool, remote)
+    candidates = [(n, c, u) for n, c, u in all_snapshots if c < cutoff]
+
+    if not candidates:
+        console.print(
+            f"[green]No snapshots found older than "
+            f"{cutoff.strftime('%Y-%m-%d %H:%M:%S UTC')}[/green]"
+        )
+        return
+
+    console.print(
+        f"  [cyan][~][/cyan] Found [bold]{len(candidates)}[/bold] snapshot(s) to delete:\n"
+    )
+    display_table(candidates, show_space=not no_space)
+
+    if not execute:
+        console.print(
+            "[yellow][!][/yellow] [bold]DRY RUN MODE[/bold] — no snapshots will be deleted\n"
+        )
+        hint = ["zfs-snapshot-cleanup", pool, age]
+        if remote:
+            hint += ["--remote", remote]
+        if no_space:
+            hint.append("--no-space")
+        if yes:
+            hint.append("--yes")
+        hint.append("--execute")
+        console.print(f"  [dim]Run with [bold]--execute[/bold] to actually delete:[/dim]")
+        console.print(f"  [dim]{' '.join(hint)}[/dim]")
+        return
+
+    console.print(
+        f"[yellow][!][/yellow] About to delete [bold]{len(candidates)}[/bold] snapshot(s)"
+    )
+    if not yes:
+        if not Confirm.ask("Continue?", default=False):
+            console.print("[blue][i][/blue] Cancelled")
+            return
+
+    console.print()
+    console.print("[blue][i][/blue] Deleting snapshots...\n")
+    destroy_snapshots(candidates, remote)
+
+
+if __name__ == "__main__":
+    app()
