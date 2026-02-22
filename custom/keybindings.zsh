@@ -4,7 +4,15 @@
 # changes (mtime-gated), so normal shell starts pay zero interpreter overhead.
 
 # FZF completion (not a keybinding — sources fzf tab completion widgets)
-source /usr/share/fzf/completion.zsh
+# Arch: /usr/share/fzf/completion.zsh  |  Debian: /usr/share/doc/fzf/examples/completion.zsh
+() {
+  local f
+  for f in \
+    /usr/share/fzf/completion.zsh \
+    /usr/share/doc/fzf/examples/completion.zsh; do
+    [[ -f $f ]] && { source $f; return }
+  done
+}
 
 # ================================================
 # Universal keymap loader (mtime-gated)
