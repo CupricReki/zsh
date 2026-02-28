@@ -1,0 +1,58 @@
+#!/usr/bin/env zsh
+# run-zau: Run the Ansible zsh playbook against the local machine.
+#
+# Handles:
+#   - Installing ansible if not present (apt / pacman / dnf)
+#   - Finding an existing ~/ansible project clone or cloning a fresh one
+#   - Disabling vault_password_file (dev-machine setting, errors on fresh hosts)
+#   - Running ansible-playbook with the correct user and become strategy
+#
+# All extra arguments are forwarded to ansible-playbook.
+# Requires: log() and HOME from the environment (provided by zshenv).
+
+ANSIBLE_REPO="https://gitlab.timepiggy.com/cupric/ansible.git"
+
+# --- Ensure ansible is available ---
+if ! command -v ansible-playbook &>/dev/null; then
+  log info "ansible-playbook not found, installing..."
+  if command -v apt-get &>/dev/null; then
+    sudo apt-get install -y ansible python3
+  elif command -v pacman &>/dev/null; then
+    sudo pacman -S --noconfirm ansible python
+  elif command -v dnf &>/dev/null; then
+    sudo dnf install -y ansible python3
+  else
+    log error "Cannot install ansible: unsupported package manager"
+    exit 1
+  fi
+fi
+
+# --- Locate or clone the ansible project ---
+_ansible_dir=""
+if [[ -f "${HOME}/ansible/playbooks/zsh.yml" ]]; then
+  _ansible_dir="${HOME}/ansible"
+else
+  _tmp="/tmp/ansible_bootstrap_zsh"
+  trap 'rm -rf "$_tmp"' EXIT
+  log info "Cloning ansible project to ${_tmp}..."
+  git clone "${ANSIBLE_REPO}" "${_tmp}"
+  _ansible_dir="${_tmp}"
+fi
+
+# --- Disable vault_password_file (dev-machine setting) ---
+sed -i 's/^vault_password_file/#vault_password_file/' "${_ansible_dir}/ansible.cfg" 2>/dev/null || true
+
+# --- Detect NOPASSWD sudo ---
+_become_arg="--ask-become-pass"
+sudo -n true 2>/dev/null && _become_arg=""
+
+# --- Run the playbook ---
+(
+  builtin cd "${_ansible_dir}"
+  ansible-playbook playbooks/zsh.yml \
+    --inventory localhost, \
+    --connection=local \
+    ${_become_arg} \
+    -e "zsh_target_user=$(whoami)" \
+    "$@"
+)

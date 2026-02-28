@@ -350,13 +350,11 @@ alias zgi='curl -fsSL https://gitlab.timepiggy.com/cupric/zsh/-/raw/master/init.
 alias zri='ssh -t -o RemoteCommand="curl -fsSL https://gitlab.timepiggy.com/cupric/zsh/-/raw/master/init.sh | bash"'
 # Re-run the Ansible zsh playbook to update system packages and cargo tools.
 # zgu handles config + plugins; zau handles system-level updates via Ansible.
+# Heavy logic lives in $ZSCRIPTS/run-zau so changes take effect without re-sourcing.
 zau() {
-  local _become_arg="--ask-become-pass"
-  sudo -n true 2>/dev/null && _become_arg=""
-  local _playbook_args="playbooks/zsh.yml --inventory localhost, --connection=local ${_become_arg} -e force_reinstall=true"
   local _stashed=false
 
-  # Warn about uncommitted changes in the zsh config repo before Ansible does a git pull
+  # Stash detection stays in the shell function — it's interactive and needs read -q.
   if [[ -d "${ZSH_DIR}" ]] && \
      ! { git -C "${ZSH_DIR}" diff --quiet && git -C "${ZSH_DIR}" diff --cached --quiet; } 2>/dev/null; then
     log warning "Uncommitted changes detected in ${ZSH_DIR}"
@@ -371,43 +369,7 @@ zau() {
     fi
   fi
 
-  # Ensure ansible is installed — on un-provisioned hosts it may be absent.
-  if ! command -v ansible-playbook &>/dev/null; then
-    log info "ansible-playbook not found, installing..."
-    if command -v apt-get &>/dev/null; then
-      sudo apt-get install -y ansible python3
-    elif command -v pacman &>/dev/null; then
-      sudo pacman -S --noconfirm ansible python
-    elif command -v dnf &>/dev/null; then
-      sudo dnf install -y ansible python3
-    else
-      log error "Cannot install ansible: unsupported package manager"
-      return 1
-    fi
-  fi
-
-  # Check for a full ansible project clone, not just a leftover collections/ dir.
-  # Use builtin cd to bypass enhancd's cd override, which may be broken on
-  # un-provisioned hosts where sheldon plugins were never loaded.
-  _run_playbook() {
-    local _dir="$1"
-    # Disable vault_password_file — dev-machine setting that errors on fresh hosts.
-    sed -i 's/^vault_password_file/#vault_password_file/' "${_dir}/ansible.cfg" 2>/dev/null || true
-    (builtin cd "${_dir}" && ansible-playbook ${=_playbook_args})
-  }
-
-  # Check for a full ansible project clone, not just a leftover collections/ dir.
-  # Use builtin cd to bypass enhancd's cd override, which may be broken on
-  # un-provisioned hosts where sheldon plugins were never loaded.
-  if [[ -f "${HOME}/ansible/playbooks/zsh.yml" ]]; then
-    _run_playbook "${HOME}/ansible"
-  else
-    local _tmp="/tmp/ansible_bootstrap_zsh"
-    trap "rm -rf '${_tmp}'" EXIT
-    git clone https://gitlab.timepiggy.com/cupric/ansible.git "${_tmp}"
-    _run_playbook "${_tmp}"
-  fi
-  unfunction _run_playbook 2>/dev/null
+  "$ZSCRIPTS/run-zau" -e force_reinstall=true "$@"
 
   if [[ "$_stashed" == "true" ]]; then
     log info "Restoring stashed changes..."
