@@ -371,17 +371,43 @@ zau() {
     fi
   fi
 
+  # Ensure ansible is installed — on un-provisioned hosts it may be absent.
+  if ! command -v ansible-playbook &>/dev/null; then
+    log info "ansible-playbook not found, installing..."
+    if command -v apt-get &>/dev/null; then
+      sudo apt-get install -y ansible python3
+    elif command -v pacman &>/dev/null; then
+      sudo pacman -S --noconfirm ansible python
+    elif command -v dnf &>/dev/null; then
+      sudo dnf install -y ansible python3
+    else
+      log error "Cannot install ansible: unsupported package manager"
+      return 1
+    fi
+  fi
+
+  # Check for a full ansible project clone, not just a leftover collections/ dir.
+  # Use builtin cd to bypass enhancd's cd override, which may be broken on
+  # un-provisioned hosts where sheldon plugins were never loaded.
+  _run_playbook() {
+    local _dir="$1"
+    # Disable vault_password_file — dev-machine setting that errors on fresh hosts.
+    sed -i 's/^vault_password_file/#vault_password_file/' "${_dir}/ansible.cfg" 2>/dev/null || true
+    (builtin cd "${_dir}" && ansible-playbook ${=_playbook_args})
+  }
+
   # Check for a full ansible project clone, not just a leftover collections/ dir.
   # Use builtin cd to bypass enhancd's cd override, which may be broken on
   # un-provisioned hosts where sheldon plugins were never loaded.
   if [[ -f "${HOME}/ansible/playbooks/zsh.yml" ]]; then
-    (builtin cd "${HOME}/ansible" && ansible-playbook ${=_playbook_args})
+    _run_playbook "${HOME}/ansible"
   else
     local _tmp="/tmp/ansible_bootstrap_zsh"
     trap "rm -rf '${_tmp}'" EXIT
     git clone https://gitlab.timepiggy.com/cupric/ansible.git "${_tmp}"
-    (builtin cd "${_tmp}" && ansible-playbook ${=_playbook_args})
+    _run_playbook "${_tmp}"
   fi
+  unfunction _run_playbook 2>/dev/null
 
   if [[ "$_stashed" == "true" ]]; then
     log info "Restoring stashed changes..."
