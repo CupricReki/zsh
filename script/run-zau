@@ -42,6 +42,12 @@ fi
 # --- Disable vault_password_file (dev-machine setting) ---
 sed -i 's/^vault_password_file/#vault_password_file/' "${_ansible_dir}/ansible.cfg" 2>/dev/null || true
 
+# --- Install required Ansible collections ---
+if [[ -f "${_ansible_dir}/requirements.yml" ]]; then
+  log info "Installing Ansible collections..."
+  ansible-galaxy collection install -r "${_ansible_dir}/requirements.yml" --collections-path "${_ansible_dir}/.ansible/collections" 2>&1 | grep -v "^Starting galaxy" || true
+fi
+
 # --- Detect NOPASSWD sudo ---
 _become_arg="--ask-become-pass"
 sudo -n true 2>/dev/null && _become_arg=""
@@ -49,6 +55,7 @@ sudo -n true 2>/dev/null && _become_arg=""
 # --- Run the playbook ---
 (
   builtin cd "${_ansible_dir}"
+  ANSIBLE_COLLECTIONS_PATH="${_ansible_dir}/.ansible/collections" \
   ansible-playbook playbooks/zsh.yml \
     --inventory localhost, \
     --connection=local \
