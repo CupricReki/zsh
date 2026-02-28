@@ -351,7 +351,9 @@ alias zri='ssh -t -o RemoteCommand="curl -fsSL https://gitlab.timepiggy.com/cupr
 # Re-run the Ansible zsh playbook to update system packages and cargo tools.
 # zgu handles config + plugins; zau handles system-level updates via Ansible.
 zau() {
-  local _playbook_args="playbooks/zsh.yml --inventory localhost, --connection=local --ask-become-pass -e force_reinstall=true"
+  local _become_arg="--ask-become-pass"
+  sudo -n true 2>/dev/null && _become_arg=""
+  local _playbook_args="playbooks/zsh.yml --inventory localhost, --connection=local ${_become_arg} -e force_reinstall=true"
   local _stashed=false
 
   # Warn about uncommitted changes in the zsh config repo before Ansible does a git pull
@@ -369,7 +371,8 @@ zau() {
     fi
   fi
 
-  if [[ -d "${HOME}/ansible" ]]; then
+  # Check for a full ansible project clone, not just a leftover collections/ dir
+  if [[ -f "${HOME}/ansible/playbooks/zsh.yml" ]]; then
     (cd "${HOME}/ansible" && ansible-playbook ${=_playbook_args})
   else
     local _tmp="/tmp/ansible_bootstrap_zsh"
