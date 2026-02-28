@@ -371,14 +371,16 @@ zau() {
     fi
   fi
 
-  # Check for a full ansible project clone, not just a leftover collections/ dir
+  # Check for a full ansible project clone, not just a leftover collections/ dir.
+  # Use builtin cd to bypass enhancd's cd override, which may be broken on
+  # un-provisioned hosts where sheldon plugins were never loaded.
   if [[ -f "${HOME}/ansible/playbooks/zsh.yml" ]]; then
-    (cd "${HOME}/ansible" && ansible-playbook ${=_playbook_args})
+    (builtin cd "${HOME}/ansible" && ansible-playbook ${=_playbook_args})
   else
     local _tmp="/tmp/ansible_bootstrap_zsh"
     trap "rm -rf '${_tmp}'" EXIT
     git clone https://gitlab.timepiggy.com/cupric/ansible.git "${_tmp}"
-    (cd "${_tmp}" && ansible-playbook ${=_playbook_args})
+    (builtin cd "${_tmp}" && ansible-playbook ${=_playbook_args})
   fi
 
   if [[ "$_stashed" == "true" ]]; then
