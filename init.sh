@@ -50,11 +50,14 @@ log() {
 # --- Main Script ---
 echo "--- Starting Zsh Local Bootstrap via Ansible ---"
 
-# Check if local ansible directory exists
-if [[ -d "$LOCAL_ANSIBLE_DIR" ]]; then
+# Check if the local ansible project is fully present (not just a leftover
+# collections/ dir from a previous failed bootstrap run).
+_run_sh="${LOCAL_ANSIBLE_DIR}/scripts/setup_zsh_local/run.sh"
+if [[ -f "$_run_sh" ]]; then
     log info "Found local Ansible directory at ${LOCAL_ANSIBLE_DIR}"
     log info "Executing the Zsh local setup script..."
-    "${LOCAL_ANSIBLE_DIR}/scripts/setup_zsh_local/run.sh"
+    "$_run_sh"
+    unset _run_sh
 else
     log info "Local Ansible directory not found, cloning from ${ANSIBLE_PROJECT_REPO}..."
     
