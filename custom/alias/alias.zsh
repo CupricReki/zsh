@@ -61,6 +61,7 @@ bwe() {
 # backup - Create timestamped backup of file or directory
 # Usage: backup <file|directory> [destination]
 # Creates: filename.YYYYMMDD_HHMMSS.bak or custom destination
+unalias backup 2>/dev/null
 backup() {
     if [[ $# -eq 0 ]]; then
         echo "Usage: backup <file|directory> [destination]" >&2
@@ -132,6 +133,7 @@ alias gba='git branch -a'
 alias gbd='git branch -d'
 # Delete all merged git branches (except main/master/dev variants)
 # Converted from alias to function for better error handling
+unalias gbda 2>/dev/null
 gbda() {
   local branches
   branches=$(git branch --no-color --merged | \
@@ -354,6 +356,7 @@ alias zri='ssh -t -o RemoteCommand="curl -fsSL https://gitlab.timepiggy.com/cupr
 # Re-run the Ansible zsh playbook to update system packages and cargo tools.
 # zgu handles config + plugins; zau handles system-level updates via Ansible.
 # Heavy logic lives in $ZSCRIPTS/run-zau so changes take effect without re-sourcing.
+unalias zau 2>/dev/null
 zau() {
   local _stashed=false
 
