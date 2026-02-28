@@ -25,7 +25,7 @@ A fast, well-organized, and maintainable Zsh configuration optimized for perform
 ### One-Line Install
 
 ```bash
-wget -O - https://gitlab.timepiggy.com/cupric/zsh/-/raw/master/init.sh | bash
+curl -fsSL https://gitlab.timepiggy.com/cupric/zsh/-/raw/master/init.sh | bash
 ```
 
 ### Prerequisites
@@ -349,6 +349,29 @@ for cmd in fzf fd rg bat eza; do
   command -v $cmd || echo "Missing: $cmd"
 done
 ```
+
+### Recovery: old install pointing at a stale remote
+
+If you have an existing zsh config that still points at the old repository
+URL, or an un-provisioned host where tools like `sheldon`, `cargo`, and `fzf`
+are missing, run this one-time recovery sequence:
+
+```zsh
+git -C $ZSH_DIR remote set-url origin https://gitlab.timepiggy.com/cupric/zsh.git \
+  && git -C $ZSH_DIR pull origin master \
+  && source $ZSH_DIR/custom/alias/alias.zsh \
+  && zau
+```
+
+What each step does:
+1. **`remote set-url`** — correct the stale remote URL
+2. **`pull`** — fetch the latest config (including all bootstrap fixes)
+3. **`source alias.zsh`** — reload `zau` from disk into the current shell
+   (necessary because the old version was loaded at shell start)
+4. **`zau`** — provision the machine via Ansible; installs ansible if absent,
+   then runs the zsh playbook to install cargo, sheldon, fzf, eza, etc.
+
+After `zau` completes, open a new shell — `zgu` will work normally from then on.
 
 ## Contributing
 
