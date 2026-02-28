@@ -65,8 +65,8 @@ else
   fi
 fi
 
-FZF_VERSION="${1:-master}"
 TMP_DIR="/tmp/fzf-install-$$"
+trap 'cd /; rm -rf "$TMP_DIR"' EXIT
 
 echo -e "${BLUE}[i]${RESET} Installing fzf to ${INSTALL_DIR}..."
 
@@ -77,13 +77,9 @@ else
   mkdir -p "$INSTALL_DIR"
 fi
 
-# Clone fzf repository to temp directory
-echo -e "${BLUE}[i]${RESET} Cloning fzf repository..."
-git clone --depth 1 https://github.com/junegunn/fzf.git "$TMP_DIR"
+mkdir -p "$TMP_DIR"
 cd "$TMP_DIR"
 
-# Build binary
-_build_succeeded=false
 # Check for --prebuilt flag to skip building from source
 _use_prebuilt=false
 for arg in "$@"; do
@@ -94,54 +90,70 @@ for arg in "$@"; do
   esac
 done
 
+# Build binary
+_build_succeeded=false
+
 if command -v go &> /dev/null && [[ "$_use_prebuilt" != "true" ]]; then
-    echo -e "${BLUE}[i]${RESET} Building fzf binary from source (Go detected)..."
-    # Use a throwaway GOPATH so Go never touches ~/go (its default) or a
-    # system directory the current user may not be able to write to.
-    # GOMODCACHE points to a persistent user-writable cache to avoid
-    # re-downloading modules on subsequent builds.
-    _gopath_tmp=$(mktemp -d -t gopath_fzf_XXXXXX)
-    export GOPATH="$_gopath_tmp"
-    export GOMODCACHE="${HOME}/.cache/go-mod"
-    mkdir -p "$GOMODCACHE"
-    # Temporarily disable set -e to handle build failure gracefully
-    set +e
-    go build -o fzf 2>&1
-    _build_status=$?
-    set -e
-    rm -rf "$_gopath_tmp"
-    unset _gopath_tmp
-    if [[ $_build_status -eq 0 ]] && [[ -f fzf ]]; then
-        _build_succeeded=true
-        echo -e "${GREEN}Build succeeded${RESET}"
+    # Probe whether the installed Go can parse fzf's go.mod without cloning the
+    # whole repo. If the system Go is too old to understand the go version
+    # directive (e.g. Debian 12 ships Go 1.19 but fzf requires 1.23.0), skip
+    # source build immediately rather than wasting time on a full clone + fail.
+    _go_minor=$(go version | grep -oP 'go1\.\K[0-9]+' | head -1)
+    if (( _go_minor < 21 )); then
+        echo -e "${YELLOW}[!]${RESET} Go ${_go_minor} is too old for current fzf (requires ≥1.21), using pre-built binary..."
+        _use_prebuilt=true
     else
-        echo -e "${YELLOW}[!]${RESET} Go build failed, falling back to pre-built binary..."
-        unset GOMODCACHE
+        echo -e "${BLUE}[i]${RESET} Building fzf binary from source (Go detected)..."
+        # Clone is only needed for source builds
+        git clone --depth 1 https://github.com/junegunn/fzf.git "$TMP_DIR/src"
+        cd "$TMP_DIR/src"
+        # Use a throwaway GOPATH so Go never touches ~/go (its default) or a
+        # system directory the current user may not be able to write to.
+        # GOMODCACHE points to a persistent user-writable cache to avoid
+        # re-downloading modules on subsequent builds.
+        _gopath_tmp=$(mktemp -d -t gopath_fzf_XXXXXX)
+        export GOPATH="$_gopath_tmp"
+        export GOMODCACHE="${HOME}/.cache/go-mod"
+        mkdir -p "$GOMODCACHE"
+        set +e
+        go build -o fzf 2>&1
+        _build_status=$?
+        set -e
+        rm -rf "$_gopath_tmp"
+        unset _gopath_tmp
+        if [[ $_build_status -eq 0 ]] && [[ -f fzf ]]; then
+            _build_succeeded=true
+            echo -e "${GREEN}Build succeeded${RESET}"
+        else
+            echo -e "${YELLOW}[!]${RESET} Go build failed, falling back to pre-built binary..."
+            unset GOMODCACHE
+            cd "$TMP_DIR"
+        fi
     fi
 fi
 
 # Use pre-built binary if Go build failed or Go not available
 if [[ "$_build_succeeded" != "true" ]]; then
     echo -e "${BLUE}[i]${RESET} Downloading pre-built binary..."
-    
+
     # Detect OS and architecture
     OS=$(uname -s | tr '[:upper:]' '[:lower:]')
     ARCH=$(uname -m)
-    
+
     case "$ARCH" in
         x86_64) ARCH="amd64" ;;
         aarch64|arm64) ARCH="arm64" ;;
         armv7l) ARCH="armv7" ;;
         *) echo -e "${RED}[X]${RESET} Unsupported architecture: $ARCH"; exit 1 ;;
     esac
-    
+
     # Get latest release version
     LATEST_VERSION=$(curl -s https://api.github.com/repos/junegunn/fzf/releases/latest | grep -oP '"tag_name": "\K[^"]+')
-    
+
     # Download binary
     DOWNLOAD_URL="https://github.com/junegunn/fzf/releases/download/${LATEST_VERSION}/fzf-${LATEST_VERSION}-${OS}_${ARCH}.tar.gz"
     echo -e "${BLUE}[i]${RESET} Downloading from: $DOWNLOAD_URL"
-    
+
     curl -sL "$DOWNLOAD_URL" | tar xz
 fi
 
@@ -154,10 +166,6 @@ else
   cp fzf "$INSTALL_DIR/"
   chmod +x "$INSTALL_DIR/fzf"
 fi
-
-# Cleanup
-cd /
-rm -rf "$TMP_DIR"
 
 echo ""
 echo -e "${GREEN}fzf installed successfully to ${INSTALL_DIR}/fzf${RESET}"
