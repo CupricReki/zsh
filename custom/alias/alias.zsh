@@ -358,8 +358,6 @@ alias zri='ssh -t -o RemoteCommand="curl -fsSL https://gitlab.timepiggy.com/cupr
 # Heavy logic lives in $ZSCRIPTS/run-zau so changes take effect without re-sourcing.
 unalias zau 2>/dev/null
 zau() {
-  local _stashed=false
-
   # Stash detection stays in the shell function — it's interactive and needs read -q.
   if [[ -d "${ZSH_DIR}" ]] && \
      ! { git -C "${ZSH_DIR}" diff --quiet && git -C "${ZSH_DIR}" diff --cached --quiet; } 2>/dev/null; then
@@ -369,18 +367,13 @@ zau() {
     read -q "REPLY?> " >&2; echo "" >&2
     if [[ $REPLY == "y" ]]; then
       git -C "${ZSH_DIR}" stash push -m "zau: pre-update stash"
-      _stashed=true
+      log info "Changes stashed. Run 'git -C \$ZSH_DIR stash pop' to restore when ready."
     else
       log warning "Proceeding without stash — update may fail if upstream conflicts with local changes."
     fi
   fi
 
-  "$ZSCRIPTS/run-zau" -e force_reinstall=true "$@"
-
-  if [[ "$_stashed" == "true" ]]; then
-    log info "Restoring stashed changes..."
-    git -C "${ZSH_DIR}" stash pop
-  fi
+  "$ZSCRIPTS/run-zau" -e force_reinstall=true "$@" && exec zsh
 }
 alias zfslist='zfs list -o name,used,avail,refquota,compressratio,logicalused,mountpoint'
 
