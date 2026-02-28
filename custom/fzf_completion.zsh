@@ -342,6 +342,6 @@ bindkey '^I' fzf-completion
 
 } always {
   # Restore the original options.
-  eval $__fzf_completion_options
+  eval $__fzf_completion_options 2>/dev/null
   'unset' '__fzf_completion_options'
 }

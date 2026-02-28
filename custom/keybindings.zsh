@@ -3,17 +3,6 @@
 # keymap/interpret_zsh.py. The gen file is regenerated only when the YAML
 # changes (mtime-gated), so normal shell starts pay zero interpreter overhead.
 
-# FZF completion (not a keybinding — sources fzf tab completion widgets)
-# Arch: /usr/share/fzf/completion.zsh  |  Debian: /usr/share/doc/fzf/examples/completion.zsh
-() {
-  local f
-  for f in \
-    /usr/share/fzf/completion.zsh \
-    /usr/share/doc/fzf/examples/completion.zsh; do
-    [[ -f $f ]] && { source $f; return }
-  done
-}
-
 # ================================================
 # Universal keymap loader (mtime-gated)
 # ================================================

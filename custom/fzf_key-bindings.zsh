@@ -116,6 +116,6 @@ bindkey -M vicmd '^R' fzf-history-widget
 bindkey -M viins '^R' fzf-history-widget
 
 } always {
-  eval $__fzf_key_bindings_options
+  eval $__fzf_key_bindings_options 2>/dev/null
   'unset' '__fzf_key_bindings_options'
 }
