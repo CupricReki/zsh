@@ -25,7 +25,7 @@ A fast, well-organized, and maintainable Zsh configuration optimized for perform
 ### One-Line Install
 
 ```bash
-wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash
+wget -O - https://gitlab.timepiggy.com/cupric/zsh/-/raw/master/init.sh | bash
 ```
 
 ### Prerequisites
@@ -47,7 +47,7 @@ sudo pacman -S zsh git curl fzf
 
 ```bash
 # 1. Clone repository
-git clone https://gitlab.ogbase.net/cupric/zsh.git ~/.config/zsh
+git clone https://gitlab.timepiggy.com/cupric/zsh.git ~/.config/zsh
 
 # 2. Run initialization script
 cd ~/.config/zsh

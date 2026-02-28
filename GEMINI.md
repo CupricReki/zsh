@@ -29,13 +29,13 @@ This configuration is intended to be used as a complete replacement for the defa
 The `init.sh` script automates the installation process. It can be run directly from the web:
 
 ```bash
-wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash
+wget -O - https://gitlab.timepiggy.com/cupric/zsh/-/raw/master/init.sh | bash
 ```
 
 Alternatively, you can clone the repository and run the script manually:
 
 ```bash
-git clone https://gitlab.ogbase.net/cupric/zsh.git ~/.config/zsh
+git clone https://gitlab.timepiggy.com/cupric/zsh.git ~/.config/zsh
 cd ~/.config/zsh
 ./init.sh
 ```

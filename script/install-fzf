@@ -96,7 +96,8 @@ done
 
 if command -v go &> /dev/null && [[ "$_use_prebuilt" != "true" ]]; then
     echo -e "${BLUE}[i]${RESET} Building fzf binary from source (Go detected)..."
-    # Set GOMODCACHE to user-writable location to avoid permission issues
+    # Pin GOPATH and GOMODCACHE to avoid creating ~/go (Go's default GOPATH)
+    export GOPATH="/usr/local/go-packages"
     export GOMODCACHE="${HOME}/.cache/go-mod"
     mkdir -p "$GOMODCACHE"
     # Temporarily disable set -e to handle build failure gracefully

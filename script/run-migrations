@@ -1,0 +1,33 @@
+#!/usr/bin/env zsh
+# run-migrations: Apply any pending numbered migration scripts
+#
+# Migrations live in $ZSH_DIR/migrations/ and are named NNN_description.zsh.
+# The last applied migration number is stored in $ZSH_CACHE_DIR/.migration_version.
+# If a migration fails the version counter does not advance, so it retries on
+# the next invocation (e.g. next zgu run).
+#
+# Requires: log() and the ZSH_DIR / ZSH_CACHE_DIR env vars from zshenv.
+
+_version_file="${ZSH_CACHE_DIR}/.migration_version"
+_migrations_dir="${ZSH_DIR}/migrations"
+_current=$(cat "$_version_file" 2>/dev/null || echo 0)
+_applied=0
+
+mkdir -p "$ZSH_CACHE_DIR"
+
+for _mig in "${_migrations_dir}"/[0-9]*.zsh(N); do
+  _num=${${_mig:t}%%_*}
+  if (( 10#$_num > 10#$_current )); then
+    log info "Applying migration $_num: ${_mig:t:r}"
+    if source "$_mig"; then
+      echo "$_num" > "$_version_file"
+      (( _applied++ ))
+    else
+      log error "Migration $_num failed — fix and re-run zgu"
+      break
+    fi
+  fi
+done
+
+(( _applied > 0 )) && log success "$_applied migration(s) applied" || true
+unset _version_file _migrations_dir _current _applied _mig _num

@@ -1,0 +1,35 @@
+---
+description: zsh config migration convention — create migrations for breaking changes
+globs: "**/*.zsh,**/zshrc,**/zshenv,**/plugins.toml"
+alwaysApply: false
+---
+
+# zsh Config Migrations
+
+When making a breaking change to the zsh config, always create a migration script in `migrations/`.
+
+## What counts as a breaking change
+
+- Removing or renaming a file/directory that existing installs may have cached
+- Adding a required new tool not covered by preflight-check
+- Changing an env var name or default value set in `zshenv`
+- Moving config to a new path (e.g., sheldon config dir)
+- Removing a cache file that must be regenerated
+
+## How to write a migration
+
+1. Find the highest existing number in `migrations/` and increment it
+2. Name the file `NNN_short_description.zsh` (zero-padded to 3 digits)
+3. Write idempotent zsh — check before acting, use `log info/warning/error`
+
+Example:
+```zsh
+# Migration 003: Remove stale dircolors cache after format change
+[[ -f "${ZSH_CACHE_DIR}/dircolors.sh" ]] && rm -f "${ZSH_CACHE_DIR}/dircolors.sh"
+```
+
+## Available helpers (from zshenv)
+
+- `log info|warning|error "message"` — coloured output
+- `command_exists cmd` — check if a command is on PATH
+- `$ZSH_DIR`, `$ZSH_CACHE_DIR`, `$SHELDON_CONFIG_DIR`, `$SHELDON_DATA_DIR`

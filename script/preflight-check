@@ -49,6 +49,11 @@ if ! file_exists "$_first_run_flag"; then
   _is_first_run=true
 fi
 
+# Run pending migrations on first run (covers Ansible-provisioned hosts where zgu has never run)
+if [[ "$_is_first_run" == "true" ]] && [[ -x "$ZSCRIPTS/run-migrations" ]]; then
+  "$ZSCRIPTS/run-migrations"
+fi
+
 # Preflight checks always run on every shell startup
 # Auto-fix prompt only appears on first run ever
 

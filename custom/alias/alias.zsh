@@ -101,8 +101,8 @@ alias diff='diff --color'
 alias dirs='dirs -v'
 alias distro='cat /etc/*-release'
 alias dl='docker logs -f'
-alias di='wget -O - https://gitlab.ogbase.net/cupric/dot/-/raw/main/init.sh | bash'
-alias dri='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/dot/-/raw/main/init.sh | bash"'
+alias di='curl -fsSL https://gitlab.timepiggy.com/cupric/dot/-/raw/main/init.sh | bash'
+alias dri='ssh -t -o RemoteCommand="curl -fsSL https://gitlab.timepiggy.com/cupric/dot/-/raw/main/init.sh | bash"'
 alias dcrmva='docker volume rm $(docker volume ls -qf dangling=true)' # delete all volumes associated with docker
 # alias ebuild='nocorrect ebuild'
 alias egrep='egrep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
@@ -345,8 +345,43 @@ alias which-command=whence
 alias wlc='wl-copy'
 alias xc='xclip -selection clipboard'
 alias zse='vi ~/.zshrc'
-alias zgu='git -C $HOME/.config/zsh pull origin master && sheldon lock --update && rm -f ~/.zcompdump* 2>/dev/null; exec zsh'
-alias zgi='wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash'
-alias zri='ssh -o RemoteCommand="wget -O - https://gitlab.ogbase.net/cupric/zsh/-/raw/master/init.sh | bash"'
+alias zgu='git -C $ZSH_DIR remote set-url origin https://gitlab.timepiggy.com/cupric/zsh.git && git -C $ZSH_DIR pull origin master && $ZSCRIPTS/run-migrations && sheldon lock --update && rm -f ~/.zcompdump* 2>/dev/null; exec zsh'
+alias zgi='curl -fsSL https://gitlab.timepiggy.com/cupric/zsh/-/raw/master/init.sh | bash'
+alias zri='ssh -t -o RemoteCommand="curl -fsSL https://gitlab.timepiggy.com/cupric/zsh/-/raw/master/init.sh | bash"'
+# Re-run the Ansible zsh playbook to update system packages and cargo tools.
+# zgu handles config + plugins; zau handles system-level updates via Ansible.
+zau() {
+  local _playbook_args="playbooks/zsh.yml --inventory localhost, --connection=local --ask-become-pass -e force_reinstall=true"
+  local _stashed=false
+
+  # Warn about uncommitted changes in the zsh config repo before Ansible does a git pull
+  if [[ -d "${ZSH_DIR}" ]] && \
+     ! { git -C "${ZSH_DIR}" diff --quiet && git -C "${ZSH_DIR}" diff --cached --quiet; } 2>/dev/null; then
+    log warning "Uncommitted changes detected in ${ZSH_DIR}"
+    echo "  (zlocal/ is gitignored and will be preserved regardless)" >&2
+    echo "Stash changes before updating? (y/n)" >&2
+    read -q "REPLY?> " >&2; echo "" >&2
+    if [[ $REPLY == "y" ]]; then
+      git -C "${ZSH_DIR}" stash push -m "zau: pre-update stash"
+      _stashed=true
+    else
+      log warning "Proceeding without stash — update may fail if upstream conflicts with local changes."
+    fi
+  fi
+
+  if [[ -d "${HOME}/ansible" ]]; then
+    (cd "${HOME}/ansible" && ansible-playbook ${=_playbook_args})
+  else
+    local _tmp="/tmp/ansible_bootstrap_zsh"
+    trap "rm -rf '${_tmp}'" EXIT
+    git clone https://gitlab.timepiggy.com/cupric/ansible.git "${_tmp}"
+    (cd "${_tmp}" && ansible-playbook ${=_playbook_args})
+  fi
+
+  if [[ "$_stashed" == "true" ]]; then
+    log info "Restoring stashed changes..."
+    git -C "${ZSH_DIR}" stash pop
+  fi
+}
 alias zfslist='zfs list -o name,used,avail,refquota,compressratio,logicalused,mountpoint'
 
