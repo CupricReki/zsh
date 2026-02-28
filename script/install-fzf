@@ -96,8 +96,12 @@ done
 
 if command -v go &> /dev/null && [[ "$_use_prebuilt" != "true" ]]; then
     echo -e "${BLUE}[i]${RESET} Building fzf binary from source (Go detected)..."
-    # Pin GOPATH and GOMODCACHE to avoid creating ~/go (Go's default GOPATH)
-    export GOPATH="/usr/local/go-packages"
+    # Use a throwaway GOPATH so Go never touches ~/go (its default) or a
+    # system directory the current user may not be able to write to.
+    # GOMODCACHE points to a persistent user-writable cache to avoid
+    # re-downloading modules on subsequent builds.
+    _gopath_tmp=$(mktemp -d -t gopath_fzf_XXXXXX)
+    export GOPATH="$_gopath_tmp"
     export GOMODCACHE="${HOME}/.cache/go-mod"
     mkdir -p "$GOMODCACHE"
     # Temporarily disable set -e to handle build failure gracefully
@@ -105,6 +109,8 @@ if command -v go &> /dev/null && [[ "$_use_prebuilt" != "true" ]]; then
     go build -o fzf 2>&1
     _build_status=$?
     set -e
+    rm -rf "$_gopath_tmp"
+    unset _gopath_tmp
     if [[ $_build_status -eq 0 ]] && [[ -f fzf ]]; then
         _build_succeeded=true
         echo -e "${GREEN}Build succeeded${RESET}"
