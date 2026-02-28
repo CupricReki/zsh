@@ -44,7 +44,10 @@ alias 7='cd -7'
 alias 8='cd -8'
 alias 9='cd -9'
 alias afind='ack -il'
-# Bitwarden unlock - converted to function for proper error handling
+# Bitwarden unlock - converted from alias to function for proper error handling.
+# Unalias first so that sourcing into a shell with the old alias defined doesn't
+# cause a parse error (zsh expands aliases before parsing function definitions).
+unalias bwe 2>/dev/null
 bwe() {
   local session
   if session=$(bw unlock --raw 2>/dev/null); then

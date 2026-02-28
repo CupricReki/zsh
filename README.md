@@ -359,6 +359,7 @@ are missing, run this one-time recovery sequence:
 ```zsh
 git -C $ZSH_DIR remote set-url origin https://gitlab.timepiggy.com/cupric/zsh.git \
   && git -C $ZSH_DIR pull origin master \
+  && source $ZSH_DIR/zshenv \
   && source $ZSH_DIR/custom/alias/alias.zsh \
   && zau
 ```
@@ -366,9 +367,11 @@ git -C $ZSH_DIR remote set-url origin https://gitlab.timepiggy.com/cupric/zsh.gi
 What each step does:
 1. **`remote set-url`** — correct the stale remote URL
 2. **`pull`** — fetch the latest config (including all bootstrap fixes)
-3. **`source alias.zsh`** — reload `zau` from disk into the current shell
+3. **`source zshenv`** — reload helper functions (`command_exists`, `log`, etc.)
+   that the new `alias.zsh` depends on but the old shell never loaded
+4. **`source alias.zsh`** — reload `zau` from disk into the current shell
    (necessary because the old version was loaded at shell start)
-4. **`zau`** — provision the machine via Ansible; installs ansible if absent,
+5. **`zau`** — provision the machine via Ansible; installs ansible if absent,
    then runs the zsh playbook to install cargo, sheldon, fzf, eza, etc.
 
 After `zau` completes, open a new shell — `zgu` will work normally from then on.
