@@ -147,14 +147,15 @@ if [[ "$_build_succeeded" != "true" ]]; then
         *) echo -e "${RED}[X]${RESET} Unsupported architecture: $ARCH"; exit 1 ;;
     esac
 
-    # Get latest release version
+    # Get latest release version (tag is e.g. "v0.68.0", filename omits the "v")
     LATEST_VERSION=$(curl -s https://api.github.com/repos/junegunn/fzf/releases/latest | grep -oP '"tag_name": "\K[^"]+')
+    LATEST_VERSION_BARE="${LATEST_VERSION#v}"
 
     # Download binary
-    DOWNLOAD_URL="https://github.com/junegunn/fzf/releases/download/${LATEST_VERSION}/fzf-${LATEST_VERSION}-${OS}_${ARCH}.tar.gz"
+    DOWNLOAD_URL="https://github.com/junegunn/fzf/releases/download/${LATEST_VERSION}/fzf-${LATEST_VERSION_BARE}-${OS}_${ARCH}.tar.gz"
     echo -e "${BLUE}[i]${RESET} Downloading from: $DOWNLOAD_URL"
 
-    curl -sL "$DOWNLOAD_URL" | tar xz
+    curl -fSL "$DOWNLOAD_URL" | tar xz
 fi
 
 # Install binary
