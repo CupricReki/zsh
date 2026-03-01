@@ -111,8 +111,11 @@ export GOPATH="/usr/local/go-packages"
 # Initialize path array (removes duplicates automatically)
 typeset -U path
 
-# System and user paths (standard locations)
+# System and user paths — user dirs first so user-installed binaries
+# (e.g. ~/.local/bin/fzf) take precedence over system packages.
 path=(
+    "$HOME/.local/bin"
+    "$HOME/bin"
     /usr/local/sbin
     /usr/local/bin
     /usr/sbin
@@ -121,8 +124,6 @@ path=(
     /bin
     /usr/games
     /usr/local/games
-    "$HOME/bin"
-    "$HOME/.local/bin"
     $path  # Preserve any existing paths
 )
 
