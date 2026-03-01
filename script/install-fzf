@@ -5,12 +5,16 @@
 
 set -e
 
-# ANSI color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-RESET='\033[0m'
+# ANSI color codes — suppressed when stdout is not a terminal (e.g. Ansible capture)
+if [[ -t 1 ]]; then
+  RED='\033[0;31m'
+  GREEN='\033[0;32m'
+  YELLOW='\033[0;33m'
+  BLUE='\033[0;34m'
+  RESET='\033[0m'
+else
+  RED='' GREEN='' YELLOW='' BLUE='' RESET=''
+fi
 
 # Parse arguments
 INSTALL_SYSTEM_WIDE=false
