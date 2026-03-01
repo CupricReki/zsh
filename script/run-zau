@@ -16,13 +16,17 @@ ANSIBLE_REPO="https://gitlab.timepiggy.com/cupric/ansible.git"
 if ! command -v ansible-playbook &>/dev/null; then
   log info "ansible-playbook not found, installing..."
   if command -v apt-get &>/dev/null; then
-    sudo apt-get install -y ansible python3
+    sudo apt-get update && sudo apt-get install -y ansible python3
   elif command -v pacman &>/dev/null; then
     sudo pacman -S --noconfirm ansible python
   elif command -v dnf &>/dev/null; then
     sudo dnf install -y ansible python3
   else
     log error "Cannot install ansible: unsupported package manager"
+    exit 1
+  fi
+  if ! command -v ansible-playbook &>/dev/null; then
+    log error "ansible-playbook installation failed — try running 'sudo apt-get update' and re-running zau"
     exit 1
   fi
 fi
