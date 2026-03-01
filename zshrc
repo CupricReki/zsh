@@ -265,7 +265,7 @@ zstyle ':completion:*:descriptions' format '[%d]'
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 # force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
 zstyle ':completion:*' menu no
-zstyle ':fzf-tab:complete:(ls|cat|bat):*' fzf-preview 'less ${(Q)realpath}'
+zstyle ':fzf-tab:complete:(ls|cat|bat):*' fzf-preview '$ZSCRIPTS/fzf-preview.sh ${(Q)realpath}'
 zstyle ':completion:*' list-grouped true
 # switch group using `<` and `>`
 zstyle ':fzf-tab:*' switch-group '<' '>'
