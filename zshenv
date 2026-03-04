@@ -135,10 +135,12 @@ dir_exists "$HOME/.local/share/cargo/bin" && path=("$HOME/.local/share/cargo/bin
 # Node.js/npm: user-installed global packages
 dir_exists "$HOME/.npm-global/bin" && path=("$HOME/.npm-global/bin" $path)
 
-# Go toolchain (go, gofmt)
-dir_exists "/usr/local/go/bin" && path=("/usr/local/go/bin" $path)
-# Go-installed binaries (go install writes to first GOPATH entry)
+# Go toolchain — Debian/Ubuntu package manager installs here; Arch puts go in /usr/bin (base PATH)
+dir_exists "/usr/lib/go/bin" && path=("/usr/lib/go/bin" $path)
+# Go-installed binaries: user packages (go install, first GOPATH entry)
 dir_exists "$HOME/.local/share/go/bin" && path=("$HOME/.local/share/go/bin" $path)
+# Go-installed binaries: system packages installed by Ansible (second GOPATH entry)
+dir_exists "/usr/local/go-packages/bin" && path=("/usr/local/go-packages/bin" $path)
 
 
 # ZSH config specific paths (only if ZSH_DIR is set)
