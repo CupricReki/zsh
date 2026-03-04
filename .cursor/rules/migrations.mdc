@@ -12,9 +12,18 @@ When making a breaking change to the zsh config, always create a migration scrip
 
 - Removing or renaming a file/directory that existing installs may have cached
 - Adding a required new tool not covered by preflight-check
-- Changing an env var name or default value set in `zshenv`
+- Renaming an env var, or changing its value in a way that breaks code already depending on the old value (e.g. a path that code outside zshenv reads directly)
 - Moving config to a new path (e.g., sheldon config dir)
 - Removing a cache file that must be regenerated
+
+## What does NOT require a migration
+
+- **Additive PATH entries** — adding a new `dir_exists ... && path=(...)` line only activates if the directory exists; it cannot break existing installs
+- **Removing a dead PATH entry** — if the removed path never existed on real installs (e.g. guarded by `dir_exists` and always false), removing it changes nothing
+- **GOPATH / env var value changes that are purely additive** — e.g. prepending a new entry to a colon-separated list while keeping the old value; existing installs lose nothing
+- In general: if the migration body would be a no-op on every existing install, skip it — empty migrations are noise
+
+The test is **"does any existing install lose something it had before?"** If no, no migration is needed.
 
 ## How to write a migration
 
