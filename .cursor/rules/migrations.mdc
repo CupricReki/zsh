@@ -21,11 +21,27 @@ When making a breaking change to the zsh config, always create a migration scrip
 1. Find the highest existing number in `migrations/` and increment it
 2. Name the file `NNN_short_description.zsh` (zero-padded to 3 digits)
 3. Write idempotent zsh — check before acting, use `log info/warning/error`
+4. Signal failure with `return 1` — this prevents `run-migrations` from marking the migration as applied, so it retries on the next run
+5. Wrap the body in a private function to properly scope `local` variables — `local` is a no-op in sourced files outside of a function
 
-Example:
+Simple example (no locals needed):
 ```zsh
 # Migration 003: Remove stale dircolors cache after format change
 [[ -f "${ZSH_CACHE_DIR}/dircolors.sh" ]] && rm -f "${ZSH_CACHE_DIR}/dircolors.sh"
+```
+
+Example with locals and failure handling:
+```zsh
+# Migration 004: Example with locals and failure signalling
+function _migration_004() {
+  local target="${ZSH_CACHE_DIR}/some-cache"
+  if [[ -f "$target" ]]; then
+    rm -f "$target" || { log error "migration 004: failed to remove $target"; return 1; }
+    log info "migration 004: removed stale cache"
+  fi
+}
+_migration_004
+unset -f _migration_004
 ```
 
 ## Available helpers (from zshenv)

@@ -129,7 +129,7 @@ path=(
 
 # Conditional paths (only add if directories exist)
 # Rust/Cargo: user-installed crates
-dir_exists "$HOME/.cargo/bin" && path=("$HOME/.cargo/bin" $path)
+dir_exists "$HOME/.local/share/cargo/bin" && path=("$HOME/.local/share/cargo/bin" $path)
 
 # Node.js/npm: user-installed global packages
 dir_exists "$HOME/.npm-global/bin" && path=("$HOME/.npm-global/bin" $path)
