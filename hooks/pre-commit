@@ -35,7 +35,7 @@ fi
 print "[bench] Running zsh-bench (${ITERS} iters)…"
 
 typeset bench_out
-bench_out=$("$bench" --iters "$ITERS" --raw 2>&1) || {
+bench_out=$("$bench" --iters "$ITERS" 2>&1) || {
   print -u2 "[bench] zsh-bench failed — skipping check"
   print -u2 "$bench_out"
   exit 0
