@@ -191,8 +191,8 @@ if command_exists tmux && [[ -n "$TMUX" ]]; then
   unset _tmux_plugin
 fi
 
-# Golang - GOPATH/bin is already in PATH from main config
-# Note: To install osc (OSC 52 clipboard tool):
+# Golang - Go toolchain (/usr/local/go/bin) and user packages (~/.local/share/go/bin)
+# are already in PATH from zshenv. To install osc (OSC 52 clipboard tool):
 #   go install github.com/theimpostor/osc@latest
 
 # yt-dlp completions are auto-discovered by compinit from system paths

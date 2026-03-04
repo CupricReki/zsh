@@ -1,0 +1,126 @@
+#!/usr/bin/env zsh
+# pre-commit: zsh startup benchmark regression guard
+#
+# Runs zsh-bench against the current config and compares against a machine-local
+# baseline. Blocks the commit if any metric regresses by more than THRESHOLD_PCT.
+#
+# Escape hatches:
+#   ZSH_BENCH_SKIP=1            git commit   # skip entirely
+#   ZSH_BENCH_UPDATE_BASELINE=1 git commit   # update stored baseline after benchmarking
+
+emulate -L zsh
+
+# ── Config ────────────────────────────────────────────────────────────────────
+
+typeset -ri ITERS=5           # iterations (default 16 is slow for a hook)
+typeset -ri THRESHOLD_PCT=50  # fail if any metric is this % slower than baseline
+
+# ── Locations ─────────────────────────────────────────────────────────────────
+
+typeset -r repo_root=$(git rev-parse --show-toplevel)
+typeset -r bench=$repo_root/vendor/zsh-bench/zsh-bench
+typeset -r baseline_file=${XDG_CACHE_HOME:-$HOME/.cache}/zsh/bench-baseline
+
+# ── Early exits ───────────────────────────────────────────────────────────────
+
+[[ -n ${ZSH_BENCH_SKIP:-} ]] && exit 0
+
+if [[ ! -x $bench ]]; then
+  print -u2 "[bench] zsh-bench not found — skipping (run: git submodule update --init)"
+  exit 0
+fi
+
+# ── Run benchmark ─────────────────────────────────────────────────────────────
+
+print "[bench] Running zsh-bench (${ITERS} iters)…"
+
+typeset bench_out
+bench_out=$("$bench" --iters "$ITERS" --raw 2>&1) || {
+  print -u2 "[bench] zsh-bench failed — skipping check"
+  print -u2 "$bench_out"
+  exit 0
+}
+
+# ── Parse output ──────────────────────────────────────────────────────────────
+
+# Extract a named metric from raw zsh-bench output (key=value lines)
+bench_get() { print -- "$bench_out" | awk -F= "/^${1}=/"'{print $2; exit}' }
+
+typeset first_prompt=$(bench_get first_prompt_lag_ms)
+typeset first_cmd=$(bench_get first_command_lag_ms)
+typeset cmd_lag=$(bench_get command_lag_ms)
+typeset input_lag=$(bench_get input_lag_ms)
+
+printf "[bench]  first_prompt=%6sms  first_cmd=%6sms  cmd=%5sms  input=%5sms\n" \
+  $first_prompt $first_cmd $cmd_lag $input_lag
+
+# ── Baseline: first run ───────────────────────────────────────────────────────
+
+if [[ ! -f $baseline_file ]]; then
+  mkdir -p ${baseline_file:h}
+  printf "first_prompt_lag_ms=%s\nfirst_cmd_lag_ms=%s\ncmd_lag_ms=%s\ninput_lag_ms=%s\n" \
+    $first_prompt $first_cmd $cmd_lag $input_lag >$baseline_file
+  print "[bench] No baseline on this machine — saved. Commit allowed."
+  exit 0
+fi
+
+# ── Compare against baseline ──────────────────────────────────────────────────
+
+baseline_get() { awk -F= "/^${1}=/"'{print $2; exit}' "$baseline_file" }
+
+typeset bp=$(baseline_get first_prompt_lag_ms)
+typeset bc=$(baseline_get first_cmd_lag_ms)
+typeset bl=$(baseline_get cmd_lag_ms)
+typeset bi=$(baseline_get input_lag_ms)
+
+# regressed <current> <baseline> → exits 0 if regression, 1 if OK
+# Uses awk for float arithmetic to avoid zsh math expression issues
+regressed() {
+  local cur=$1 base=$2
+  awk -v cur="$cur" -v base="$base" -v pct="$THRESHOLD_PCT" \
+    'BEGIN { exit !(base > 0.001 && cur > base * (1.0 + pct / 100.0)) }'
+}
+
+typeset -i failed=0
+typeset -a failures=()
+
+if regressed $first_prompt $bp; then
+  (( failed++ ))
+  failures+=("first_prompt_lag:  ${first_prompt}ms  (baseline: ${bp}ms)")
+fi
+if regressed $first_cmd $bc; then
+  (( failed++ ))
+  failures+=("first_cmd_lag:     ${first_cmd}ms  (baseline: ${bc}ms)")
+fi
+if regressed $cmd_lag $bl; then
+  (( failed++ ))
+  failures+=("cmd_lag:           ${cmd_lag}ms  (baseline: ${bl}ms)")
+fi
+if regressed $input_lag $bi; then
+  (( failed++ ))
+  failures+=("input_lag:         ${input_lag}ms  (baseline: ${bi}ms)")
+fi
+
+if (( failed )); then
+  print -u2 ""
+  print -u2 "[bench] REGRESSION: ${failed} metric(s) are >${THRESHOLD_PCT}% slower than baseline:"
+  for f in $failures; do
+    print -u2 "  ✗ $f"
+  done
+  print -u2 ""
+  print -u2 "  Profile:         zprof (uncomment zmodload zsh/zprof in zshrc)"
+  print -u2 "  Update baseline: ZSH_BENCH_UPDATE_BASELINE=1 git commit"
+  print -u2 "  Skip check:      ZSH_BENCH_SKIP=1 git commit"
+  exit 1
+fi
+
+# ── Optionally update baseline ────────────────────────────────────────────────
+
+if [[ -n ${ZSH_BENCH_UPDATE_BASELINE:-} ]]; then
+  printf "first_prompt_lag_ms=%s\nfirst_cmd_lag_ms=%s\ncmd_lag_ms=%s\ninput_lag_ms=%s\n" \
+    $first_prompt $first_cmd $cmd_lag $input_lag >$baseline_file
+  print "[bench] Baseline updated."
+fi
+
+print "[bench] OK — no regression (baseline: first_prompt=${bp}ms  first_cmd=${bc}ms  cmd=${bl}ms  input=${bi}ms)"
+exit 0

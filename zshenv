@@ -100,7 +100,8 @@ export EDITOR="${EDITOR:-vi}"
 export LIBVIRT_DEFAULT_URI="qemu:///system"
 
 # Go configuration (if go is installed)
-export GOPATH="/usr/local/go-packages"
+# First entry is writable by the user; second is system-wide (requires sudo for go install)
+export GOPATH="$HOME/.local/share/go:/usr/local/go-packages"
 
 # ================================================
 # PATH Configuration
@@ -134,8 +135,10 @@ dir_exists "$HOME/.local/share/cargo/bin" && path=("$HOME/.local/share/cargo/bin
 # Node.js/npm: user-installed global packages
 dir_exists "$HOME/.npm-global/bin" && path=("$HOME/.npm-global/bin" $path)
 
-# Go binaries
-dir_exists "$HOME/.go/bin" && path=("$HOME/.go/bin" $path)
+# Go toolchain (go, gofmt)
+dir_exists "/usr/local/go/bin" && path=("/usr/local/go/bin" $path)
+# Go-installed binaries (go install writes to first GOPATH entry)
+dir_exists "$HOME/.local/share/go/bin" && path=("$HOME/.local/share/go/bin" $path)
 
 
 # ZSH config specific paths (only if ZSH_DIR is set)

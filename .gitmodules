@@ -1,0 +1,3 @@
+[submodule "vendor/zsh-bench"]
+	path = vendor/zsh-bench
+	url = https://github.com/romkatv/zsh-bench
