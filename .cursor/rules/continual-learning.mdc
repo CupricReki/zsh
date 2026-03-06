@@ -1,0 +1,6 @@
+# Continual learning (AGENTS.md)
+
+When running the continual-learning workflow (e.g. from the continual-learning skill):
+
+1. **Exclusion list**: After extracting candidate bullets for AGENTS.md, discard any bullet whose text contains (substring match) a non-comment, non-empty line from `.cursor/hooks/state/continual-learning-exclude.txt`. Do not add or re-add those bullets. This prevents removed or unwanted items from being re-added on later runs.
+2. Only then merge the remaining candidates with existing AGENTS.md (update matching, add net-new, deduplicate).
