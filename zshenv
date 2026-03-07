@@ -169,8 +169,10 @@ if [[ -o interactive ]]; then
 fi
 
 # ================================================
-# Rustup Environment Setup
+# Rustup / Cargo Environment Setup
 # ================================================
+export CARGO_HOME="${XDG_DATA_HOME}/cargo"
+
 # Source rustup environment if available
 if file_exists "$HOME/.cargo/env"; then
   source "$HOME/.cargo/env"
