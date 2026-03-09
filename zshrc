@@ -200,8 +200,31 @@ fi
 
 # Vi mode configuration
 VI_MODE_SET_CURSOR=true         # Vertical bar on insert
+KEYTIMEOUT=20                   # 200ms escape timeout (default 400ms causes sluggish Escape)
+zle_highlight=(paste:none)      # Don't highlight pasted text
+
 bindkey -M viins '^[[3~' delete-char        # Remap delete key in insert mode
 bindkey -M vicmd '^[[3~' delete-char        # Remap delete key in command mode
+
+# Bind arrow keys in both vi keymaps using terminfo sequences (with raw fallbacks).
+# Prevents unbound \e[... sequences from being split in vicmd, where stray
+# characters like 'A' are interpreted as vi commands (vi-add-eol = insert mode).
+zmodload zsh/terminfo
+(( ${+terminfo[kcuu1]} )) && {
+  bindkey -M vicmd "${terminfo[kcuu1]}" up-line-or-history
+  bindkey -M vicmd "${terminfo[kcud1]}" down-line-or-history
+  bindkey -M vicmd "${terminfo[kcub1]}" backward-char
+  bindkey -M vicmd "${terminfo[kcuf1]}" forward-char
+  bindkey -M viins "${terminfo[kcuu1]}" up-line-or-history
+  bindkey -M viins "${terminfo[kcud1]}" down-line-or-history
+  bindkey -M viins "${terminfo[kcub1]}" backward-char
+  bindkey -M viins "${terminfo[kcuf1]}" forward-char
+}
+# Raw VT100 fallbacks for when smkx hasn't been applied
+bindkey -M vicmd '^[[A' up-line-or-history
+bindkey -M vicmd '^[[B' down-line-or-history
+bindkey -M vicmd '^[[D' backward-char
+bindkey -M vicmd '^[[C' forward-char
 
 # Initialize enhancd configuration
 export ENHANCD_DIR="$ZSH_CACHE_DIR/enhancd"
