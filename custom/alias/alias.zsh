@@ -1,7 +1,8 @@
 # To disable autocorrect for any command
-# alias foobar="nocorrect foobar"
-# updated 20241130
 
+# alias foobar="nocorrect foobar"
+
+TIMEPIGGY_GIT_URL="https://gitlab.timepiggy.com/cupric"
 
 # Check for ccat
 if command_exists ccat; then
@@ -105,8 +106,8 @@ alias diff='diff --color'
 alias dirs='dirs -v'
 alias distro='cat /etc/*-release'
 alias dl='docker logs -f'
-alias di='curl -fsSL https://gitlab.timepiggy.com/cupric/dot/-/raw/main/init.sh | bash'
-alias dri='ssh -t -o RemoteCommand="curl -fsSL https://gitlab.timepiggy.com/cupric/dot/-/raw/main/init.sh | bash"'
+alias di='curl -fsSL '"$TIMEPIGGY_GIT_URL"'/dot/-/raw/main/init.sh | bash'
+alias dri='ssh -t -o RemoteCommand="curl -fsSL '"$TIMEPIGGY_GIT_URL"'/dot/-/raw/main/init.sh | bash"'
 alias dcrmva='docker volume rm $(docker volume ls -qf dangling=true)' # delete all volumes associated with docker
 # alias ebuild='nocorrect ebuild'
 alias egrep='egrep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
@@ -350,9 +351,9 @@ alias which-command=whence
 alias wlc='wl-copy'
 alias xc='xclip -selection clipboard'
 alias zse='vi ~/.zshrc'
-alias zgu='git -C $ZSH_DIR remote set-url origin https://gitlab.timepiggy.com/cupric/zsh.git && git -C $ZSH_DIR pull origin master && $ZSCRIPTS/run-migrations && sheldon lock --update && rm -f ~/.zcompdump*(N) && exec zsh'
-alias zgi='curl -fsSL https://gitlab.timepiggy.com/cupric/zsh/-/raw/master/init.sh | bash'
-alias zri='ssh -t -o RemoteCommand="curl -fsSL https://gitlab.timepiggy.com/cupric/zsh/-/raw/master/init.sh | bash"'
+alias zgu='git -C $ZSH_DIR remote set-url origin '"$TIMEPIGGY_GIT_URL"'/zsh.git && git -C $ZSH_DIR pull origin master && $ZSCRIPTS/run-migrations && sheldon lock --update && rm -f ~/.zcompdump*(N) && exec zsh'
+alias zgi='curl -fsSL '"$TIMEPIGGY_GIT_URL"'/zsh/-/raw/master/init.sh | bash'
+alias zri='ssh -t -o RemoteCommand="curl -fsSL '"$TIMEPIGGY_GIT_URL"'/zsh/-/raw/master/init.sh | bash"'
 # Re-run the Ansible zsh playbook to update system packages and cargo tools.
 # zgu handles config + plugins; zau handles system-level updates via Ansible.
 # Heavy logic lives in $ZSCRIPTS/run-zau so changes take effect without re-sourcing.

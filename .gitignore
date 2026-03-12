@@ -21,3 +21,22 @@ __pycache__/
 
 # Machine-specific local config
 local/
+
+# Cursor
+.cursor/*
+!.cursor/plans/
+!.cursor/rules/
+
+# Editor and IDE configurations
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
