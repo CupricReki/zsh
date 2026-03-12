@@ -101,7 +101,7 @@ alias cd=__enhancd::cd
 alias ca="cursor-agent"
 alias dd='dd conv=noerror status=progress'
 alias df='df -h'
-alias dgu='git -C ~/.dotfiles pull origin main'
+alias dgu='git -C $DOT_DIR remote set-url origin '"$TIMEPIGGY_GIT_URL"'/dot.git && git -C $DOT_DIR pull origin main'
 alias diff='diff --color'
 alias dirs='dirs -v'
 alias distro='cat /etc/*-release'

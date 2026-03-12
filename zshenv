@@ -70,6 +70,9 @@ export XDG_DATA_HOME="${HOME}/.local/share"
 # Main ZSH config directory
 export ZSH_DIR="${HOME}/.config/zsh"
 
+# Main dotfiles config directory
+export DOT_DIR="${HOME}/.dotfiles"
+
 # Customizations folder
 export ZSH_CUSTOM="${ZSH_DIR}/custom"
 export ZCOMPLETION="${ZSH_DIR}/completion"
