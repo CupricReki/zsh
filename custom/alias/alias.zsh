@@ -45,6 +45,8 @@ alias 7='cd -7'
 alias 8='cd -8'
 alias 9='cd -9'
 alias afind='ack -il'
+
+
 # Bitwarden unlock - converted from alias to function for proper error handling.
 # Unalias first so that sourcing into a shell with the old alias defined doesn't
 # cause a parse error (zsh expands aliases before parsing function definitions).
@@ -99,6 +101,32 @@ backup() {
 alias cd=__enhancd::cd
 # alias cp='nocorrect cp'
 alias ca="cursor-agent"
+unalias dau 2>/dev/null
+dau() {
+  # Stash detection stays in the shell function — needs read -k 1 to capture y/n/d (read -q normalizes to y/n only).
+  if [[ -d "${DOT_DIR}" ]] && \
+     ! { git -C "${DOT_DIR}" diff --quiet && git -C "${DOT_DIR}" diff --cached --quiet; } 2>/dev/null; then
+    log warning "Uncommitted changes detected in ${DOT_DIR}"
+    echo "  (zlocal/ is gitignored and will be preserved regardless)" >&2
+    local _reply
+    while true; do
+      echo -n "Stash changes before updating? (y/n/(d)iff) " >&2
+      read -k 1 _reply
+      echo "" >&2
+      case "${(L)_reply}" in
+        y) git -C "${DOT_DIR}" stash push -m "dau: pre-update stash"
+           log info "Changes stashed. Run 'git -C \$DOT_DIR stash pop' to restore when ready."
+           break ;;
+        n) log warning "Proceeding without stash — update may fail if upstream conflicts with local changes."
+           break ;;
+        d) git -C "${DOT_DIR}" diff ;;
+        *) echo "Press y, n, or d" >&2 ;;
+      esac
+    done
+  fi
+
+  "$ZSCRIPTS/run-ansible" dot -e force_reinstall=true
+}
 alias dd='dd conv=noerror status=progress'
 alias df='df -h'
 alias dgu='git -C $DOT_DIR remote set-url origin '"$TIMEPIGGY_GIT_URL"'/dot.git && git -C $DOT_DIR pull origin main'
@@ -356,25 +384,31 @@ alias zgi='curl -fsSL '"$TIMEPIGGY_GIT_URL"'/zsh/-/raw/master/init.sh | bash'
 alias zri='ssh -t -o RemoteCommand="curl -fsSL '"$TIMEPIGGY_GIT_URL"'/zsh/-/raw/master/init.sh | bash"'
 # Re-run the Ansible zsh playbook to update system packages and cargo tools.
 # zgu handles config + plugins; zau handles system-level updates via Ansible.
-# Heavy logic lives in $ZSCRIPTS/run-zau so changes take effect without re-sourcing.
+# Heavy logic lives in $ZSCRIPTS/run-ansible so changes take effect without re-sourcing.
 unalias zau 2>/dev/null
 zau() {
-  # Stash detection stays in the shell function — it's interactive and needs read -q.
+  # Stash detection stays in the shell function — needs read -k 1 to capture y/n/d (read -q normalizes to y/n only).
   if [[ -d "${ZSH_DIR}" ]] && \
      ! { git -C "${ZSH_DIR}" diff --quiet && git -C "${ZSH_DIR}" diff --cached --quiet; } 2>/dev/null; then
     log warning "Uncommitted changes detected in ${ZSH_DIR}"
     echo "  (zlocal/ is gitignored and will be preserved regardless)" >&2
-    echo "Stash changes before updating? (y/n)" >&2
-    read -q "REPLY?> " >&2; echo "" >&2
-    if [[ $REPLY == "y" ]]; then
-      git -C "${ZSH_DIR}" stash push -m "zau: pre-update stash"
-      log info "Changes stashed. Run 'git -C \$ZSH_DIR stash pop' to restore when ready."
-    else
-      log warning "Proceeding without stash — update may fail if upstream conflicts with local changes."
-    fi
+    local _reply
+    while true; do
+      echo -n "Stash changes before updating? (y/n/(d)iff) " >&2
+      read -k 1 _reply
+      echo "" >&2
+      case "${(L)_reply}" in
+        y) git -C "${ZSH_DIR}" stash push -m "zau: pre-update stash"
+           log info "Changes stashed. Run 'git -C \$ZSH_DIR stash pop' to restore when ready."
+           break ;;
+        n) log warning "Proceeding without stash — update may fail if upstream conflicts with local changes."
+           break ;;
+        d) git -C "${ZSH_DIR}" diff ;;
+        *) echo "Press y, n, or d" >&2 ;;
+      esac
+    done
   fi
 
-  "$ZSCRIPTS/run-zau" -e force_reinstall=true "$@" && exec zsh
+  "$ZSCRIPTS/run-ansible" zsh -e force_reinstall=true && exec zsh
 }
 alias zfslist='zfs list -o name,used,avail,refquota,compressratio,logicalused,mountpoint'
-

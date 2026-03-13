@@ -1,5 +1,9 @@
 #!/usr/bin/env zsh
-# run-zau: Run the Ansible zsh playbook against the local machine.
+# run-zau: Run an Ansible playbook against the local machine.
+#
+# Usage: run-zau <playbook> [ansible-playbook args...]
+# Example: run-zau zsh
+# Example: run-zau dot
 #
 # Handles:
 #   - Installing ansible if not present (apt / pacman / dnf)
@@ -7,10 +11,53 @@
 #   - Disabling vault_password_file (dev-machine setting, errors on fresh hosts)
 #   - Running ansible-playbook with the correct user and become strategy
 #
-# All extra arguments are forwarded to ansible-playbook.
 # Requires: log() and HOME from the environment (provided by zshenv).
 
 ANSIBLE_REPO="https://gitlab.timepiggy.com/cupric/ansible.git"
+
+show_help() {
+  local exit_code="${1:-0}"
+  cat << EOF
+Usage: run-zau <playbook> [ansible-playbook args...]
+
+Run an Ansible playbook against the local machine.
+
+Options:
+  playbook              Playbook name (e.g. zsh, dot). Resolves to playbooks/<name>.yml
+  ansible-playbook args  Extra args forwarded to ansible-playbook (e.g. -v, --tags foo)
+  -h, --help             Display this help message.
+
+Examples:
+  run-zau zsh
+  run-zau dot
+  run-zau zsh -v --tags deps
+EOF
+  exit "$exit_code"
+}
+
+# Parse command-line options
+_playbook_name=""
+_ansible_args=()
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -h|--help)
+      show_help
+      ;;
+    *)
+      if [[ -z "$_playbook_name" ]]; then
+        _playbook_name="$1"
+      else
+        _ansible_args+=("$1")
+      fi
+      shift
+      ;;
+  esac
+done
+
+if [[ -z "$_playbook_name" ]]; then
+  log error "Playbook name required."
+  show_help 1
+fi
 
 # --- Ensure ansible is available ---
 if ! command -v ansible-playbook &>/dev/null; then
@@ -31,9 +78,11 @@ if ! command -v ansible-playbook &>/dev/null; then
   fi
 fi
 
+
+
 # --- Locate or clone the ansible project ---
 _ansible_dir=""
-if [[ -f "${HOME}/ansible/playbooks/zsh.yml" ]]; then
+if [[ -f "${HOME}/ansible/ansible.cfg" ]]; then
   _ansible_dir="${HOME}/ansible"
 else
   _tmp="/tmp/ansible_bootstrap_zsh"
@@ -53,10 +102,10 @@ sudo -n true 2>/dev/null && _become_arg=""
 # --- Run the playbook ---
 (
   builtin cd "${_ansible_dir}"
-  ansible-playbook playbooks/zsh.yml \
+  ansible-playbook "playbooks/${_playbook_name}.yml" \
     --inventory localhost, \
     --connection=local \
     ${_become_arg} \
     -e "zsh_target_user=$(whoami)" \
-    "$@"
+    "${_ansible_args[@]}"
 )
