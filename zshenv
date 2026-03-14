@@ -62,6 +62,9 @@ log() {
   esac
 }
 
+export ANSIBLE_DIR="${HOME}/.config/ansible"
+export ANSIBLE_CONFIG="${ANSIBLE_DIR}/ansible.cfg"
+
 # XDG Base Directory Specification
 export XDG_CONFIG_HOME="${HOME}/.config"
 export XDG_CACHE_HOME="${HOME}/.cache"

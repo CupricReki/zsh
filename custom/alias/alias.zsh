@@ -45,8 +45,7 @@ alias 7='cd -7'
 alias 8='cd -8'
 alias 9='cd -9'
 alias afind='ack -il'
-
-
+alias ap='ansible-playbook'
 # Bitwarden unlock - converted from alias to function for proper error handling.
 # Unalias first so that sourcing into a shell with the old alias defined doesn't
 # cause a parse error (zsh expands aliases before parsing function definitions).
@@ -125,7 +124,7 @@ dau() {
     done
   fi
 
-  "$ZSCRIPTS/run-ansible" dot -e force_reinstall=true
+  "$ZSCRIPTS/run-ansible" dotfiles -e force_reinstall=true
 }
 alias dd='dd conv=noerror status=progress'
 alias df='df -h'
