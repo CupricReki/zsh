@@ -172,6 +172,11 @@ unset _sheldon_output
 # Conditional Plugins - Only load if tools exist
 # ================================================
 
+# direnv: load/unload env when entering directories with .envrc
+if command_exists direnv; then
+  eval "$(direnv hook zsh)"
+fi
+
 # kubectl plugin (only if kubectl is installed)
 if command_exists kubectl; then
   source <(kubectl completion zsh)
