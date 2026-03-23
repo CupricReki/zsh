@@ -9,9 +9,12 @@ dc() {
   set -a
   [[ -f /opt/environment/env/global.env ]] && source /opt/environment/env/global.env
   [[ -f /opt/environment/env/hosts/$(hostname -s).env ]] && source /opt/environment/env/hosts/$(hostname -s).env
-  for f in /opt/secrets/*.env; do
-    [[ -f "$f" ]] && source "$f"
-  done
+  # zsh errors on unmatched globs by default; (N) allows zero matches; skip if dir missing
+  if [[ -d /opt/secrets ]]; then
+    for f in /opt/secrets/*.env(N); do
+      [[ -f "$f" ]] && source "$f"
+    done
+  fi
   set +a
   if command_exists docker-compose; then
     command docker-compose "$@"
