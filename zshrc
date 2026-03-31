@@ -168,6 +168,10 @@ fi
 eval "$_sheldon_output"
 unset _sheldon_output
 
+# Aliases resolve before functions; clear any `backup` alias so the autoloaded
+# function from $ZFUNC/backup is used (same as the old inline backup() in alias.zsh).
+unalias backup 2>/dev/null
+
 # ================================================
 # Conditional Plugins - Only load if tools exist
 # ================================================

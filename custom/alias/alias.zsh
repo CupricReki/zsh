@@ -89,6 +89,17 @@ dau() {
 
   "$ZSCRIPTS/run-ansible" dotfiles -e force_reinstall=true
 }
+unalias dai 2>/dev/null
+dai() {
+  log warning "dai runs dotfiles with dotfiles_clean_existing=true: managed configs on this machine (e.g. under ~/.config) may be removed, then reinstalled from ${DOT_DIR}."
+  if ! read -q "REPLY?Proceed? Local changes in those paths can be lost. (y/n) "; then
+    echo "" >&2
+    log info "Cancelled."
+    return 1
+  fi
+  echo "" >&2
+  "$ZSCRIPTS/run-ansible" dotfiles -e dotfiles_clean_existing=true
+}
 alias dd='dd conv=noerror status=progress'
 alias df='df -h'
 alias dgu='git -C $DOT_DIR remote set-url origin '"$TIMEPIGGY_GIT_URL"'/dot.git && git -C $DOT_DIR pull origin main'
