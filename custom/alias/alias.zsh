@@ -45,7 +45,39 @@ alias 7='cd -7'
 alias 8='cd -8'
 alias 9='cd -9'
 alias afind='ack -il'
-alias ap='ansible-playbook'
+# Bare playbook names resolve to $ANSIBLE_DIR/playbooks/ (ansible-playbook only looks in cwd).
+unalias ap 2>/dev/null
+ap() {
+  if (( $# == 0 )); then
+    ansible-playbook
+    return
+  fi
+  if [[ "$1" == -* ]]; then
+    ansible-playbook "$@"
+    return
+  fi
+  local first="$1"
+  if [[ "$first" == /* ]] || [[ "$first" == */* ]]; then
+    ansible-playbook "$@"
+    return
+  fi
+  if [[ -f "$first" ]]; then
+    ansible-playbook "$@"
+    return
+  fi
+  # Collection playbook FQCN (no slash, not a .yml/.yaml file).
+  if [[ "$first" == *.* ]] && [[ "$first" != *.yml ]] && [[ "$first" != *.yaml ]]; then
+    ansible-playbook "$@"
+    return
+  fi
+  if [[ -z "${ANSIBLE_DIR}" ]]; then
+    echo "ap: ANSIBLE_DIR is not set" >&2
+    return 1
+  fi
+  local pb="${ANSIBLE_DIR}/playbooks/${first}"
+  shift
+  ansible-playbook "$pb" "$@"
+}
 # Bitwarden unlock - converted from alias to function for proper error handling.
 # Unalias first so that sourcing into a shell with the old alias defined doesn't
 # cause a parse error (zsh expands aliases before parsing function definitions).
