@@ -60,43 +60,6 @@ bwe() {
     return 1
   fi
 }
-# backup - Create timestamped backup of file or directory
-# Usage: backup <file|directory> [destination]
-# Creates: filename.YYYYMMDD_HHMMSS.bak or custom destination
-unalias backup 2>/dev/null
-backup() {
-    if [[ $# -eq 0 ]]; then
-        echo "Usage: backup <file|directory> [destination]" >&2
-        echo "Example: backup myfile.txt" >&2
-        echo "         backup mydir/ /backups/mydir.bak" >&2
-        return 1
-    fi
-
-    local src="$1"
-    local timestamp=$(date +%Y%m%d_%H%M%S)
-    local dest="${2:-${src%/}.${timestamp}.bak}"
-
-    if [[ ! -e "$src" ]]; then
-        echo "Error: '$src' does not exist" >&2
-        return 1
-    fi
-
-    if [[ -e "$dest" ]]; then
-        echo "Warning: '$dest' already exists" >&2
-        read -q "REPLY?Overwrite? (y/n) "
-        echo
-        [[ $REPLY != "y" ]] && return 1
-    fi
-
-    echo "Backing up: $src → $dest"
-    if rsync -a --info=progress2 "$src" "$dest"; then
-        log success "Backup complete: $dest"
-        du -sh "$dest"
-    else
-        log error "Backup failed"
-        return 1
-    fi
-}
 alias cd=__enhancd::cd
 # alias cp='nocorrect cp'
 alias ca="cursor-agent"
