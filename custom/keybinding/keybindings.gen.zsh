@@ -4,7 +4,7 @@
 bindkey '^ ' autosuggest-accept  # Accept autosuggestion
 
 # fzf
-bindkey '^[t' fzf-file-widget  # FZF file search (Alt+T)
+bindkey '^[t' fzf-file-widget  # FZF file search
 
 # navigation
 bindkey '^[f' forward-word  # Forward word

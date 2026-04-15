@@ -24,8 +24,8 @@ completion:
     action: autosuggest-accept
 
 fzf:
-  - shortcut: M-t
-    description: FZF file search (Alt+T)
+  - shortcut: A-t
+    description: FZF file search
     action: fzf-file-widget
 
 navigation:
