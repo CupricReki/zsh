@@ -109,6 +109,16 @@ export LIBVIRT_DEFAULT_URI="qemu:///system"
 # First entry is writable by the user; second is system-wide (requires sudo for go install)
 export GOPATH="$HOME/.local/share/go:/usr/local/go-packages"
 
+# Shared Python library submodules
+# Keep standards helper modules importable from any shell-launched Python script.
+if [[ -n "$ZSH_DIR" ]]; then
+    _standards_py="${ZSH_DIR}/libraries/python/standards/python"
+    if dir_exists "$_standards_py" && [[ ":${PYTHONPATH:-}:" != *":${_standards_py}:"* ]]; then
+        export PYTHONPATH="${_standards_py}${PYTHONPATH:+:${PYTHONPATH}}"
+    fi
+    unset _standards_py
+fi
+
 # ================================================
 # PATH Configuration
 # ================================================
