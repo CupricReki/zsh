@@ -46,8 +46,8 @@ sudo pacman -S zsh git curl fzf
 ### Manual Install
 
 ```bash
-# 1. Clone repository
-git clone https://gitlab.timepiggy.com/cupric/zsh.git ~/.config/zsh
+# 1. Clone repository (with submodules)
+git clone --recurse-submodules https://gitlab.timepiggy.com/cupric/zsh.git ~/.config/zsh
 
 # 2. Run initialization script
 cd ~/.config/zsh
@@ -159,13 +159,14 @@ myfunction
 - **[PROFILING.md](docs/PROFILING.md)** - How to profile your shell startup
 - **[MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)** - Migrating between plugin managers
 - **[PLUGIN_MANAGER_COMPARISON.md](docs/PLUGIN_MANAGER_COMPARISON.md)** - Plugin manager comparison
+- **[ANSIBLE_SUBMODULE_INTEGRATION_PROMPT.md](docs/ANSIBLE_SUBMODULE_INTEGRATION_PROMPT.md)** - Handoff prompt for Ansible-side submodule setup
 
 ## Updates
 
 ### Update Everything
 
 ```bash
-cd ~/.config/zsh && git pull && exec zsh
+cd ~/.config/zsh && git pull && git submodule update --init --recursive && exec zsh
 ```
 
 Or use the alias:

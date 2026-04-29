@@ -384,7 +384,7 @@ alias which-command=whence
 alias wlc='wl-copy'
 alias xc='xclip -selection clipboard'
 alias zse='vi ~/.zshrc'
-alias zgu='git -C $ZSH_DIR remote set-url origin '"$TIMEPIGGY_GIT_URL"'/zsh.git && git -C $ZSH_DIR pull origin master && $ZSCRIPTS/run-migrations && sheldon lock --update && rm -f ~/.zcompdump*(N) && exec zsh'
+alias zgu='git -C $ZSH_DIR remote set-url origin '"$TIMEPIGGY_GIT_URL"'/zsh.git && git -C $ZSH_DIR pull origin master && git -C $ZSH_DIR submodule update --init --recursive && $ZSCRIPTS/run-migrations && sheldon lock --update && rm -f ~/.zcompdump*(N) && exec zsh'
 alias zgi='curl -fsSL '"$TIMEPIGGY_GIT_URL"'/zsh/-/raw/master/init.sh | bash'
 alias zri='ssh -t -o RemoteCommand="curl -fsSL '"$TIMEPIGGY_GIT_URL"'/zsh/-/raw/master/init.sh | bash"'
 # Re-run the Ansible zsh playbook to update system packages and cargo tools.

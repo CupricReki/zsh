@@ -1,3 +1,6 @@
 [submodule "vendor/zsh-bench"]
 	path = vendor/zsh-bench
 	url = https://github.com/romkatv/zsh-bench
+[submodule "libraries/python/standards"]
+	path = libraries/python/standards
+	url = /home/cupric/dev/libraries/python/standards
