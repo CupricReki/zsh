@@ -3,4 +3,4 @@
 	url = https://github.com/romkatv/zsh-bench
 [submodule "libraries/python/standards"]
 	path = libraries/python/standards
-	url = /home/cupric/dev/libraries/python/standards
+	url = ssh://git@gitlabssh.timepiggy.com:2224/cupric/standards-library.git
