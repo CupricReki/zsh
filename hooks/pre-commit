@@ -30,14 +30,27 @@ if [[ ! -x $bench ]]; then
   exit 0
 fi
 
+# ── Fix util-linux 2.42.2 script incompatibility ──────────────────────────────
+# zsh-bench's script() wrapper uses: script -fqec "cmd" -- "$1"
+# util-linux >=2.42 treats "-- file" as a program argument, conflicting with -c.
+# Patch the submodule copy in a temp file so the fix survives submodule updates.
+
+typeset -r _bench_fixed=$(mktemp /tmp/zsh-bench-fixed-XXXXXX)
+trap "rm -f $_bench_fixed" EXIT INT TERM HUP
+
+sed 's/with-env command script -fqec "${(j: :)@:2}" -- "\$1"/with-env command script -fqec "${(j: :)@:2}" "\$1"/' \
+  "$bench" > "$_bench_fixed"
+chmod +x "$_bench_fixed"
+
 # ── Run benchmark ─────────────────────────────────────────────────────────────
 
 print "[bench] Running zsh-bench (${ITERS} iters)…"
 
 typeset bench_out
-bench_out=$("$bench" --iters "$ITERS" 2>&1) || {
+# timeout: zsh-bench can hang on some machines; cap at 30s max
+bench_out=$(timeout 30 "$_bench_fixed" --iters "$ITERS" 2>&1) || {
   print -u2 "[bench] zsh-bench failed — skipping check"
-  print -u2 "$bench_out"
+  [[ -n $bench_out ]] && print -u2 "$bench_out"
   exit 0
 }
 
