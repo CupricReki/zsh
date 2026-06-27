@@ -134,7 +134,25 @@ dai() {
 }
 alias dd='dd conv=noerror status=progress'
 alias df='df -h'
-alias dgu='git -C $DOT_DIR remote set-url origin '"$TIMEPIGGY_GIT_URL"'/dot.git && git -C $DOT_DIR pull origin main'
+unalias dgu 2>/dev/null
+dgu() {
+  git -C "$DOT_DIR" remote set-url origin "${TIMEPIGGY_GIT_URL}/dot.git" || return 1
+  git -C "$DOT_DIR" pull origin main || return 1
+
+  local lazy_dir="${HOME}/.local/share/nvim/lazy"
+  if [[ -d "$lazy_dir" ]]; then
+    for d in "$lazy_dir"/*(N/); do
+      [[ -d "$d/.git" ]] || continue
+      command git -C "$d" diff --quiet &>/dev/null
+      if [[ $? -eq 128 ]]; then
+        echo "dotfiles: removing corrupted lazy plugin: $(basename "$d")" >&2
+        if ! rm -rf "$d"; then
+          echo "dotfiles: FAILED to remove corrupted plugin: $(basename "$d")" >&2
+        fi
+      fi
+    done
+  fi
+}
 alias diff='diff --color'
 alias dirs='dirs -v'
 alias distro='cat /etc/*-release'
