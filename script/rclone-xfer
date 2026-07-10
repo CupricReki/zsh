@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+"""Safe multi-source rclone copy/move wrapper.
+
+Usage:
+    rclone-xfer copy <source...> <dest>
+    rclone-xfer move <source...> <dest>
+
+Features:
+    - Copies/moves each source into dest (see trailing-/ note below for dirs)
+    - Respects rclone's native trailing-/ semantics (dir/ copies contents)
+    - Pre-flight collision detection: refuses to run if two sources share
+      a basename
+    - Rejects all flags: use bare rclone for --exclude, --bwlimit, etc.
+    - Checks rclone is installed before touching any data
+"""
+
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import sys
+
+USAGE = "Usage: rclone-xfer copy|move <source...> <dest>"
+
+RCLONE_FLAGS = ["--progress", "--transfers", "8", "--links", "--metadata"]
+
+
+def basenames(paths: list[str]) -> list[str]:
+    """Extract basenames, stripping trailing slashes first."""
+    return [os.path.basename(p.rstrip("/") or "/") for p in paths]
+
+
+def resolve_dest(src: str, dest: str) -> str:
+    """Destination for a single source.
+
+    'dir/'  -> dest           (copy contents — rclone convention)
+    'dir'   -> dest/dir       (copy the dir itself)
+    'file'  -> dest/file
+    """
+    norm_dest = dest.rstrip("/") or "/"
+    if src.endswith("/"):
+        return norm_dest
+    return os.path.join(norm_dest, os.path.basename(src.rstrip("/") or "/"))
+
+
+def main() -> None:
+    if len(sys.argv) < 2 or sys.argv[1] not in ("copy", "move"):
+        sys.exit(f"rclone-xfer: invalid usage\n{USAGE}\n")
+
+    cmd = sys.argv[1]
+    args = sys.argv[2:]
+
+    # Reject flags (but allow "-" for stdin)
+    bad = [a for a in args if a.startswith("-") and a != "-"]
+    if bad:
+        quoted = ", ".join(repr(f) for f in bad)
+        sys.exit(
+            f"rclone-xfer: flags are not supported (got {quoted}); "
+            "use bare rclone for advanced options\n"
+        )
+
+    if len(args) < 2:
+        sys.exit(
+            f"rclone-xfer: missing arguments (need at least 2, got {len(args)})\n"
+            f"{USAGE}\n"
+        )
+
+    *sources, dest = args
+
+    if shutil.which("rclone") is None:
+        sys.exit("rclone-xfer: rclone not found in PATH\n")
+
+    # Pre-flight: detect basename collisions
+    seen: dict[str, str] = {}
+    bn = basenames(sources)
+    norm_dest = dest.rstrip("/") or "/"
+    for i, name in enumerate(bn):
+        if name in seen:
+            sys.exit(
+                f"rclone-xfer: refusing to continue: both "
+                f"'{seen[name]}' and '{sources[i]}' would write to "
+                f"'{norm_dest}/{name}'\n"
+            )
+        seen[name] = sources[i]
+
+    # Build flags — move gets --delete-empty-src-dirs
+    flags = list(RCLONE_FLAGS)
+    if cmd == "move":
+        flags.append("--delete-empty-src-dirs")
+
+    rc = 0
+    for src in sources:
+        target = resolve_dest(src, dest)
+        result = subprocess.run(
+            ["rclone", cmd, *flags, "--", src, target],
+        )
+        if result.returncode != 0:
+            rc = 1
+
+    sys.exit(rc)
+
+
+if __name__ == "__main__":
+    main()
