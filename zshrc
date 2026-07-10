@@ -407,7 +407,13 @@ if [[ -o login ]]; then
     else
         start_agent
     fi
+
 fi
+
+# Keep a stable symlink to the current SSH agent socket for devcontainers.
+# gpg-agent rotates the actual socket path on restart; this symlink lets
+# Docker bind-mounts survive agent restarts without recreating the container.
+[[ -n "${SSH_AUTH_SOCK}" && -S "${SSH_AUTH_SOCK}" ]] && ln -sf "${SSH_AUTH_SOCK}" "${HOME}/.ssh/agent.sock"
 
 # Use system clipboard - must go after other keybindings
 # zsh-system-clipboard is loaded via sheldon (with lazy loading)
