@@ -222,6 +222,7 @@ sheldon lock --update
 ### Recommended
 - **rg** (ripgrep) - Fast grep alternative (fzf file search)
 - **bat** - Better cat with syntax highlighting (fzf previews)
+- **rclone** - Cloud storage sync (used by `rclonecopy`/`rclonemove` functions)
 - **zoxide** - Smart cd replacement (alternative to enhancd)
 - **git-delta** - Better git diffs
 - **nvim** - Modern vim
