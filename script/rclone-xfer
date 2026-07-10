@@ -85,7 +85,7 @@ def main() -> None:
     for src in sources:
         if ":" in src or src == "-":
             continue  # rclone remote or stdin — can't pre-flight
-        path = src.rstrip("/") or "/"
+        path = os.path.expanduser(src.rstrip("/") or "/")
         if not os.path.lexists(path):
             missing.append(src)
     if missing:
