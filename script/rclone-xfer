@@ -22,9 +22,23 @@ import shutil
 import subprocess
 import sys
 
+try:
+    from standard_logging_stdlib import color_red
+except ImportError:
+    RED = "\033[31m"
+    RESET = "\033[0m"
+
+    def color_red(msg: str) -> str:
+        return f"{RED}{msg}{RESET}" if sys.stderr.isatty() else msg
+
+
 USAGE = "Usage: rclone-xfer copy|move <source...> <dest>"
 
 RCLONE_FLAGS = ["--progress", "--transfers", "8", "--links", "--metadata"]
+
+
+def die(msg: str) -> None:
+    sys.exit(color_red(f"rclone-xfer: {msg}"))
 
 
 def basenames(paths: list[str]) -> list[str]:
@@ -47,7 +61,7 @@ def resolve_dest(src: str, dest: str) -> str:
 
 def main() -> None:
     if len(sys.argv) < 2 or sys.argv[1] not in ("copy", "move"):
-        sys.exit(f"rclone-xfer: invalid usage\n{USAGE}")
+        die(f"invalid usage\n{USAGE}")
 
     cmd = sys.argv[1]
     args = sys.argv[2:]
@@ -56,21 +70,15 @@ def main() -> None:
     bad = [a for a in args if a.startswith("-") and a != "-"]
     if bad:
         quoted = ", ".join(repr(f) for f in bad)
-        sys.exit(
-            f"rclone-xfer: flags are not supported (got {quoted}); "
-            "use bare rclone for advanced options"
-        )
+        die(f"flags are not supported (got {quoted}); use bare rclone for advanced options")
 
     if len(args) < 2:
-        sys.exit(
-            f"rclone-xfer: missing arguments (need at least 2, got {len(args)})\n"
-            f"{USAGE}"
-        )
+        die(f"missing arguments (need at least 2, got {len(args)})\n{USAGE}")
 
     *sources, dest = args
 
     if shutil.which("rclone") is None:
-        sys.exit("rclone-xfer: rclone not found in PATH")
+        die("rclone not found in PATH")
 
     # Pre-flight: verify local sources exist (skip remotes and stdin)
     missing = []
@@ -82,7 +90,7 @@ def main() -> None:
             missing.append(src)
     if missing:
         quoted = ", ".join(repr(s) for s in missing)
-        sys.exit(f"rclone-xfer: source(s) not found: {quoted}")
+        die(f"source(s) not found: {quoted}")
 
     # Pre-flight: detect basename collisions
     seen: dict[str, str] = {}
@@ -90,8 +98,8 @@ def main() -> None:
     norm_dest = dest.rstrip("/") or "/"
     for i, name in enumerate(bn):
         if name in seen:
-            sys.exit(
-                f"rclone-xfer: refusing to continue: both "
+            die(
+                f"refusing to continue: both "
                 f"'{seen[name]}' and '{sources[i]}' would write to "
                 f"'{norm_dest}/{name}'"
             )
