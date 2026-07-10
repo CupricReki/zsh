@@ -8,6 +8,7 @@ Usage:
 Features:
     - Copies/moves each source into dest (see trailing-/ note below for dirs)
     - Respects rclone's native trailing-/ semantics (dir/ copies contents)
+    - Pre-flight source-existence check: refuses if any local source is missing
     - Pre-flight collision detection: refuses to run if two sources share
       a basename
     - Rejects all flags: use bare rclone for --exclude, --bwlimit, etc.
@@ -46,7 +47,7 @@ def resolve_dest(src: str, dest: str) -> str:
 
 def main() -> None:
     if len(sys.argv) < 2 or sys.argv[1] not in ("copy", "move"):
-        sys.exit(f"rclone-xfer: invalid usage\n{USAGE}\n")
+        sys.exit(f"rclone-xfer: invalid usage\n{USAGE}")
 
     cmd = sys.argv[1]
     args = sys.argv[2:]
@@ -57,19 +58,31 @@ def main() -> None:
         quoted = ", ".join(repr(f) for f in bad)
         sys.exit(
             f"rclone-xfer: flags are not supported (got {quoted}); "
-            "use bare rclone for advanced options\n"
+            "use bare rclone for advanced options"
         )
 
     if len(args) < 2:
         sys.exit(
             f"rclone-xfer: missing arguments (need at least 2, got {len(args)})\n"
-            f"{USAGE}\n"
+            f"{USAGE}"
         )
 
     *sources, dest = args
 
     if shutil.which("rclone") is None:
-        sys.exit("rclone-xfer: rclone not found in PATH\n")
+        sys.exit("rclone-xfer: rclone not found in PATH")
+
+    # Pre-flight: verify local sources exist (skip remotes and stdin)
+    missing = []
+    for src in sources:
+        if ":" in src or src == "-":
+            continue  # rclone remote or stdin — can't pre-flight
+        path = src.rstrip("/") or "/"
+        if not os.path.lexists(path):
+            missing.append(src)
+    if missing:
+        quoted = ", ".join(repr(s) for s in missing)
+        sys.exit(f"rclone-xfer: source(s) not found: {quoted}")
 
     # Pre-flight: detect basename collisions
     seen: dict[str, str] = {}
@@ -80,7 +93,7 @@ def main() -> None:
             sys.exit(
                 f"rclone-xfer: refusing to continue: both "
                 f"'{seen[name]}' and '{sources[i]}' would write to "
-                f"'{norm_dest}/{name}'\n"
+                f"'{norm_dest}/{name}'"
             )
         seen[name] = sources[i]
 
