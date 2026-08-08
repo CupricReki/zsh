@@ -257,9 +257,16 @@ if command_exists carapace; then
   # Generate cached init script on first run or after carapace update
   if [[ ! -f "$_carapace_init" ]] || [[ "$_carapace_init" -ot "${commands[carapace]}" ]]; then
     log info "Generating carapace completions (one-time)..."
-    carapace _carapace > "$_carapace_init"
+    if ! carapace _carapace > "$_carapace_init"; then
+      log error "carapace init generation failed"
+      rm -f "$_carapace_init"
+    fi
   fi
-  source "$_carapace_init"
+  if [[ -s "$_carapace_init" ]]; then
+    source "$_carapace_init"
+  else
+    log warning "carapace init not available; completions may be limited"
+  fi
 
   # Pre-warm carapace spec cache in background (populates ~/.cache/carapace/)
   (carapace --list 2>/dev/null | while read -r _carapace_cmd; do
