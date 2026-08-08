@@ -244,15 +244,39 @@ export ENHANCD_FILTER="fzf --preview 'eza -al --tree --level 1 --group-directori
         :peco"
 
 # ================================================
-# Additional tool-specific completions
-# Custom completion files are in $ZCOMPLETION which is in $FPATH
-# compinit automatically discovers and loads them - DO NOT source them manually
+# Carapace — multi-shell completion engine
 # ================================================
-# These are custom completion files that aren't in sheldon
+# Generates zsh completion functions from declarative YAML specs (1600+ commands).
+# Init script is cached; regenerated only when the carapace binary updates.
+# Pre-warms carapace's spec cache in background each session.
+# CARAPACE_BRIDGES enables fallback to native zsh for uncovered commands.
 
+if command_exists carapace; then
+  _carapace_init="${ZSH_CACHE_DIR}/carapace-init.zsh"
 
+  # Generate cached init script on first run or after carapace update
+  if [[ ! -f "$_carapace_init" ]] || [[ "$_carapace_init" -ot "${commands[carapace]}" ]]; then
+    log info "Generating carapace completions (one-time)..."
+    carapace _carapace > "$_carapace_init"
+  fi
+  source "$_carapace_init"
 
-# Tailscale completions are auto-discovered by compinit from $ZCOMPLETION/_tailscale
+  # Pre-warm carapace spec cache in background (populates ~/.cache/carapace/)
+  (carapace --list 2>/dev/null | while read -r _carapace_cmd; do
+    carapace "$_carapace_cmd" '' &>/dev/null
+  done) &!
+  unset _carapace_init
+
+  # Fall back to native zsh completions for commands carapace doesn't cover
+  export CARAPACE_BRIDGES='zsh'
+fi
+
+# ================================================
+# Custom completion files
+# ================================================
+# $ZCOMPLETION is in $FPATH (set in zshenv). compinit auto-discovers _files.
+# Carapace handles most tools; hand-authored _files kept for outliers
+# (cursor-agent, audio_split-tag, rbw, sheldon).
 
 # Load custom key bindings (sources keybinding/keybindings.gen.zsh via mtime-gated interpreter)
 source "$ZSH_CUSTOM/keybindings.zsh"
