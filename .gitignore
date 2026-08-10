@@ -40,3 +40,6 @@ Thumbs.db
 venv/
 env/
 
+# Git worktrees
+.worktrees/
+
