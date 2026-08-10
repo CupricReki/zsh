@@ -58,6 +58,9 @@ TOP_N=50
 EXCLUDE_PATTERNS=()
 SHOW_PROGRESS=true
 STREAM_RESULTS=true
+SKIP_ZFS=false
+ZFS_DATASETS=5
+SORT_ORDER="asc"
 
 # System directories to skip
 SYSTEM_EXCLUDES=(
@@ -127,6 +130,9 @@ while [[ $# -gt 0 ]]; do
         -e|--exclude) EXCLUDE_PATTERNS+=("$2"); shift 2 ;;
         --no-stream) STREAM_RESULTS=false; shift ;;
         --no-progress) SHOW_PROGRESS=false; shift ;;
+        --skip-zfs) SKIP_ZFS=true; shift ;;
+        --zfs-datasets) ZFS_DATASETS="$2"; shift 2 ;;
+        --sort) SORT_ORDER="$2"; shift 2 ;;
         -h|--help) show_help; exit 0 ;;
         *) log error "Unknown option: $1"; show_help; exit 1 ;;
     esac
@@ -185,6 +191,128 @@ should_exclude() {
     done < <(get_network_mounts)
     
     return 1
+}
+
+# Human-readable byte formatting (no numfmt dependency for preamble)
+human_bytes() {
+    local bytes="$1"
+    if command -v numfmt &> /dev/null; then
+        numfmt --to=iec-i --suffix=B "$bytes" 2>/dev/null
+        return
+    fi
+    if [[ $bytes -ge 1099511627776 ]]; then
+        awk "BEGIN {printf \"%.1f TiB\", $bytes / 1099511627776}"
+    elif [[ $bytes -ge 1073741824 ]]; then
+        awk "BEGIN {printf \"%.1f GiB\", $bytes / 1073741824}"
+    elif [[ $bytes -ge 1048576 ]]; then
+        awk "BEGIN {printf \"%.1f MiB\", $bytes / 1048576}"
+    elif [[ $bytes -ge 1024 ]]; then
+        awk "BEGIN {printf \"%.1f KiB\", $bytes / 1024}"
+    else
+        echo "${bytes} B"
+    fi
+}
+
+# ZFS pool and dataset summary (shown before file/directory scan)
+zfs_preamble() {
+    [[ "$SKIP_ZFS" == "true" ]] && return
+    if ! command -v zfs &> /dev/null; then
+        echo -e "${BLUE}[i]${RESET} zfs not available, skipping ZFS context" >&2
+        return
+    fi
+
+    # Collect raw data: name, used, avail, usedbysnapshots, mountpoint
+    local zfs_data
+    zfs_data=$(zfs list -Hp -o name,used,avail,usedbysnapshots,mountpoint -t filesystem 2>/dev/null) || {
+        return  # silent skip on error (no pools, permissions, etc.)
+    }
+
+    [[ -z "$zfs_data" ]] && return
+
+    # Build associative maps: pool_name -> (total_used, total_avail, total_snaps)
+    # Also collect datasets for top-N display
+    declare -A pool_used pool_avail pool_snaps
+    local datasets=()  # entries: "used_bytes|snaps_bytes|name|mountpoint"
+
+    local pool ds_name ds_used ds_avail ds_snaps ds_mp
+    while IFS=$'\t' read -r ds_name ds_used ds_avail ds_snaps ds_mp; do
+        [[ -z "$ds_name" ]] && continue
+        # Default snap value to 0 if empty (belt-and-suspenders with set -u)
+        ds_snaps=${ds_snaps:-0}
+        datasets+=("${ds_used}|${ds_snaps}|${ds_name}|${ds_mp}")
+
+        # Determine pool (first component of dataset name)
+        pool="${ds_name%%/*}"
+
+        # Sum snapshot space across ALL datasets in pool (snapshots live on
+        # child datasets like zroot/ROOT/default, not the pool root)
+        pool_snaps["$pool"]=$(( ${pool_snaps["$pool"]:-0} + ds_snaps ))
+
+        # Pool root dataset (e.g. "zroot", "tb") has the authoritative used/avail
+        if [[ "$ds_name" != */* ]]; then
+            pool_used["$pool"]=$ds_used
+            pool_avail["$pool"]=$ds_avail
+        fi
+    done <<< "$zfs_data"
+
+    # Pool health banner
+    echo ""
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${RESET}"
+    echo -e "${CYAN}  ZFS Pool Summary${RESET}"
+    echo ""
+
+    for pool in "${!pool_used[@]}"; do
+        local used=${pool_used["$pool"]}
+        local avail=${pool_avail["$pool"]}
+        local total=$(( used + avail ))
+        local pct=0
+        [[ $total -gt 0 ]] && pct=$(( used * 100 / total ))
+
+        # Capacity bar (20 chars)
+        local bar_filled=$(( pct * 20 / 100 ))
+        local bar=""
+        local i
+        for (( i=0; i<bar_filled; i++ )); do bar+="█"; done
+        for (( i=bar_filled; i<20; i++ )); do bar+=" "; done
+
+        local color="$RED"
+        [[ $pct -lt 80 ]] && color="$YELLOW"
+        [[ $pct -lt 60 ]] && color="$GREEN"
+
+        local snap_label=""
+        [[ ${pool_snaps["$pool"]} -gt 0 ]] && snap_label="  snapshots: $(human_bytes ${pool_snaps["$pool"]})"
+
+        printf "  ${color}%-10s %3d%% %s${RESET}  (%s free)%s\n" \
+            "$pool" "$pct" "$bar" "$(human_bytes $avail)" "$snap_label"
+    done
+
+    # Top datasets
+    echo ""
+    echo -e "${CYAN}  Top datasets (by used):${RESET}"
+    echo ""
+
+    # Sort datasets by used descending, take top N
+    local sorted
+    sorted=$(printf '%s\n' "${datasets[@]}" | sort -t'|' -k1 -nr | head -n "$ZFS_DATASETS") || true
+
+    local max_name=20
+    while IFS='|' read -r ds_used ds_snaps ds_name ds_mp; do
+        [[ -z "$ds_name" ]] && continue
+        local snap_col=""
+        [[ "$ds_snaps" -gt 0 ]] && snap_col="$(human_bytes "$ds_snaps")"
+
+        # ncdu hint
+        local hint=""
+        [[ -n "$ds_mp" && "$ds_mp" != "none" && "$ds_mp" != "legacy" ]] && \
+            hint="  → ncdu ${ds_mp}"
+
+        printf "  %-30s %10s  %-10s%s\n" \
+            "$ds_name" "$(human_bytes "$ds_used")" "$snap_col" "$hint"
+    done <<< "$sorted"
+
+    echo ""
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${RESET}"
+    echo ""
 }
 
 # Convert size to bytes
@@ -296,6 +424,9 @@ fi
 log info "Scanning for files larger than $SIZE_THRESHOLD..."
 log info "Scanning directories: ${SCAN_DIRS[*]}"
 echo ""
+
+# Show ZFS context before scanning
+zfs_preamble
 
 THRESHOLD_BYTES=$(size_to_bytes "$SIZE_THRESHOLD")
 
