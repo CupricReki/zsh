@@ -280,10 +280,10 @@ zfs_preamble() {
         [[ $pct -lt 60 ]] && color="$GREEN"
 
         local snap_label=""
-        [[ ${pool_snaps["$pool"]} -gt 0 ]] && snap_label="  snapshots: $(human_bytes ${pool_snaps["$pool"]})"
+        [[ ${pool_snaps["$pool"]} -gt 0 ]] && snap_label="  snapshots: $(human_bytes "${pool_snaps["$pool"]}")"
 
         printf "  ${color}%-10s %3d%% %s${RESET}  (%s free)%s\n" \
-            "$pool" "$pct" "$bar" "$(human_bytes $avail)" "$snap_label"
+            "$pool" "$pct" "$bar" "$(human_bytes "$avail")" "$snap_label"
     done
 
     # Top datasets
@@ -295,7 +295,6 @@ zfs_preamble() {
     local sorted
     sorted=$(printf '%s\n' "${datasets[@]}" | sort -t'|' -k1 -nr | head -n "$ZFS_DATASETS") || true
 
-    local max_name=20
     while IFS='|' read -r ds_used ds_snaps ds_name ds_mp; do
         [[ -z "$ds_name" ]] && continue
         local snap_col=""
