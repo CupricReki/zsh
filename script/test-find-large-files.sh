@@ -102,7 +102,7 @@ fi
 echo "=== Test 3: --top limits output ==="
 
 TOOL_OUTPUT=$(bash "$TOOL" -d "$TMPTEST" -s 1M --skip-zfs -n 1 2>&1) || true
-FILE_COUNT=$(echo "$TOOL_OUTPUT" | grep -cE '^\s+[0-9.]+ [KMG]?iB' || true)
+FILE_COUNT=$(echo "$TOOL_OUTPUT" | grep -cE '^\s+[0-9.]+[KMG]?iB' || true)
 if [[ "$FILE_COUNT" -le 1 ]]; then
     pass "--top 1: shows at most 1 result"
 else
