@@ -16,11 +16,23 @@ set -eo pipefail
 cleanup_on_interrupt() {
     INTERRUPTED=true
     echo "" >&2
-    if [[ ${FILES_FOUND:-0} -gt 0 ]]; then
+    if [[ -s "${RESULTS_TMP:-}" ]]; then
+        local found
+        found=$(wc -l < "$RESULTS_TMP" 2>/dev/null || echo "0")
+        echo -e "\033[0;36m[~]\033[0m Interrupted. Showing partial results ($found file(s)):" >&2
+        echo "" >&2
+        echo "  SIZE         PATH"
+        if [[ "$SORT_ORDER" == "desc" ]]; then
+            sort -rh "$RESULTS_TMP" 2>/dev/null
+        else
+            sort -h "$RESULTS_TMP" 2>/dev/null
+        fi
+    elif [[ ${FILES_FOUND:-0} -gt 0 ]]; then
         echo -e "\033[0;36m[~]\033[0m Interrupted. Found $FILES_FOUND large file(s) before cancellation." >&2
     else
         echo -e "\033[0;36m[~]\033[0m Interrupted. No large files found yet." >&2
     fi
+    rm -f "${RESULTS_TMP:-}" 2>/dev/null
     exit 130
 }
 
@@ -98,6 +110,9 @@ Options:
   -e, --exclude PATTERN    Additional exclude pattern (can be used multiple times)
   --no-stream              Collect all results before displaying (non-streaming)
   --no-progress           Disable progress indicators
+  --sort ORDER            Sort order for results: asc (largest last) or desc [default: asc]
+  --skip-zfs              Skip ZFS pool/dataset summary
+  --zfs-datasets N        Show top N datasets (default: 5)
   -h, --help               Show this help message
 
 Examples:
@@ -137,6 +152,12 @@ while [[ $# -gt 0 ]]; do
         *) log error "Unknown option: $1"; show_help; exit 1 ;;
     esac
 done
+
+# Validate sort order immediately after arg parsing (before any scanning logic)
+if [[ "$SORT_ORDER" != "asc" && "$SORT_ORDER" != "desc" ]]; then
+    log error "Invalid sort order: $SORT_ORDER (use asc or desc)"
+    exit 1
+fi
 
 # Get network mount points
 get_network_mounts() {
@@ -504,6 +525,13 @@ if [[ "$SHOW_DIRS" == "true" ]]; then
     
 else
     # File mode - use find with native size filtering (most reliable)
+
+    # Create temp file for collecting (and sorting) results
+    RESULTS_TMP=$(mktemp) || {
+        log error "Could not create temporary file"
+        exit 1
+    }
+
     log notice "Finding large files..."
     echo ""
     
@@ -572,18 +600,31 @@ else
                     fi
                 fi
                 
-                printf "  %-12s  %s\n" "$size_human" "$file"
+                printf "  %-12s  %s\n" "$size_human" "$file" >> "$RESULTS_TMP"
                 ((FILES_FOUND++)) || true
             done < <(find "$dir" "${find_excludes[@]}" -type f -size "$FIND_SIZE" -print 2>/dev/null || true)
         fi
     done
     
     echo ""
-    if [[ $FILES_FOUND -gt 0 ]]; then
-        log notice "Scan complete. Found $FILES_FOUND large file(s)"
+    if [[ -s "$RESULTS_TMP" ]]; then
+        FILES_FOUND=$(wc -l < "$RESULTS_TMP" 2>/dev/null || echo "0")
+        # Strip leading/trailing whitespace from count
+        FILES_FOUND=$(echo "$FILES_FOUND" | xargs)
+
+        # Sort and display results
+        if [[ "$SORT_ORDER" == "desc" ]]; then
+            sort -rh "$RESULTS_TMP"
+        else
+            sort -h "$RESULTS_TMP"
+        fi | head -n "$TOP_N" || true
+
+        echo ""
+        log notice "Scan complete. Showing top $(head -n "$TOP_N" "$RESULTS_TMP" | wc -l) of $FILES_FOUND large file(s)"
     else
         log notice "Scan complete. No files found matching size threshold ($SIZE_THRESHOLD)"
     fi
+    [[ -n "${RESULTS_TMP:-}" ]] && rm -f "$RESULTS_TMP"
 fi
 
 echo ""
