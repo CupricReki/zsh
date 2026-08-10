@@ -23,9 +23,9 @@ cleanup_on_interrupt() {
         echo "" >&2
         echo "  SIZE         PATH"
         if [[ "$SORT_ORDER" == "desc" ]]; then
-            sort -rh "$RESULTS_TMP" 2>/dev/null
+            sort -rh "$RESULTS_TMP" 2>/dev/null || true
         else
-            sort -h "$RESULTS_TMP" 2>/dev/null
+            sort -h "$RESULTS_TMP" 2>/dev/null || true
         fi
     elif [[ ${FILES_FOUND:-0} -gt 0 ]]; then
         echo -e "\033[0;36m[~]\033[0m Interrupted. Found $FILES_FOUND large file(s) before cancellation." >&2
