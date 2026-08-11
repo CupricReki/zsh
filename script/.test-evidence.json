@@ -1,0 +1,8 @@
+{
+    "tool": "find-large-files",
+    "tests_run": ["test-find-large-files.sh"],
+    "lint": ["shellcheck script/find-large-files"],
+    "passed": true,
+    "timestamp": "2026-08-10T19:25:00-04:00",
+    "notes": "All 7 tests pass. ShellCheck shows only pre-existing warnings (no new issues)."
+}

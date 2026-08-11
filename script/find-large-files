@@ -16,11 +16,23 @@ set -eo pipefail
 cleanup_on_interrupt() {
     INTERRUPTED=true
     echo "" >&2
-    if [[ ${FILES_FOUND:-0} -gt 0 ]]; then
+    if [[ -s "${RESULTS_TMP:-}" ]]; then
+        local found
+        found=$(wc -l < "$RESULTS_TMP" 2>/dev/null || echo "0")
+        echo -e "\033[0;36m[~]\033[0m Interrupted. Showing partial results ($found file(s)):" >&2
+        echo "" >&2
+        echo "  SIZE         PATH"
+        if [[ "$SORT_ORDER" == "desc" ]]; then
+            sort -rh "$RESULTS_TMP" 2>/dev/null || true
+        else
+            sort -h "$RESULTS_TMP" 2>/dev/null || true
+        fi
+    elif [[ ${FILES_FOUND:-0} -gt 0 ]]; then
         echo -e "\033[0;36m[~]\033[0m Interrupted. Found $FILES_FOUND large file(s) before cancellation." >&2
     else
         echo -e "\033[0;36m[~]\033[0m Interrupted. No large files found yet." >&2
     fi
+    rm -f "${RESULTS_TMP:-}" 2>/dev/null
     exit 130
 }
 
@@ -58,6 +70,9 @@ TOP_N=50
 EXCLUDE_PATTERNS=()
 SHOW_PROGRESS=true
 STREAM_RESULTS=true
+SKIP_ZFS=false
+ZFS_DATASETS=5
+SORT_ORDER="asc"
 
 # System directories to skip
 SYSTEM_EXCLUDES=(
@@ -95,6 +110,9 @@ Options:
   -e, --exclude PATTERN    Additional exclude pattern (can be used multiple times)
   --no-stream              Collect all results before displaying (non-streaming)
   --no-progress           Disable progress indicators
+  --sort ORDER            Sort order for results: asc (largest last) or desc [default: asc]
+  --skip-zfs              Skip ZFS pool/dataset summary
+  --zfs-datasets N        Show top N datasets (default: 5)
   -h, --help               Show this help message
 
 Examples:
@@ -127,10 +145,19 @@ while [[ $# -gt 0 ]]; do
         -e|--exclude) EXCLUDE_PATTERNS+=("$2"); shift 2 ;;
         --no-stream) STREAM_RESULTS=false; shift ;;
         --no-progress) SHOW_PROGRESS=false; shift ;;
+        --skip-zfs) SKIP_ZFS=true; shift ;;
+        --zfs-datasets) ZFS_DATASETS="$2"; shift 2 ;;
+        --sort) SORT_ORDER="$2"; shift 2 ;;
         -h|--help) show_help; exit 0 ;;
         *) log error "Unknown option: $1"; show_help; exit 1 ;;
     esac
 done
+
+# Validate sort order immediately after arg parsing (before any scanning logic)
+if [[ "$SORT_ORDER" != "asc" && "$SORT_ORDER" != "desc" ]]; then
+    log error "Invalid sort order: $SORT_ORDER (use asc or desc)"
+    exit 1
+fi
 
 # Get network mount points
 get_network_mounts() {
@@ -185,6 +212,127 @@ should_exclude() {
     done < <(get_network_mounts)
     
     return 1
+}
+
+# Human-readable byte formatting (no numfmt dependency for preamble)
+human_bytes() {
+    local bytes="$1"
+    if command -v numfmt &> /dev/null; then
+        numfmt --to=iec-i --suffix=B "$bytes" 2>/dev/null
+        return
+    fi
+    if [[ $bytes -ge 1099511627776 ]]; then
+        awk "BEGIN {printf \"%.1f TiB\", $bytes / 1099511627776}"
+    elif [[ $bytes -ge 1073741824 ]]; then
+        awk "BEGIN {printf \"%.1f GiB\", $bytes / 1073741824}"
+    elif [[ $bytes -ge 1048576 ]]; then
+        awk "BEGIN {printf \"%.1f MiB\", $bytes / 1048576}"
+    elif [[ $bytes -ge 1024 ]]; then
+        awk "BEGIN {printf \"%.1f KiB\", $bytes / 1024}"
+    else
+        echo "${bytes} B"
+    fi
+}
+
+# ZFS pool and dataset summary (shown before file/directory scan)
+zfs_preamble() {
+    [[ "$SKIP_ZFS" == "true" ]] && return
+    if ! command -v zfs &> /dev/null; then
+        echo -e "${BLUE}[i]${RESET} zfs not available, skipping ZFS context" >&2
+        return
+    fi
+
+    # Collect raw data: name, used, avail, usedbysnapshots, mountpoint
+    local zfs_data
+    zfs_data=$(zfs list -Hp -o name,used,avail,usedbysnapshots,mountpoint -t filesystem 2>/dev/null) || {
+        return  # silent skip on error (no pools, permissions, etc.)
+    }
+
+    [[ -z "$zfs_data" ]] && return
+
+    # Build associative maps: pool_name -> (total_used, total_avail, total_snaps)
+    # Also collect datasets for top-N display
+    declare -A pool_used pool_avail pool_snaps
+    local datasets=()  # entries: "used_bytes|snaps_bytes|name|mountpoint"
+
+    local pool ds_name ds_used ds_avail ds_snaps ds_mp
+    while IFS=$'\t' read -r ds_name ds_used ds_avail ds_snaps ds_mp; do
+        [[ -z "$ds_name" ]] && continue
+        # Default snap value to 0 if empty (belt-and-suspenders with set -u)
+        ds_snaps=${ds_snaps:-0}
+        datasets+=("${ds_used}|${ds_snaps}|${ds_name}|${ds_mp}")
+
+        # Determine pool (first component of dataset name)
+        pool="${ds_name%%/*}"
+
+        # Sum snapshot space across ALL datasets in pool (snapshots live on
+        # child datasets like zroot/ROOT/default, not the pool root)
+        pool_snaps["$pool"]=$(( ${pool_snaps["$pool"]:-0} + ds_snaps ))
+
+        # Pool root dataset (e.g. "zroot", "tb") has the authoritative used/avail
+        if [[ "$ds_name" != */* ]]; then
+            pool_used["$pool"]=$ds_used
+            pool_avail["$pool"]=$ds_avail
+        fi
+    done <<< "$zfs_data"
+
+    # Pool health banner
+    echo ""
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${RESET}"
+    echo -e "${CYAN}  ZFS Pool Summary${RESET}"
+    echo ""
+
+    for pool in "${!pool_used[@]}"; do
+        local used=${pool_used["$pool"]}
+        local avail=${pool_avail["$pool"]}
+        local total=$(( used + avail ))
+        local pct=0
+        [[ $total -gt 0 ]] && pct=$(( used * 100 / total ))
+
+        # Capacity bar (20 chars)
+        local bar_filled=$(( pct * 20 / 100 ))
+        local bar=""
+        local i
+        for (( i=0; i<bar_filled; i++ )); do bar+="█"; done
+        for (( i=bar_filled; i<20; i++ )); do bar+=" "; done
+
+        local color="$RED"
+        [[ $pct -lt 80 ]] && color="$YELLOW"
+        [[ $pct -lt 60 ]] && color="$GREEN"
+
+        local snap_label=""
+        [[ ${pool_snaps["$pool"]} -gt 0 ]] && snap_label="  snapshots: $(human_bytes "${pool_snaps["$pool"]}")"
+
+        printf "  ${color}%-10s %3d%% %s${RESET}  (%s free)%s\n" \
+            "$pool" "$pct" "$bar" "$(human_bytes "$avail")" "$snap_label"
+    done
+
+    # Top datasets
+    echo ""
+    echo -e "${CYAN}  Top datasets (by used):${RESET}"
+    echo ""
+
+    # Sort datasets by used descending, take top N
+    local sorted
+    sorted=$(printf '%s\n' "${datasets[@]}" | sort -t'|' -k1 -nr | head -n "$ZFS_DATASETS") || true
+
+    while IFS='|' read -r ds_used ds_snaps ds_name ds_mp; do
+        [[ -z "$ds_name" ]] && continue
+        local snap_col=""
+        [[ "$ds_snaps" -gt 0 ]] && snap_col="$(human_bytes "$ds_snaps")"
+
+        # ncdu hint
+        local hint=""
+        [[ -n "$ds_mp" && "$ds_mp" != "none" && "$ds_mp" != "legacy" ]] && \
+            hint="  → ncdu ${ds_mp}"
+
+        printf "  %-30s %10s  %-10s%s\n" \
+            "$ds_name" "$(human_bytes "$ds_used")" "$snap_col" "$hint"
+    done <<< "$sorted"
+
+    echo ""
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${RESET}"
+    echo ""
 }
 
 # Convert size to bytes
@@ -297,6 +445,9 @@ log info "Scanning for files larger than $SIZE_THRESHOLD..."
 log info "Scanning directories: ${SCAN_DIRS[*]}"
 echo ""
 
+# Show ZFS context before scanning
+zfs_preamble
+
 THRESHOLD_BYTES=$(size_to_bytes "$SIZE_THRESHOLD")
 
 # Find large files or directories
@@ -374,6 +525,13 @@ if [[ "$SHOW_DIRS" == "true" ]]; then
     
 else
     # File mode - use find with native size filtering (most reliable)
+
+    # Create temp file for collecting (and sorting) results
+    RESULTS_TMP=$(mktemp) || {
+        log error "Could not create temporary file"
+        exit 1
+    }
+
     log notice "Finding large files..."
     echo ""
     
@@ -442,18 +600,31 @@ else
                     fi
                 fi
                 
-                printf "  %-12s  %s\n" "$size_human" "$file"
+                printf "  %-12s  %s\n" "$size_human" "$file" >> "$RESULTS_TMP"
                 ((FILES_FOUND++)) || true
             done < <(find "$dir" "${find_excludes[@]}" -type f -size "$FIND_SIZE" -print 2>/dev/null || true)
         fi
     done
     
     echo ""
-    if [[ $FILES_FOUND -gt 0 ]]; then
-        log notice "Scan complete. Found $FILES_FOUND large file(s)"
+    if [[ -s "$RESULTS_TMP" ]]; then
+        FILES_FOUND=$(wc -l < "$RESULTS_TMP" 2>/dev/null || echo "0")
+        # Strip leading/trailing whitespace from count
+        FILES_FOUND=$(echo "$FILES_FOUND" | xargs)
+
+        # Sort and display results
+        if [[ "$SORT_ORDER" == "desc" ]]; then
+            sort -rh "$RESULTS_TMP"
+        else
+            sort -h "$RESULTS_TMP"
+        fi | head -n "$TOP_N" || true
+
+        echo ""
+        log notice "Scan complete. Showing top $(head -n "$TOP_N" "$RESULTS_TMP" | wc -l) of $FILES_FOUND large file(s)"
     else
         log notice "Scan complete. No files found matching size threshold ($SIZE_THRESHOLD)"
     fi
+    [[ -n "${RESULTS_TMP:-}" ]] && rm -f "$RESULTS_TMP"
 fi
 
 echo ""
