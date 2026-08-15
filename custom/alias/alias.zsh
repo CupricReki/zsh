@@ -379,7 +379,7 @@ alias please=sudo
 alias plz=sudo
 alias rd='rm -fdr'
 alias reboot_windows='sudo gksu grub-reboot 2 && sudo gksu reboot'
-alias restart_plasmashell='sudo pkill plasmashell && kstart5 plasmashell > /dev/null 2>&1'
+alias restart_plasmashell='killall -9 plasmashell; kstart plasmashell > /dev/null 2>&1 &'
 alias rsynccopy='rsync -ah --stats --partial --progress'
 alias rsyncmove='rsync -ah --stats --partial --progress --remove-sent-files --prune-empty-dirs'
 # rclone wrappers — safe multi-source copy/move via script/rclone-xfer
