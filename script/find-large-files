@@ -105,6 +105,7 @@ Options:
                           Supports: K, M, G, T (e.g., 500M, 1G)
   -d, --dir DIR            Specific directory to scan (default: common locations)
                           Can be specified multiple times
+  [DIR...]                 Positional directories work too (e.g., $0 .)
   -D, --directories        Show directory sizes instead of individual files
   -n, --top N              Show top N results (default: 50)
   -e, --exclude PATTERN    Additional exclude pattern (can be used multiple times)
@@ -121,6 +122,7 @@ Examples:
   $0 -d /home -s 1G                     # Find files >1G in /home
   $0 -D -s 100M                         # Show directory sizes >100M
   $0 -d /var/log -s 10M                 # Find large log files
+  $0 .                                   # Scan current working directory
 
 Performance:
   - Uses 'dua' (if available) for fastest directory scanning
@@ -149,7 +151,8 @@ while [[ $# -gt 0 ]]; do
         --zfs-datasets) ZFS_DATASETS="$2"; shift 2 ;;
         --sort) SORT_ORDER="$2"; shift 2 ;;
         -h|--help) show_help; exit 0 ;;
-        *) log error "Unknown option: $1"; show_help; exit 1 ;;
+        -*) log error "Unknown option: $1"; show_help; exit 1 ;;
+        *) SCAN_DIRS+=("$1"); shift ;;  # positional directory argument (e.g., .)
     esac
 done
 
@@ -158,6 +161,15 @@ if [[ "$SORT_ORDER" != "asc" && "$SORT_ORDER" != "desc" ]]; then
     log error "Invalid sort order: $SORT_ORDER (use asc or desc)"
     exit 1
 fi
+
+# Resolve relative scan dirs to absolute paths (e.g., "-d ." → /home/user/cwd)
+for i in "${!SCAN_DIRS[@]}"; do
+    if [[ "${SCAN_DIRS[$i]}" != /* ]]; then
+        if resolved=$(cd "${SCAN_DIRS[$i]}" 2>/dev/null && pwd -P); then
+            SCAN_DIRS[$i]="$resolved"
+        fi
+    fi
+done
 
 # Get network mount points
 get_network_mounts() {
@@ -536,7 +548,7 @@ else
     echo ""
     
     # Convert size threshold to find format (e.g., 100M -> +100M)
-    FIND_SIZE="+${SIZE_THRESHOLD}"
+    FIND_SIZE="+$(echo "$SIZE_THRESHOLD" | tr 'Kmgt' 'kMGT')"
     
     # Display header
     echo "  SIZE         PATH"
