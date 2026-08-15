@@ -109,5 +109,40 @@ else
     fail "--top 1: expected ≤1 result, got $FILE_COUNT:\n$TOOL_OUTPUT"
 fi
 
+# ----- Test 4: Positional dir arg and relative dir resolution -----
+echo "=== Test 4: Positional dir and relative paths ==="
+
+# Positional dir (no -d flag)
+TOOL_OUTPUT=$(bash "$TOOL" "$TMPTEST" -s 1M --skip-zfs -n 5 2>&1) || true
+if echo "$TOOL_OUTPUT" | grep -qF "$TMPTEST/a.bin"; then
+    pass "positional dir: scans directory passed as positional arg"
+else
+    fail "positional dir: expected $TMPTEST/a.bin in output:\n$TOOL_OUTPUT"
+fi
+
+# Relative dir resolves to absolute path (no ./ prefix in output)
+TOOL_OUTPUT=$(cd "$TMPTEST" && bash "$TOOL" . -s 1M --skip-zfs -n 5 2>&1) || true
+if echo "$TOOL_OUTPUT" | grep -qF "$TMPTEST/a.bin" && ! echo "$TOOL_OUTPUT" | grep -qE '\s\./a\.bin'; then
+    pass "relative dir: resolves to absolute path (no ./ prefix)"
+else
+    fail "relative dir: expected absolute path $TMPTEST/a.bin in output:\n$TOOL_OUTPUT"
+fi
+
+# ----- Test 5: Uppercase K size suffix works with find -----
+echo "=== Test 5: K size suffix ==="
+
+TMPK=$(mktemp -d)
+trap 'rm -rf "$TMPTEST" "$TMPDIR" "$TMPK"' EXIT
+
+dd if=/dev/zero of="$TMPK/small.bin" bs=1024 count=400 2>/dev/null
+dd if=/dev/zero of="$TMPK/big.bin" bs=1024 count=800 2>/dev/null
+
+TOOL_OUTPUT=$(bash "$TOOL" -d "$TMPK" -s 500K --skip-zfs 2>&1) || true
+if echo "$TOOL_OUTPUT" | grep -q 'big.bin' && ! echo "$TOOL_OUTPUT" | grep -q 'small.bin'; then
+    pass "-s 500K: uppercase K works, threshold correct"
+else
+    fail "-s 500K: expected only big.bin in output:\n$TOOL_OUTPUT"
+fi
+
 echo ""
 echo -e "${GREEN}All tests passed${RESET}"
