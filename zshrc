@@ -481,3 +481,5 @@ export HIP_VISIBLE_DEVICES=0
 export ROCM_PATH=/opt/rocm
 export PATH=$PATH:/opt/rocm/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/rocm/lib
+
+. "$HOME/.local/share/../bin/env"

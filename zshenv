@@ -64,6 +64,7 @@ log() {
 
 export ANSIBLE_DIR="${HOME}/.config/ansible"
 export ANSIBLE_CONFIG="${ANSIBLE_DIR}/ansible.cfg"
+export ANSIBLE_VAULT_PASSWORD_FILE="${HOME}/.ansible-vault-password"
 
 # XDG Base Directory Specification
 export XDG_CONFIG_HOME="${HOME}/.config"
