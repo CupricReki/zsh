@@ -78,6 +78,11 @@ def _run_tests():
         ('M-<Return>', '^[^M'),
         ('M-<BS>',     '^[^H'),
         ('M-<Del>',    '^[^?'),
+        # Combined modifiers (Ctrl + Meta/Alt, any order)
+        ('C-A-o',      '^[^o'),
+        ('C-M-x',      '^[^x'),
+        ('C-A-x',      '^[^x'),
+        ('M-C-x',      '^[^x'),
         # Bare keys — pass through
         ('x',          'x'),
         ('|',          '|'),

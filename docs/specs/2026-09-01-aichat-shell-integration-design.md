@@ -72,9 +72,14 @@ Adapted from aichat's official `scripts/shell-integration/integration.zsh` (whic
 _aichat_compose() {
     if [[ -n "$BUFFER" ]]; then
         local _old=$BUFFER
+        local _new
         BUFFER+="⌛"
         zle -I && zle redisplay
-        BUFFER=$(aichat -e "$_old")
+        if _new=$(aichat -e "$_old"); then
+            BUFFER="$_new"
+        else
+            BUFFER="$_old"   # on failure, keep what you typed
+        fi
         zle end-of-line
     fi
 }
@@ -142,7 +147,7 @@ clients:
 
 - **aichat not installed** → the `zshrc` source is guarded by `command_exists aichat`; widgets simply don't register (no errors).
 - **Empty buffer on `Ctrl+O`** → no-op (matches aichat's official behavior).
-- **LM Studio not running / model not loaded** → aichat surfaces its own error; the shell is unaffected.
+- **LM Studio not running / model not loaded** → aichat surfaces its own error on stderr; `_aichat_compose` restores the original buffer so the typed request isn't lost. `_aichat_repl` is unaffected (its REPL UI shows the error).
 - **Cloud model without a key** → aichat auth error; `~/.config/aichat/.env` is the single place to fix it.
 
 ## 10. Testing / validation

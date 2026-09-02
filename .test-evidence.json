@@ -1,0 +1,13 @@
+{
+  "slug": "aichat-shell-integration",
+  "ref": "feature/aichat-shell-integration",
+  "commit": "4221464e3864caa90de5dd1a51356f6e8bb995bd",
+  "timestamp": "2026-09-02T01:26:40Z",
+  "passed": true,
+  "checks": {
+    "interpret_zsh_test": "passed",
+    "interpret_zsh_validate": "passed",
+    "zsh_syntax": "passed",
+    "generated_bindkeys": 2
+  }
+}
