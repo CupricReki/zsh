@@ -49,7 +49,7 @@ Note: `custom/keybinding/keybindings.gen.zsh` is gitignored (`.gitignore:6`) and
 | D | Wire widgets into `zshrc` | done |
 | E | Smoke-test widget registration + live keybindings | done |
 | F | Add `aichat` to ansible provisioning (ansible repo) | done |
-| Z | Validation: full checks + `.test-evidence.json` | pending |
+| Z | Validation: full checks + `.test-evidence.json` | done |
 
 ---
 
@@ -355,7 +355,7 @@ git commit -m "feat(zsh): provision aichat via rust-tools packages"
 - Create: `.test-evidence.json` (zsh repo)
 - Create: `.test-evidence.json` (ansible repo)
 
-- [ ] **Step 1: Run full zsh-repo checks**
+- [x] **Step 1: Run full zsh-repo checks**
 
 Run:
 ```bash
@@ -366,7 +366,7 @@ zsh -n custom/aichat.zsh
 ```
 Expected: all exit 0; no FAIL lines, no syntax errors.
 
-- [ ] **Step 2: Functional verification (zsh repo)**
+- [x] **Step 2: Functional verification (zsh repo)**
 
 Run:
 ```bash
@@ -375,7 +375,7 @@ grep -Fc "_aichat" /tmp/aichat-gen.zsh
 ```
 Expected: `2` (both `_aichat_compose` and `_aichat_repl` bindings are generated).
 
-- [ ] **Step 3: Run ansible lint + molecule (ansible repo, devcontainer)**
+- [x] **Step 3: Run ansible lint + molecule (ansible repo, devcontainer)**
 
 Run:
 ```bash
@@ -384,7 +384,7 @@ devcontainer exec --workspace-folder /home/cupric/dev/ansible molecule test -s d
 ```
 Expected: lint clean for the changed file; molecule converge + idempotency pass.
 
-- [ ] **Step 4: Write `.test-evidence.json` in the zsh repo**
+- [x] **Step 4: Write `.test-evidence.json` in the zsh repo**
 
 ```bash
 cat > .test-evidence.json <<EOF
@@ -404,7 +404,7 @@ cat > .test-evidence.json <<EOF
 EOF
 ```
 
-- [ ] **Step 5: Write `.test-evidence.json` in the ansible repo**
+- [x] **Step 5: Write `.test-evidence.json` in the ansible repo**
 
 ```bash
 cat > .test-evidence.json <<EOF
@@ -423,12 +423,12 @@ cat > .test-evidence.json <<EOF
 EOF
 ```
 
-- [ ] **Step 6: Verify both evidence files**
+- [x] **Step 6: Verify both evidence files**
 
 Run (in each repo): `cat .test-evidence.json`
 Expected: valid JSON with `"passed": true` and a non-empty `ref`/`commit`/`timestamp`.
 
-- [ ] **Step 7: Commit evidence in each repo**
+- [x] **Step 7: Commit evidence in each repo**
 
 ```bash
 # zsh repo
