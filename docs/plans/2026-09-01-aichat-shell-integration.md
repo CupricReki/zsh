@@ -457,3 +457,8 @@ git commit -m "chore: validation evidence for aichat provisioning"
 - **Date:** 2026-09-01 19:53 EDT
 - **Base commit:** c6d68abb618a3a4f5bd45e38921102afebeb2fda
 - **Design doc:** [2026-09-01-aichat-shell-integration-design.md](docs/specs/2026-09-01-aichat-shell-integration-design.md)
+
+## Plan Completed
+- **Date:** 2026-09-01 21:32 EDT
+- **Final commit:** 02b1dbef02655f1ddde8a58fd592183e6393c938
+- **Summary:** aichat inline command generation (Ctrl+O compose, Ctrl+Alt+O REPL) via LM Studio, wired into zsh and ansible provisioning
