@@ -10,9 +10,14 @@
 _aichat_compose() {
     if [[ -n "$BUFFER" ]]; then
         local _old=$BUFFER
+        local _new
         BUFFER+="⌛"
         zle -I && zle redisplay
-        BUFFER=$(aichat -e "$_old")
+        if _new=$(aichat -e "$_old"); then
+            BUFFER="$_new"
+        else
+            BUFFER="$_old"   # on failure, keep what you typed
+        fi
         zle end-of-line
     fi
 }
