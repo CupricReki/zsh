@@ -48,7 +48,7 @@ Note: `custom/keybinding/keybindings.gen.zsh` is gitignored (`.gitignore:6`) and
 | C | Add keybindings + fix interpreter docstring | done |
 | D | Wire widgets into `zshrc` | done |
 | E | Smoke-test widget registration + live keybindings | done |
-| F | Add `aichat` to ansible provisioning (ansible repo) | pending |
+| F | Add `aichat` to ansible provisioning (ansible repo) | done |
 | Z | Validation: full checks + `.test-evidence.json` | pending |
 
 ---
@@ -304,7 +304,7 @@ If either binding is missing, the `command_exists aichat` guard (Task D) is the 
 **Files:**
 - Modify: `roles/zsh/vars/main.yml`
 
-- [ ] **Step 1: Add `aichat` to `zsh_rust_tools_packages`**
+- [x] **Step 1: Add `aichat` to `zsh_rust_tools_packages`**
 
 In `roles/zsh/vars/main.yml`, change:
 ```yaml
@@ -324,7 +324,7 @@ zsh_rust_tools_packages:
 
 Rationale: the role already downloads each package from the rust-tools registry with a `cargo-binstall` → `cargo install` fallback. `aichat` publishes pre-built GitHub release binaries, so `cargo-binstall aichat` satisfies the fallback until it is added to the rust-tools CI `PACKAGES` list (out of scope — see Gotchas).
 
-- [ ] **Step 2: Run ansible-lint (in the devcontainer)**
+- [x] **Step 2: Run ansible-lint (in the devcontainer)**
 
 Run (per `ansible/AGENTS.md`, inside the devcontainer):
 ```bash
@@ -332,7 +332,7 @@ devcontainer exec --workspace-folder /home/cupric/dev/ansible ansible-lint roles
 ```
 Expected: 0 failures, 0 warnings for the changed file (pre-existing warnings elsewhere are acceptable but must not be new).
 
-- [ ] **Step 3: Run the zsh role molecule scenario (one at a time)**
+- [x] **Step 3: Run the zsh role molecule scenario (one at a time)**
 
 Run (inside the devcontainer; only one molecule run at a time across all worktrees):
 ```bash
@@ -340,7 +340,7 @@ devcontainer exec --workspace-folder /home/cupric/dev/ansible molecule test -s d
 ```
 Expected: converge + idempotency pass on the configured platforms. Confirm `aichat` is present in the molecule verify step, or add the assertion if the scenario lacks one.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add roles/zsh/vars/main.yml
