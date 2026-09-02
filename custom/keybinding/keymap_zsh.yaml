@@ -13,7 +13,7 @@
 
 # ── Metadata ─────────────────────────────────────────────────────────────────
 _tool_name: Zsh
-_section_order: [completion, fzf, navigation, editing]
+_section_order: [completion, fzf, navigation, editing, ai]
 # Uncomment to override cheatsheet display defaults:
 # _modifiers: { C: Ctrl, M: Meta, A: Alt }
 # ─────────────────────────────────────────────────────────────────────────────
@@ -41,3 +41,12 @@ editing:
   - shortcut: M-d
     description: Kill word forward
     action: kill-word
+
+ai:
+  - shortcut: C-o
+    description: Compose command via aichat
+    action: _aichat_compose
+
+  - shortcut: C-A-o
+    description: Open aichat REPL
+    action: _aichat_repl

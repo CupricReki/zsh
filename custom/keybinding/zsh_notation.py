@@ -12,7 +12,7 @@ Ctrl keys  : C-x       → ^x        (lowercase convention)
 Alt/Meta   : M-x       → ^[x       (ESC-prefix, ^[ and \\e are equivalent)
              M-<Space> → ^[ <space>
              M-<Tab>   → ^[^I
-Combined   : (not supported — use raw: true)
+Combined   : C-M-x / C-A-x → ^[^x  (ESC + Ctrl key; two modifiers, any order)
 
 For arrow keys, F-keys, Delete etc., use raw: true in the YAML and look up
 the CSI_SEQUENCES table below for your terminal's expected sequence.
