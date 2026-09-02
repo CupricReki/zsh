@@ -285,6 +285,11 @@ fi
 # Carapace handles most tools; hand-authored _files kept for outliers
 # (cursor-agent, audio_split-tag, rbw, sheldon).
 
+# aichat — LLM command generation widgets (registered before keybindings are sourced)
+if command_exists aichat; then
+  source "$ZSH_CUSTOM/aichat.zsh"
+fi
+
 # Load custom key bindings (sources keybinding/keybindings.gen.zsh via mtime-gated interpreter)
 source "$ZSH_CUSTOM/keybindings.zsh"
 
