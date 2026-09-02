@@ -43,11 +43,11 @@ Note: `custom/keybinding/keybindings.gen.zsh` is gitignored (`.gitignore:6`) and
 
 | Task | Description | Status |
 |------|-------------|--------|
-| A | Prerequisites: install aichat + seed user-local config (human) | pending |
-| B | Define aichat zle widgets (`custom/aichat.zsh`) | pending |
-| C | Add keybindings + fix interpreter docstring | pending |
-| D | Wire widgets into `zshrc` | pending |
-| E | Smoke-test widget registration + live keybindings | pending |
+| A | Prerequisites: install aichat + seed user-local config (human) | done |
+| B | Define aichat zle widgets (`custom/aichat.zsh`) | done |
+| C | Add keybindings + fix interpreter docstring | done |
+| D | Wire widgets into `zshrc` | done |
+| E | Smoke-test widget registration + live keybindings | done |
 | F | Add `aichat` to ansible provisioning (ansible repo) | pending |
 | Z | Validation: full checks + `.test-evidence.json` | pending |
 
@@ -61,7 +61,7 @@ Note: `custom/keybinding/keybindings.gen.zsh` is gitignored (`.gitignore:6`) and
 - Create: `~/.config/aichat/config.yaml` (user-local, NOT committed)
 - Create: `~/.config/aichat/.env` (user-local, NOT committed)
 
-- [ ] **Step 1: [human] Install aichat**
+- [x] **Step 1: [human] Install aichat**
 
 ```bash
 cargo install aichat
@@ -69,12 +69,12 @@ cargo install aichat
 
 (Alternatively, run Task F first so the ansible role installs it.)
 
-- [ ] **Step 2: Checkpoint — confirm aichat is on PATH**
+- [x] **Step 2: Checkpoint — confirm aichat is on PATH**
 
 Run: `command -v aichat`
 Expected: prints the full path to the `aichat` binary.
 
-- [ ] **Step 3: [human] Seed the user-local config and env**
+- [x] **Step 3: [human] Seed the user-local config and env**
 
 ```bash
 mkdir -p ~/.config/aichat
@@ -82,7 +82,7 @@ mkdir -p ~/.config/aichat
 
 Create `~/.config/aichat/config.yaml` from the design doc §7 (`docs/specs/2026-09-01-aichat-shell-integration-design.md` — LM Studio `:1234/v1` + `qwen/qwen3.5-9b` + commented cloud clients). Put any cloud keys in `~/.config/aichat/.env` (e.g. `OPENAI_API_KEY=...`). Neither file is committed. Also confirm **Thinking is disabled** for `qwen/qwen3.5-9b` in LM Studio (My Models → Inference → Thinking off).
 
-- [ ] **Step 4: Checkpoint — confirm the model is reachable**
+- [x] **Step 4: Checkpoint — confirm the model is reachable**
 
 Run: `aichat --list-models | head -20`
 Expected: prints a model list including `lmstudio:qwen/qwen3.5-9b`. (LM Studio serves the model as `qwen/qwen3.5-9b`; aichat surfaces it as `lmstudio:qwen/qwen3.5-9b`.)
@@ -96,7 +96,7 @@ Expected: prints a model list including `lmstudio:qwen/qwen3.5-9b`. (LM Studio s
 **Files:**
 - Create: `custom/aichat.zsh`
 
-- [ ] **Step 1: Write the widget file**
+- [x] **Step 1: Write the widget file**
 
 ```zsh
 # aichat — local-first (LM Studio) LLM command generation.
@@ -129,12 +129,12 @@ _aichat_repl() {
 zle -N _aichat_repl
 ```
 
-- [ ] **Step 2: Syntax-check the file**
+- [x] **Step 2: Syntax-check the file**
 
 Run: `zsh -n custom/aichat.zsh`
 Expected: exit 0, no output.
 
-- [ ] **Step 3: Verify widgets register in a clean zsh**
+- [x] **Step 3: Verify widgets register in a clean zsh**
 
 Run:
 ```bash
@@ -142,7 +142,7 @@ zsh -f -c 'zmodload zsh/zle; source custom/aichat.zsh; zle -la | grep -q _aichat
 ```
 Expected: `WIDGETS_OK`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add custom/aichat.zsh
@@ -159,7 +159,7 @@ git commit -m "feat(zsh): add aichat compose and repl zle widgets"
 - Modify: `custom/keybinding/keymap_zsh.yaml`
 - Modify: `custom/keybinding/zsh_notation.py`
 
-- [ ] **Step 1: Confirm current interpreter output lacks the new bindings (red)**
+- [x] **Step 1: Confirm current interpreter output lacks the new bindings (red)**
 
 Run:
 ```bash
@@ -167,7 +167,7 @@ python3 custom/keybinding/interpret_zsh.py custom/keybinding/keymap_zsh.yaml | g
 ```
 Expected: `NOT_PRESENT (expected before edit)`.
 
-- [ ] **Step 2: Extend `_section_order` in `custom/keybinding/keymap_zsh.yaml`**
+- [x] **Step 2: Extend `_section_order` in `custom/keybinding/keymap_zsh.yaml`**
 
 Change:
 ```yaml
@@ -178,7 +178,7 @@ to:
 _section_order: [completion, fzf, navigation, editing, ai]
 ```
 
-- [ ] **Step 3: Append the `ai:` section to `custom/keybinding/keymap_zsh.yaml`**
+- [x] **Step 3: Append the `ai:` section to `custom/keybinding/keymap_zsh.yaml`**
 
 Append at the end of the file:
 ```yaml
@@ -192,7 +192,7 @@ ai:
     action: _aichat_repl
 ```
 
-- [ ] **Step 4: Fix the stale docstring in `custom/keybinding/zsh_notation.py`**
+- [x] **Step 4: Fix the stale docstring in `custom/keybinding/zsh_notation.py`**
 
 Change (line 15):
 ```
@@ -203,7 +203,7 @@ to:
 Combined   : C-M-x / C-A-x → ^[^x  (ESC + Ctrl key; two modifiers, any order)
 ```
 
-- [ ] **Step 5: Validate and confirm the new bindings generate correctly (green)**
+- [x] **Step 5: Validate and confirm the new bindings generate correctly (green)**
 
 Run:
 ```bash
@@ -218,12 +218,12 @@ python3 custom/keybinding/interpret_zsh.py custom/keybinding/keymap_zsh.yaml | g
 ```
 Expected: both lines print (with `# Compose command via aichat` and `# Open aichat REPL` trailing comments respectively).
 
-- [ ] **Step 6: Run the interpreter unit tests**
+- [x] **Step 6: Run the interpreter unit tests**
 
 Run: `python3 custom/keybinding/interpret_zsh.py --test`
 Expected: `All N tests passed.` (no FAIL lines).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add custom/keybinding/keymap_zsh.yaml custom/keybinding/zsh_notation.py
@@ -239,7 +239,7 @@ git commit -m "feat(zsh): bind aichat compose/repl and document combined modifie
 **Files:**
 - Modify: `zshrc`
 
-- [ ] **Step 1: Insert the guarded source line before the keybindings source**
+- [x] **Step 1: Insert the guarded source line before the keybindings source**
 
 In `zshrc`, immediately before:
 ```zsh
@@ -256,12 +256,12 @@ fi
 
 Rationale: the widget functions must be `zle -N`-registered before `bindkey` runs, and `command_exists` is already in scope here (defined in `zshenv`).
 
-- [ ] **Step 2: Syntax-check `zshrc`**
+- [x] **Step 2: Syntax-check `zshrc`**
 
 Run: `zsh -n zshrc`
 Expected: exit 0, no output.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add zshrc
@@ -274,7 +274,7 @@ git commit -m "feat(zsh): source aichat widgets before keybindings"
 
 **Repo:** zsh
 
-- [ ] **Step 1: Automated smoke check (widgets + generated bindkeys)**
+- [x] **Step 1: Automated smoke check (widgets + generated bindkeys)**
 
 Run:
 ```bash
@@ -283,7 +283,7 @@ python3 custom/keybinding/interpret_zsh.py custom/keybinding/keymap_zsh.yaml > /
 ```
 Expected: `WIDGETS_OK` on the first line, `2` on the second.
 
-- [ ] **Step 2: [human] Verify the live bindings in an interactive zsh**
+- [x] **Step 2: [human] Verify the live bindings in an interactive zsh**
 
 Start a new interactive zsh. Confirm:
 - `bindkey | grep -F '^o'` shows a `_aichat_compose` entry.
@@ -291,7 +291,7 @@ Start a new interactive zsh. Confirm:
 - Typing a natural-language request then `Ctrl+O` replaces the buffer with a concrete command (clear the buffer rather than running an unwanted command).
 - `Ctrl+Alt+O` opens the aichat REPL, then exits cleanly.
 
-- [ ] **Step 3: Checkpoint — confirm Step 2 passed**
+- [x] **Step 3: Checkpoint — confirm Step 2 passed**
 
 If either binding is missing, the `command_exists aichat` guard (Task D) is the most likely cause — confirm `aichat` is on `$PATH`. Do not proceed to Task F until both bindings work interactively.
 
@@ -447,7 +447,13 @@ git commit -m "chore: validation evidence for aichat provisioning"
 - **`command_exists aichat` must be true** for the `zshrc` source to fire. If `aichat` isn't installed yet, Tasks D/E bindings will silently not register. Complete Task A (manual install) or Task F (ansible install) first.
 - **LM Studio model ID is `qwen/qwen3.5-9b`** (note the `qwen/` prefix — confirmed via `GET /v1/models`). aichat references it as `lmstudio:qwen/qwen3.5-9b`. Confirm with `aichat --list-models` (Task A Step 4).
 - **Thinking must be disabled** for `qwen/qwen3.5-9b` in LM Studio (My Models → Inference → Thinking off). aichat does not send `enable_thinking`, so a thinking-enabled model emits reasoning tokens on every `Ctrl+O` (latency).
+- **`_aichat_compose` preserves the buffer on aichat failure.** If `aichat -e` exits non-zero (LM Studio down / model not loaded), the widget restores the original buffer instead of wiping it; aichat's own stderr error is still shown. `_aichat_repl` needs no equivalent handling (its REPL UI surfaces errors itself).
 - **`Ctrl+Alt+O` depends on terminal ESC-prefix transmission** (`ESC ^O`). If the binding doesn't fire, verify with `cat -v` that the emulator (through tmux) emits `^[^O`; some "Option as Meta" remaps break it.
 - **The rust-tools registry won't have `aichat` until its CI `PACKAGES` list is updated + tagged.** The `cargo-binstall` fallback works immediately; the pinned-registry fast path is a follow-up (add to `rust-tools/.gitlab-ci.yml`, tag, then bump `zsh_rust_tools_tag`).
 - **Only one molecule run at a time** across all worktrees/devcontainers (shared host Docker daemon collides on container names), per `ansible/AGENTS.md`.
 - **`custom/keybinding/keybindings.gen.zsh` is gitignored** (`.gitignore:6`) — it regenerates from `keymap_zsh.yaml` automatically; do not `git add` it.
+
+## Execution Started
+- **Date:** 2026-09-01 19:53 EDT
+- **Base commit:** c6d68abb618a3a4f5bd45e38921102afebeb2fda
+- **Design doc:** [2026-09-01-aichat-shell-integration-design.md](docs/specs/2026-09-01-aichat-shell-integration-design.md)
