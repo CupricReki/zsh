@@ -13,3 +13,7 @@ bindkey '^[b' backward-word  # Backward word
 # editing
 bindkey '^[d' kill-word  # Kill word forward
 
+# ai
+bindkey '^o' _aichat_compose  # Compose command via aichat
+bindkey '^[^o' _aichat_repl  # Open aichat REPL
+
