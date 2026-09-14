@@ -100,7 +100,21 @@ setopt correct
 # Share history between terminal sessions
 # setopt share_history
 
-# Custom environmental  variables
+# Custom environmental variables, sourced and exported from systemd environment.d
+# (plain KEY=value lines need an explicit export so child processes like opencode see them)
+_load_environment_d() {
+  local conf line var
+  for conf in "${XDG_CONFIG_HOME:-$HOME/.config}"/environment.d/*.conf(N); do
+    source "$conf"
+    while IFS= read -r line; do
+      line="${line#"${line%%[![:space:]]*}"}"
+      [[ -z "$line" || "$line" == (#s)\#* || "$line" == (#s)\;* ]] && continue
+      var="${line%%=*}"
+      [[ "$var" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] && export "$var"
+    done < "$conf"
+  done
+}
+_load_environment_d
 # Local environment variables should go into $ZDOTDIR/.zshenv where $ZDOTDIR is home unless specified
 
 # Better spelling correction prompt
