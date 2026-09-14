@@ -2,10 +2,15 @@
 
 # Script Name: set_acl-media.sh
 # Author: Skyler Ogden
-# Date: 2025-05-13
-# Version: 1.1
+# Date: 2026-09-13
+# Version: 1.3
 # Description: This script sets default ACLs for the specified directories
 #              for the user and group 'media' with read and write permissions.
+# 1.2
+# Moved from setfacl to setgid to be more universally compatible as we only
+# ever use a single group
+# 1.3
+# Optimized to process all directories at once and traverse file trees only once.
 
 # Check if at least one directory argument is provided
 if [ "$#" -lt 1 ]; then
@@ -13,31 +18,32 @@ if [ "$#" -lt 1 ]; then
     exit 1
 fi
 
-# Loop through all provided directory arguments
+VALID_DIRS=()
+
+# Filter and collect all valid directory arguments
 for DIRECTORY in "$@"; do
-    # Check if the provided argument is a valid directory
     if [ ! -d "$DIRECTORY" ]; then
         echo "Error: $DIRECTORY is not a valid directory."
-        continue
+    else
+        VALID_DIRS+=("$DIRECTORY")
     fi
+done
 
-    # Set default ACL for group 'media' to have read/write access
-    sudo setfacl -d -m g:media:rwX "$DIRECTORY"
+if [ ${#VALID_DIRS[@]} -eq 0 ]; then
+    echo "Error: No valid directories to process."
+    exit 1
+fi
 
-    # Set default ACL for user 'media' to have read/write access
-    sudo setfacl -d -m u:media:rwX "$DIRECTORY"
+# Set ownership of all valid directories recursively in one command
+sudo chown media:media -R "${VALID_DIRS[@]}"
 
-    # Set ACL for existing files and directories
-    sudo setfacl -m g:media:rwX "$DIRECTORY"
-    sudo setfacl -m u:media:rwX "$DIRECTORY"
+# Use a single find traversal for both directories and files
+# This cuts disk I/O in half for large directories
+sudo find "${VALID_DIRS[@]}" \
+    \( -type d -exec chmod 2775 {} + \) -o \
+    \( -type f -exec chmod 664 {} + \)
 
-    # Set ownership of the directory to user and group 'media'
-    sudo chown media:media -R "$DIRECTORY"
-
-    # Set the setgid bit to ensure new files inherit the group ownership
-    sudo chmod g+s "$DIRECTORY"
-
-    # Verify the ACLs
-    echo "ACLs set for $DIRECTORY:"
-    getfacl "$DIRECTORY"
+for DIRECTORY in "${VALID_DIRS[@]}"; do
+    echo "Permissions successfully set for $DIRECTORY"
+    ls -ld "$DIRECTORY"
 done
