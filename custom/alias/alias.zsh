@@ -369,6 +369,7 @@ alias myip='curl http://ipecho.net/plain; echo'
 # alias mysql='nocorrect mysql'
 alias oscc="osc copy"
 alias oscp="osc paste"
+alias oc=opencode
 alias perms='stat -c '\''%a - %n'\'
 alias pip='noglob pip'
 alias pipir='pip install -r requirements.txt'
