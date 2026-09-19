@@ -21,7 +21,7 @@ Implement Ansible changes to support the standards library submodule topology us
 ### Constraints
 - Apply changes in Ansible repository only.
 - No destructive git commands (`reset --hard`, force checkout, force clean).
-- Prefer `--recurse-submodules` on clone paths and `git submodule update --init --recursive` on existing clones.
+- Prefer `--recurse-submodules` on clone paths and `git submodule sync --recursive && git submodule update --init --recursive` on existing clones.
 
 ### Suggested Validation
 - Fresh host/bootstrap path: zsh repo exists and `libraries/python/standards` is populated.

@@ -166,7 +166,7 @@ myfunction
 ### Update Everything
 
 ```bash
-cd ~/.config/zsh && git pull && git submodule update --init --recursive && exec zsh
+cd ~/.config/zsh && git pull && git submodule sync --recursive && git submodule update --init --recursive && exec zsh
 ```
 
 Or use the alias:
