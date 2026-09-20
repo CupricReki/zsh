@@ -1247,11 +1247,13 @@ class LibarchiveHandler:
         if password is not None:
             kwargs["passphrase"] = password.encode("utf-8", "surrogateescape")
         try:
+            count = 0
             with libarchive.file_reader(str(archive), **kwargs) as reader:
                 for entry in reader:
                     pathname = str(entry.pathname or "")
                     if not pathname:
                         continue
+                    count += 1
                     target = safe_join(dest, pathname)
                     if entry.isdir:
                         target.mkdir(parents=True, exist_ok=True)
@@ -1270,6 +1272,8 @@ class LibarchiveHandler:
                     with open(target, "wb") as fh:
                         for block in entry.get_blocks():
                             fh.write(block)
+            if count == 0:
+                return _err("empty or unreadable archive")
             return Result(ErrorClass.NONE)
         except Exception as exc:  # noqa: BLE001 — ValueError from safe_join lands here too
             return self._classify(str(exc))
@@ -1950,6 +1954,9 @@ def process_archive(
     family: str,
 ) -> bool:
     """Extract one archive; True on success or skip, False on failure."""
+    # Resolve to an absolute path: subprocess handlers (ar/cpio) run with
+    # cwd=dest, so a relative archive path would resolve against dest.
+    archive = archive.resolve()
     sweep_stale(archive)
     base_target = archive.parent / target_name(archive.name)
 
@@ -1957,6 +1964,11 @@ def process_archive(
         if skip_existing:
             log("info", f"skipping {archive.name}: already extracted")
             return True
+        if base_target.is_file():
+            # findings M12: a target-name collision with a regular file is an
+            # error (never clobber or silently suffix over an unrelated file).
+            log("error", f"{archive.name}: target {base_target.name} is an existing file")
+            return False
         target = compute_target(archive, force=False)
     else:
         target = base_target
