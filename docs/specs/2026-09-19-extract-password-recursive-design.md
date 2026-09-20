@@ -28,6 +28,8 @@ Major decisions locked in during design (rationale lives in the referenced secti
 | 7 | Backend selection: **capability-gated preference hierarchy**, data-driven and defensively coded so it can be re-tuned later; `python-libarchive-c` primary (API-level passphrase, no argv exposure); rar goes through `unrar` only | §7 |
 | 8 | Robustness: atomic temp-dir extraction (interrupted runs leave no partial target), live tool output, status on stderr, per-archive failures reported and skipped with exit code 1 | §6.1, §8.2 |
 | 9 | Explicitly declined (for the record): zip-slip traversal pre-checks; `py7zr`, `rarfile`, `pyzipper`, `dtrx`, `atool`, `patool` as dependencies; encrypted tars; parallel extraction | §12, §13 |
+| 10 | **UR — data integrity:** extraction counts as successful only when the backend's per-entry CRC/checksum verification passes; integrity failures are `EXTRACT_ERROR` (no rename, no removal, archive preserved) | §6.5 |
+| 11 | **UR — data preservation:** destructive actions are guarded — `-r` re-verifies the archive before deleting it, `-F` merges never prune pre-existing files, temp dirs are deleted only with an ownership marker, and no operation follows symlinks | §6.6 |
 
 ## 3. Context / current state
 
@@ -76,7 +78,7 @@ extract.py [-r|--remove] [-R|--recursive] [-p TEXT|--password TEXT]
 
 - Target dir = archive name minus known archive extensions, e.g. `foo.tar.gz` → `foo`, `bar.2024.tgz` → `bar.2024`. Extension stripping loops (`foo.tar.gz` strips `.gz` then `.tar`), a superset of the plugin's one-level `.tar` rule.
 - If the target path already exists: append a random 5-char base36 suffix (plugin behavior) — **unless** `-F`, which reuses the existing dir.
-- Extraction always happens in a **sibling temp dir** named `.extract-<name>-<pid>`; only on success is it renamed to the final target, after which the collapse runs. Stale `.extract-<name>-*` dirs from interrupted runs are removed when that archive is next processed.
+- Extraction always happens in a **sibling temp dir** named `.extract-<name>-<pid>`; only on success is it renamed to the final target, after which the collapse runs. Stale `.extract-<name>-*` dirs from interrupted runs are removed when that archive is next processed — only if they carry the ownership marker (§6.6).
 - After extraction: if the target dir contains exactly one entry and it is a directory, move it up (plugin's collapse, including its 3-step rename for name collisions).
 
 ### 6.2 Recursive mode (`-R`)
@@ -90,11 +92,25 @@ extract.py [-r|--remove] [-R|--recursive] [-p TEXT|--password TEXT]
 
 - **In recursive mode**: target dir already exists + no `-F` → log "skipping: already extracted" and continue. Skips don't fail the run. This makes `-R` re-runnable.
 - **In single-file mode**: an existing target dir takes the plugin's unique-suffix path instead (§6.1); it is never skipped.
-- `-F` (either mode) → extraction runs in the fresh temp dir (§6.1), then its tree is **merged into the existing target with file-level overwrite**. (No subprocess overwrite flags needed — the temp dir is always fresh; only the merge overwrites.)
+- `-F` (either mode) → extraction runs in the fresh temp dir (§6.1), then its tree is **merged into the existing target with file-level overwrite**. (No subprocess overwrite flags needed — the temp dir is always fresh; only the merge overwrites.) The merge never prunes (§6.6).
 
 ### 6.4 Removal (`-r`)
 
-- Archive deleted only after that archive's extraction succeeded **and the temp dir was renamed into place** (correct password found, or no password needed). Failure or skip → archive preserved.
+- Archive deleted only after that archive's extraction succeeded **and the temp dir was renamed into place** (correct password found, or no password needed). Failure or skip → archive preserved. Deletion itself is guarded by §6.6.
+
+### 6.5 Data integrity (UR)
+
+- **Success requires verification:** an extraction is successful only when the backend's per-entry CRC/checksum verification passes with no corruption indicators — "bad CRC"/"checksum error" output, truncated streams, or partial-failure warnings all mean failure. A multi-entry archive with even one failing entry is a failure for the whole archive.
+- Integrity failure = `EXTRACT_ERROR` (§7.3): the temp dir is discarded, the target is never created/renamed, and the archive is preserved even with `-r`.
+- The atomic rename (§6.1) happens only after a clean, verified extraction — a partial tree can never become the target.
+- No extra post-hoc verification pass (`unzip -t` etc.) by default; the backends already verify during extraction.
+
+### 6.6 Destructive action safeguards (UR: data preservation)
+
+- **`-r` archive removal:** before unlinking, re-stat the archive and confirm its size and mtime match the file that was processed; if it changed during the run (e.g. replaced by an in-flight download), abort the deletion and warn. Only the exact processed regular file is ever unlinked.
+- **`-F` merge:** strictly additive-overwrite — files present in the existing target but absent from the extracted tree are **never deleted or pruned**.
+- **Temp-dir cleanup:** every temp dir we create gets an ownership marker file (`.extract-owned` with pid + archive path). Cleanup paths (failed attempt, `KeyboardInterrupt`, stale sweep) delete only directories created and tracked this run; the stale sweep removes sibling dirs matching our pattern **only when they carry the marker** — a matching dir without the marker is left alone with a warning.
+- **No symlink following:** deletion and merge operations never follow symlinks (a symlinked archive is unlinked, not its referent; symlinked target dirs are not entered for pruning).
 
 ## 7. Format dispatch — capability-gated backend hierarchy
 
@@ -165,7 +181,7 @@ Unknown extension → error for that archive, continue.
   - `7z`/`7za`: exit 2 ("Wrong password") → next candidate.
   - `unrar`: exit 11 → next candidate.
   - `unzip`: exit 0 **and** no "incorrect password" in combined output = success (also catches partially encrypted zips); "incorrect password" present → next candidate.
-  - Any other exit/output per handler → `EXTRACT_ERROR` (fatal, §7.3).
+  - Any other exit/output per handler → `EXTRACT_ERROR` (fatal, §7.3) — includes CRC/checksum failures (data integrity, §6.5).
 - `BACKEND_UNSUPPORTED` (e.g. libarchive on an AES zip, exotic 7z codec) → descend to the next handler in the chain; candidate iteration restarts there.
 - All candidates exhausted in all capable handlers → log failure, remove the temp dir; the target is never created, archive preserved even with `-r`.
 - On success, log which candidate index matched (never the password itself).
@@ -223,6 +239,7 @@ pytest suite in `zsh/tests/test_extract.py`, invoking `extract.py` via subproces
 8. **Wrapper** — `zsh -c` with mocked `extract`/`extract_orig`: delegation for each new flag, fall-through otherwise.
 9. **Temp-dir robustness** — failed extraction leaves no target dir; stale `.extract-*` dirs cleaned on the next run (simulated interrupted run); live output reaches the terminal while detection still works.
 10. **Dispatch engine** — parametrized over chains with mocked handlers: availability skip, capability gate (passwords vs handler capability), `WRONG_PASSWORD` keeps the handler, `BACKEND_UNSUPPORTED` descends, `EXTRACT_ERROR` fails; a registry edit (added/reordered handler) works with zero engine changes. Classification unit tests per handler; subprocess safety (list argv, no shell) and the missing-tool "requires <tool>" path.
+11. **Integrity & safeguards** — corrupted archive (bad CRC) → `EXTRACT_ERROR`, no rename, archive preserved with `-r`; `-r` aborts when the archive changed during the run; `-F` merge never prunes pre-existing files; stale temp dir without marker is left alone, with marker is cleaned; symlink non-following.
 
 ## 12. Trade-offs / risks
 
