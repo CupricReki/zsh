@@ -1,0 +1,7 @@
+#compdef extract extract.py
+
+_extractpy_completion() {
+  eval $(env _TYPER_COMPLETE_ARGS="${words[1,$CURRENT]}" _EXTRACT.PY_COMPLETE=complete_zsh extract.py)
+}
+
+compdef _extractpy_completion extract.py
