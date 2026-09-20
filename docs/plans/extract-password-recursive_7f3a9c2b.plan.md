@@ -90,7 +90,7 @@ Where each task should use them:
 | C | Dispatch engine: ErrorClass/Result/Handler + generic resolve() | done |
 | D | Backend handlers + registry + run_streamed (spec §7.2 chains) | done |
 | E | Orchestration: temp dirs, placement, collapse, merge, -r safeguard | done |
-| F | Typer CLI, bin shim, zsh wrapper, zshrc wiring, completion | pending |
+| F | Typer CLI, bin shim, zsh wrapper, zshrc wiring, completion | done |
 | Z | Full validation + .test-evidence-extract-password-recursive.json | pending |
 
 ---
@@ -2025,7 +2025,7 @@ git commit -m "feat(extract): add orchestration with atomic temp-dir placement a
 
 **Context:** Wires everything together (spec §5, §9, §10). Typer CLI in the package, executable shim in `zsh/bin/`, zsh wrapper + `zshrc` source line, generated completion.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 **Files:**
 - Create: `zsh/tests/test_cli.py`
@@ -2209,12 +2209,12 @@ class TestWrapper:
         assert result.stdout.strip() == "PLUGIN"
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_cli.py -v`
 Expected: FAIL — every test errors on the missing `bin/extract.py` shim (subprocess `FileNotFoundError` surfaces as nonzero rc / missing stdout) and the missing `custom/extract.zsh` wrapper
 
-- [ ] **Step 3: Implement the Typer CLI**
+- [x] **Step 3: Implement the Typer CLI**
 
 **Files:**
 - Create: `zsh/libraries/python/extract/cli.py`
@@ -2290,7 +2290,7 @@ if __name__ == "__main__":
     app()
 ```
 
-- [ ] **Step 4: Create the bin shim**
+- [x] **Step 4: Create the bin shim**
 
 **Files:**
 - Create: `zsh/bin/extract.py`
@@ -2323,7 +2323,7 @@ Then make it executable:
 Run: `chmod +x /home/cupric/dev/zsh/bin/extract.py`
 Expected: no output
 
-- [ ] **Step 5: Create the zsh wrapper and wire zshrc**
+- [x] **Step 5: Create the zsh wrapper and wire zshrc**
 
 **Files:**
 - Create: `zsh/custom/extract.zsh`
@@ -2375,7 +2375,7 @@ extract() {
 source "$ZSH_CUSTOM/extract.zsh"
 ```
 
-- [ ] **Step 6: Generate the completion**
+- [x] **Step 6: Generate the completion**
 
 Run: `cd /home/cupric/dev/zsh && python3 bin/extract.py --show-completion zsh > completion/_extract`
 Then: `sed -i '1s/^#compdef .*/#compdef extract extract.py/' completion/_extract`
@@ -2398,17 +2398,17 @@ _arguments \
 
 Expected: file written, first line `#compdef extract extract.py`.
 
-- [ ] **Step 7: Run tests, verify they pass**
+- [x] **Step 7: Run tests, verify they pass**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_cli.py -v`
 Expected: all `test_cli.py` tests pass (skips honored when 7z is absent)
 
-- [ ] **Step 8: Sanity-check the wrapper syntax**
+- [x] **Step 8: Sanity-check the wrapper syntax**
 
 Run: `zsh -n custom/extract.zsh && zsh -n zshrc`
 Expected: no output, exit 0
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 cd /home/cupric/dev/zsh
@@ -2506,6 +2506,7 @@ git commit -m "test(extract): add validation evidence"
 - Task D is the largest task (~12 handlers, ~20 tests). If the executing subagent struggles or the two-stage review flags quality, split it at execution time — `handlers.py` separates cleanly into primary handlers (libarchive/tarfile/unzip/7z/unrar) and auxiliary handlers (single-file/rpm/cpio/deb/cab/zlib), and the registry makes the split mechanical.
 - Task D shipped with four plan-code bugfixes (recorded in commit `261f5fe` + `180a4f1`): `entry.ishardlink`→`entry.islnk` (libarchive-c attribute), `SevenZipHandler` was missing the `str(archive)` operand, `TarfileHandler` declines exotic compressions by suffix (Python 3.14 raises `ReadError`, not `CompressionError`), and `SingleFileHandler` cwd-mode no longer references an unbound `proc`. The `_classify` `"bad crc"` wrong-password marker (spike: ZipCrypto wrong password emits `"ZIP bad CRC"`, while AES emits `"Incorrect passphrase"`) is also required.
 - Security follow-ups (plan-level, not shipped): `Rpm2cpioHandler`/`CpioHandler` invoke `cpio` without `--no-absolute-filenames` (a hostile `.cpio`/`.rpm` could write absolute paths outside the target); `LibarchiveHandler` does not guard symlink follow-through (a symlink member + a later `link/…` member escapes `safe_join`); `run_streamed`'s timeout only fires after stdout EOF, not while a child is hung mid-stream.
+- The Typer-generated zsh completion (`--show-completion zsh`) is non-functional: it emits `_extractpy_completion`, but zsh autoloads completion by file basename (`_extract`). Task F uses the hand-written `_arguments` form (the plan's Step 6 fallback) instead. The wrapper's `-p*`/`-r*` patterns will also false-positive on dash-leading filenames like `-password.tar` (delegated to the shim and mis-parsed) — a documented low-probability edge.
 
 ## Execution Started
 - **Date:** 2026-09-19 23:15 EDT
