@@ -416,12 +416,12 @@ from pathlib import Path
 # Compound suffixes (incl. split-archive first volumes) consume as one unit.
 NAME_SUFFIXES: tuple[str, ...] = (
     ".tar.zst", ".tar.bz2", ".tar.gz", ".tar.lz4", ".tar.lrz", ".tar.lz",
-    ".tar.br", ".tar.xz", ".tar.zma", ".tar.bz", ".tar.Z",
+    ".tar.br", ".tar.xz", ".tar.zma", ".tar.bz", ".tar.z",
     ".tbz2", ".tbz", ".tgz", ".txz", ".tzst", ".tlz",
     ".part1.rar", ".7z.001",
     ".sublime-package",
     ".tar", ".rar", ".zip", ".7z", ".gz", ".bz2", ".xz", ".lrz", ".lz4",
-    ".lzma", ".z", ".Z", ".zst", ".zstd", ".br", ".lz", ".zpaq", ".zlib",
+    ".lzma", ".z", ".zst", ".zstd", ".br", ".lz", ".zpaq", ".zlib",
     ".rpm", ".deb", ".cab", ".exe",
     ".cpio", ".obscpio", ".war", ".jar", ".ear", ".ipa", ".ipsw", ".xpi",
     ".apk", ".aar", ".whl",
@@ -430,7 +430,7 @@ NAME_SUFFIXES: tuple[str, ...] = (
 FAMILY_BY_SUFFIX: dict[str, str] = {
     ".tar.zst": "tar", ".tar.bz2": "tar", ".tar.gz": "tar", ".tar.lz4": "tar",
     ".tar.lrz": "tar", ".tar.lz": "tar", ".tar.br": "tar", ".tar.xz": "tar",
-    ".tar.zma": "tar", ".tar.bz": "tar", ".tar.Z": "tar",
+    ".tar.zma": "tar", ".tar.bz": "tar", ".tar.z": "tar",
     ".tbz2": "tar", ".tbz": "tar", ".tgz": "tar", ".txz": "tar", ".tzst": "tar",
     ".tlz": "tar", ".tar": "tar",
     ".zip": "zip", ".war": "zip", ".jar": "zip", ".ear": "zip",
@@ -442,7 +442,7 @@ FAMILY_BY_SUFFIX: dict[str, str] = {
     ".cpio": "cpio", ".obscpio": "cpio",
     ".zlib": "zlib",
     ".gz": "single", ".bz2": "single", ".xz": "single", ".lrz": "single",
-    ".lz4": "single", ".lzma": "single", ".z": "single", ".Z": "single",
+    ".lz4": "single", ".lzma": "single", ".z": "single",
     ".zst": "single", ".zstd": "single", ".br": "single", ".lz": "single",
     ".zpaq": "single",
 }
@@ -1327,7 +1327,7 @@ class TarSubprocessHandler:
             rc = self._pipe([_tool(("lzcat",)) or "lzcat", str(archive)], ["tar", "-xf", "-"], dest)
         elif low.endswith(".tar.br"):
             rc = self._pipe([_tool(("brotli",)) or "brotli", "-dc", str(archive)], ["tar", "-xf", "-"], dest)
-        elif low.endswith(".tar.Z"):
+        elif low.endswith(".tar.z"):
             rc = self._pipe([_tool(("uncompress",)) or "uncompress", "-c", str(archive)], ["tar", "-xf", "-"], dest)
         elif low.endswith(".tar.bz"):
             rc = self._pipe([_tool(("bzip2",)) or "bzip2", "-dc", str(archive)], ["tar", "-xf", "-"], dest)
@@ -1516,7 +1516,6 @@ class SingleFileHandler:
         ".xz": ((("xz", "-dc"), "stdout"),),
         ".lzma": ((("unlzma", "-c"), "stdout"),),
         ".z": ((("uncompress", "-c"), "stdout"),),
-        ".Z": ((("uncompress", "-c"), "stdout"),),
         ".zst": ((("zstd", "-dc"), "stdout"),),
         ".zstd": ((("zstd", "-dc"), "stdout"),),
         ".lz4": ((("lz4", "-dc"), "stdout"),),
