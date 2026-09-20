@@ -1,7 +1,9 @@
 #compdef extract extract.py
 
-_extractpy_completion() {
-  eval $(env _TYPER_COMPLETE_ARGS="${words[1,$CURRENT]}" _EXTRACT.PY_COMPLETE=complete_zsh extract.py)
-}
-
-compdef _extractpy_completion extract.py
+_arguments \
+  '(-R --recursive)'{-R,--recursive}'[extract every archive below each directory, in place]' \
+  '(-p --password)'{-p,--password}'[single password for encrypted archives]:password:' \
+  '(-P --password-file)'{-P,--password-file}'[file of password candidates]:file:_files' \
+  '(-F --force)'{-F,--force}'[merge into existing target directory]' \
+  '(-r --remove)'{-r,--remove}'[delete archive after successful extraction]' \
+  '*:archive or directory:_files'
