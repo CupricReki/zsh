@@ -195,3 +195,11 @@ class TestProcessArchive:
         assert not process_archive(archive, [], force=False, remove=True, skip_existing=False, family="tar")
         assert archive.exists()  # -r never removes on failure
         assert not (tmp_path / "x").exists()
+
+    def test_marker_not_leaked_into_output(self, tmp_path):
+        archive = tmp_path / "x.tar.gz"
+        make_tar(archive)
+        assert process_archive(archive, [], force=False, remove=False, skip_existing=False, family="tar")
+        target = tmp_path / "x"
+        assert (target / "a.txt").read_text() == "a\n"
+        assert not (target / ".extract-owned").exists()

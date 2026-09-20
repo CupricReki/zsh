@@ -139,3 +139,16 @@ def test_all_fail_returns_error_and_no_tempdir(tempdirs):
     assert result.cls is ErrorClass.EXTRACT_ERROR
     assert tmp is None
     assert not made[0].exists() and not made[1].exists()
+
+
+def test_handler_exception_cleans_tempdir(tempdirs):
+    made, factory = tempdirs
+
+    class Raises(FakeHandler):
+        def extract(self, archive, dest, password):
+            raise RuntimeError("boom")
+
+    h = Raises("h1", password_capable=True)
+    with pytest.raises(RuntimeError):
+        resolve(Path("a.zip"), "zip", ("h1",), {"h1": h}, ["pw"], factory)
+    assert not made[0].exists()

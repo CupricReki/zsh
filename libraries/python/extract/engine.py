@@ -72,7 +72,11 @@ def resolve(
             continue
         for index, password in enumerate(attempts):
             tmp = new_tempdir()
-            result = handler.extract(archive, tmp, password)
+            try:
+                result = handler.extract(archive, tmp, password)
+            except Exception:
+                shutil.rmtree(tmp, ignore_errors=True)
+                raise
             if result.ok:
                 result.candidate_index = index if password is not None else None
                 return result, tmp

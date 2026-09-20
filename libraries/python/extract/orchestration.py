@@ -133,6 +133,7 @@ def process_archive(
 
         assert tmp is not None
         collapse_tree(tmp)
+        (tmp / MARKER_NAME).unlink(missing_ok=True)  # don't leak the ownership marker
 
         if force and target.exists():
             merge_into(tmp, target)
