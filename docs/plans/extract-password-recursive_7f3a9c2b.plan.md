@@ -91,7 +91,7 @@ Where each task should use them:
 | D | Backend handlers + registry + run_streamed (spec §7.2 chains) | done |
 | E | Orchestration: temp dirs, placement, collapse, merge, -r safeguard | done |
 | F | Typer CLI, bin shim, zsh wrapper, zshrc wiring, completion | done |
-| Z | Full validation + .test-evidence-extract-password-recursive.json | pending |
+| Z | Full validation + .test-evidence-extract-password-recursive.json | done |
 
 ---
 
@@ -2432,7 +2432,7 @@ git commit -m "feat(extract): add Typer CLI, bin shim, zsh wrapper, and completi
 
 ### Task Z: Full validation
 
-- [ ] **Step 1: Run the complete test suite**
+- [x] **Step 1: Run the complete test suite**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/ -v`
 Expected: all tests pass (unrar/7z-dependent tests skipped only when tools absent); record the summary line (e.g. `= 63 passed, 2 skipped in 12.3s =`).
@@ -2443,12 +2443,12 @@ skipped — any other skip means a fixture went unexercised and must be explaine
 the evidence. The two `xfail` cases (Alpine `.apk`, multi-volume `.7z.001`) are
 documented gaps from the findings doc; leave them `xfail`, do not force them green.
 
-- [ ] **Step 2: Compile-check all Python modules and syntax-check zsh files**
+- [x] **Step 2: Compile-check all Python modules and syntax-check zsh files**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m py_compile bin/extract.py libraries/python/extract/*.py && zsh -n completion/_extract && zsh -n custom/extract.zsh`
 Expected: exit 0, no output. (py_compile is the lint substitute — this repo has no flake8/ruff; `zsh -n` syntax-checks the completion and wrapper.)
 
-- [ ] **Step 3: Functional smoke test (all spec §5 flags on real files)**
+- [x] **Step 3: Functional smoke test (all spec §5 flags on real files)**
 
 Run:
 
@@ -2466,7 +2466,7 @@ python3 /home/cupric/dev/zsh/bin/extract.py -r top.tar.gz && test ! -f top.tar.g
 
 Expected: extraction dirs appear, `SKIP_OK` and `REMOVE_OK` printed.
 
-- [ ] **Step 4: Write test evidence**
+- [x] **Step 4: Write test evidence**
 
 **Files:**
 - Create: `.test-evidence-extract-password-recursive.json`
@@ -2500,7 +2500,7 @@ Expected: extraction dirs appear, `SKIP_OK` and `REMOVE_OK` printed.
 }
 ```
 
-- [ ] **Step 5: Commit validation evidence**
+- [x] **Step 5: Commit validation evidence**
 
 ```bash
 cd /home/cupric/dev/zsh
