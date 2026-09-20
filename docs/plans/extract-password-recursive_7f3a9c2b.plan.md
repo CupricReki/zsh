@@ -2523,3 +2523,8 @@ git commit -m "test(extract): add validation evidence"
 ## Execution Started
 - **Date:** 2026-09-19 23:15 EDT
 - **Base commit:** af056666a9a53166e557c6f14836031285da0979
+
+## Plan Completed
+- **Date:** 2026-09-20 00:36 EDT
+- **Final commit:** b25887edfeeba685a75f7de19dfd7c2fb94a1a5b
+- **Summary:** Shipped extract.py (Typer CLI + zsh wrapper + completion) with password candidates, recursive extraction, and force/remove flags; full fixture matrix green (196 passed).
