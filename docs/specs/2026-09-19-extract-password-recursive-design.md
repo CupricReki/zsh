@@ -23,6 +23,7 @@ The tool is a standalone Python CLI (`extract.py`, callable from any shell) plus
   - `libraries/python/standards` (submodule) provides the logging standard; `zshenv` adds `$ZSH_DIR/libraries/python/standards/python` to `PYTHONPATH` in zsh shells only.
 - Standards repo (`/home/cupric/dev/standards`) mandates: **Typer** for Python CLIs (carapace completion extraction), and the **standard_logging** module for output. Both are available on this system (typer 0.27.2, click 8.3.3, Python 3.14).
 - Carapace is bridged to native zsh completions (`CARAPACE_BRIDGES='zsh'` in `zshrc`), so a committed `_extract` completion is picked up for both `extract.py` and the `extract` function.
+- `python-libarchive-c` (official `extra`, already installed) is available as the primary extraction backend (§6); `python-rarfile` is also installed but deliberately not adopted (see §11).
 
 ## 3. Components
 
@@ -79,31 +80,51 @@ extract.py [-r|--remove] [-R|--recursive] [-p TEXT|--password TEXT]
 
 - Archive deleted only after that archive's extraction succeeded **and the temp dir was renamed into place** (correct password found, or no password needed). Failure or skip → archive preserved.
 
-## 6. Format dispatch
+## 6. Format dispatch — capability-gated backend hierarchy
 
-Port of the plugin's table. "Stdlib" means Python's `tarfile`/`zlib`/`lzma` modules; "subprocess" mirrors the plugin's command.
+Dispatch is **data-driven and defensive**: handlers and per-format preference chains are declared as data, and a generic engine walks them. Tuning the tree later (adding a backend, reordering preferences, adding a format) is a table edit, never an engine change.
 
-| Extensions | Method | Password? |
-|---|---|---|
-| `.tar.gz` `.tgz` `.tar.bz2` `.tbz` `.tbz2` `.tar.xz` `.txz` `.tar` | stdlib `tarfile` | no |
-| `.tar.zma` `.tlz` | subprocess `lzcat \| tar` (lzma_alone unsupported by tarfile) | no |
-| `.tar.zst` `.tzst` | subprocess `tar --zstd`, fallback `zstdcat \| tar` | no |
-| `.tar.lz` | subprocess `tar xvf` (requires tar lzip support, as plugin) | no |
-| `.tar.lz4` | subprocess `lz4 -dc \| tar` | no |
-| `.tar.lrz` | subprocess `lrzuntar` | no |
-| `.gz` | subprocess `pigz -cdk` (fallback `gunzip -ck`) → file inside target dir | no |
-| `.bz2` `.xz` `.lrz` `.lz4` `.lzma` `.z` `.zst` | subprocess single-file decompress into target dir | no |
-| `.zip` `.war` `.jar` `.ear` `.sublime-package` `.ipa` `.ipsw` `.xpi` `.apk` `.aar` `.whl` | subprocess `unzip` (`-P` when passwords given) | **yes** |
-| `.7z` | subprocess `7z x` (fallback `7za`), `-p` when passwords given | **yes** |
-| `.rar` | subprocess `unrar x -p` (no `-ad`; see §11) | **yes** |
-| `.rpm` | subprocess `rpm2cpio \| cpio -id` | no |
-| `.deb` | subprocess `ar` + internal engine for `control.tar.*`/`data.tar.*` (plugin parity) | no |
-| `.cab` `.exe` | subprocess `cabextract` | no |
-| `.cpio` `.obscpio` | subprocess `cpio -idmvF` | no |
-| `.zpaq` | subprocess `zpaq x` | no |
-| `.zlib` | stdlib `zlib.decompress` → file inside target dir | no |
+### 6.1 Architecture
+
+- **Handler registry** — each handler is a record with:
+  - `name` — stable key;
+  - `available()` — probe (module import or `shutil.which`); unavailable handlers are skipped with a debug log;
+  - `capabilities` — the format families it serves plus password-relevant traits (e.g. libarchive: `aes_zip: false`);
+  - `extract(archive, dest, passwords)` → `Result` — runs one attempt (one candidate) into a fresh temp dir, streaming output live;
+  - `classify_failure(...)` — maps its own failures into the shared error classes (§6.3).
+- **Chain tables** — `CHAINS: dict[family, list[handler_names]]` in preference order (§6.2); `EXTENSION_FAMILIES` maps every known extension (case-insensitive) to a family.
+- **Engine** — generic `resolve(archive)`: walks the chain, skips handlers that are unavailable or incapable of the current requirement (e.g. passwords present but handler has no password support), runs the attempt, and reacts to the result class (§6.3). The engine knows nothing about specific tools; handlers own their mechanics, so new handlers plug in without touching the engine.
+- **Defensive rules** (enforced for every handler):
+  - subprocesses always run with **list argv, never `shell=True`** — passwords containing `$`, spaces, quotes, or `;` cannot break out;
+  - every subprocess is preceded by its availability probe; if a tool is missing the archive fails with "requires <tool>" (chain first, then error);
+  - unknown exit codes / unrecognizable output → `EXTRACT_ERROR` carrying the tool's last ~20 output lines for diagnosis;
+  - `finally`/`KeyboardInterrupt` guarantees temp-dir cleanup;
+  - handlers never write outside the temp dir and the explicitly computed target.
+
+### 6.2 Per-format chains
+
+| Family | Extensions | Chain (preference order) | Passwords |
+|---|---|---|---|
+| tar | `.tar` `.tar.gz` `.tgz` `.tar.bz2` `.tbz` `.tbz2` `.tar.xz` `.txz` `.tar.zst` `.tzst` `.tar.lz` `.tar.lz4` `.tar.lrz` `.tar.zma` `.tlz` | ① libarchive-c → ② stdlib `tarfile` (gz/bz2/xz only) → ③ subprocess `tar --zstd` / `zstdcat\|tar` / `lz4 -dc\|tar` / `lrzuntar` | no |
+| zip | `.zip` `.war` `.jar` `.ear` `.sublime-package` `.ipa` `.ipsw` `.xpi` `.apk` `.aar` `.whl` | ① libarchive-c (`passphrase=`) → ② `unzip [-P]` | **yes** |
+| 7z | `.7z` | ① libarchive-c (`passphrase=`, AES-capable) → ② `7z x -p` (fallback `7za`) | **yes** |
+| rar | `.rar` | ① `unrar x [-p]` — **single handler by design** (libarchive's partial rar support would only add flaky duplicate attempts) | **yes** |
+| rpm | `.rpm` | ① libarchive-c → ② `rpm2cpio \| cpio -id` | no |
+| cpio | `.cpio` `.obscpio` | ① libarchive-c → ② `cpio -idmvF` | no |
+| deb | `.deb` | fixed path: `ar` + internal engine for `control.tar.*`/`data.tar.*` (plugin parity) | no |
+| single-file | `.gz` `.bz2` `.xz` `.lrz` `.lz4` `.lzma` `.z` `.zst` `.zpaq` | one handler each: `pigz`→`gunzip`, `bunzip2`, `unxz`, `lrunzip`, `lz4`, `unlzma`, `uncompress`, `unzstd`, `zpaq` | no |
+| zlib | `.zlib` | stdlib `zlib.decompress` → file inside target dir | no |
+| cab | `.cab` `.exe` | `cabextract` | no |
 
 Unknown extension → error for that archive, continue.
+
+### 6.3 Error classification (drives traversal)
+
+| Class | Meaning | Engine action |
+|---|---|---|
+| `WRONG_PASSWORD` | candidate rejected | next password candidate, same handler |
+| `BACKEND_UNSUPPORTED` | format/codec/encryption this handler can't do (e.g. libarchive on an AES zip) | descend to next handler in the chain, candidates restart there |
+| `EXTRACT_ERROR` | corrupt/invalid data | fatal for this archive, chain stops |
 
 ## 7. Password handling
 
@@ -120,20 +141,23 @@ Unknown extension → error for that archive, continue.
 
 ### 7.2 Retry and success detection
 
-- Candidates apply to the three password-capable families (§6). For any other format, candidates are ignored (single info log).
-- Tool stdout/stderr is **streamed live to the terminal** while being captured (tee-style) for success detection; nothing is swallowed.
-- For each archive, try candidates in order:
-  - `7z`/`7za`: exit 0 = success; exit 2 ("Wrong password") = next candidate; any other exit = fatal for this archive (corrupt/unsupported), stop trying.
-  - `unrar`: exit 0 = success; exit 11 (bad password) = next candidate; anything else = fatal for this archive.
-  - `unzip`: exit 0 **and** no "incorrect password" in combined output = success (this also catches partially encrypted zips); output containing "incorrect password" = next candidate; other nonzero exits without that marker = fatal for this archive.
-- Each attempt extracts into a fresh temp dir (§5.1); a failed attempt's tree is deleted wholesale, so partial output (unzip extracts non-encrypted entries before failing) never pollutes the next attempt.
-- All candidates exhausted → log failure, remove the temp dir; the target is never created, archive preserved even with `-r`.
+- Candidates apply to the three password-capable families (§6.2). For any other format, candidates are ignored (single info log).
+- Tool output is **streamed live to the terminal** while being captured (tee-style) for detection; nothing is swallowed.
+- The engine runs the chain (§6); each attempt extracts into a fresh temp dir (§5.1); a failed attempt's tree is deleted wholesale, so partial output (unzip extracts non-encrypted entries before failing) never pollutes the next attempt.
+- `WRONG_PASSWORD` classification per handler (drives the candidate loop):
+  - libarchive-c: exception whose message matches passphrase/password phrases (case-insensitive) → next candidate.
+  - `7z`/`7za`: exit 2 ("Wrong password") → next candidate.
+  - `unrar`: exit 11 → next candidate.
+  - `unzip`: exit 0 **and** no "incorrect password" in combined output = success (also catches partially encrypted zips); "incorrect password" present → next candidate.
+  - Any other exit/output per handler → `EXTRACT_ERROR` (fatal, §6.3).
+- `BACKEND_UNSUPPORTED` (e.g. libarchive on an AES zip, exotic 7z codec) → descend to the next handler in the chain; candidate iteration restarts there.
+- All candidates exhausted in all capable handlers → log failure, remove the temp dir; the target is never created, archive preserved even with `-r`.
 - On success, log which candidate index matched (never the password itself).
 
 ### 7.3 Security notes
 
-- Passwords for 7z/rar/unzip pass through the tools' argv and are visible in `/proc/<pid>/cmdline` while the process runs — inherent to those tools' only non-interactive interface. Accepted limitation; documented in the script header.
-- The password value is never written to logs.
+- Passwords reach argv **only** on the two remaining subprocess paths: AES-encrypted zip (`unzip -P`) and rar (`unrar -p`) — visible in `/proc/<pid>/cmdline` while those processes run; inherent to those tools' only non-interactive interface. The primary libarchive-c path passes the passphrase via API (no argv exposure), covering 7z and ZipCrypto/unencrypted zips.
+- The password value is never written to logs; diagnostic dumps (§6.1) redact any line matching a candidate.
 
 ## 8. Wrapper (`custom/extract.zsh`)
 
@@ -182,13 +206,17 @@ pytest suite in `zsh/tests/test_extract.py`, invoking `extract.py` via subproces
 7. **Single-file** — unique suffix on existing target, `-F` reuse.
 8. **Wrapper** — `zsh -c` with mocked `extract`/`extract_orig`: delegation for each new flag, fall-through otherwise.
 9. **Temp-dir robustness** — failed extraction leaves no target dir; stale `.extract-*` dirs cleaned on the next run (simulated interrupted run); live output reaches the terminal while detection still works.
+10. **Dispatch engine** — parametrized over chains with mocked handlers: availability skip, capability gate (passwords vs handler capability), `WRONG_PASSWORD` keeps the handler, `BACKEND_UNSUPPORTED` descends, `EXTRACT_ERROR` fails; a registry edit (added/reordered handler) works with zero engine changes. Classification unit tests per handler; subprocess safety (list argv, no shell) and the missing-tool "requires <tool>" path.
 
 ## 11. Trade-offs / risks
 
+- `python-libarchive-c` as primary backend (official `extra`, installed): one API covers tar/zip/7z/rpm/cpio with API-level passphrase (no argv exposure). Gaps — AES-encrypted zip and encrypted RAR5 — keep the `unzip`/`unrar` subprocess paths alive; the chain design (§6) makes swapping backends a table edit.
 - `unrar x` without the plugin's `-ad` flag: `-ad` nests contents under an archive-named subdir inside the target dir; dropping it yields `target/contents` directly. Deliberate deviation for cleaner recursion results.
-- stdlib `tarfile` replaces `tar -I pigz/pbzip2/pixz`: loses parallel decompression speed, gains portability and testability. Accepted.
+- rar is a **single-handler chain** (`unrar` only): libarchive's partial rar support would add flaky duplicate attempts; predictability wins. Revisitable as a one-line chain edit if libarchive's rar support matures.
+- stdlib `tarfile` remains the zero-dep fallback tier for the tar family when libarchive-c is unavailable.
+- §5.1's extract-to-temp-then-collapse mirrors `atool`'s design (prior art, not a dependency).
+- `pyzipper` (AUR-only) would remove the last zip argv case (AES zips); not adopted — noted as a future chain insertion point.
 - `typer` is a runtime dependency (vs stdlib argparse). Mandated by the standards repo; installed on this system. Companion note: ensure `python-typer` in the ansible role's zsh provisioning (tracked separately, not in this repo).
-- Passwords in argv (see §7.3).
 
 ## 12. Out of scope
 
