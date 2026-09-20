@@ -1,0 +1,7 @@
+# Test fixtures are byte-exact inputs. Never apply EOL conversion: it would
+# corrupt the binary archives and the deliberately-CRLF password fixture.
+* -text
+
+# The generator and helper scripts are still text.
+*.py text
+*.md text
