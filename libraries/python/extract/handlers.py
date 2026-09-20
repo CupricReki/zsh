@@ -108,11 +108,13 @@ class LibarchiveHandler:
         if password is not None:
             kwargs["passphrase"] = password.encode("utf-8", "surrogateescape")
         try:
+            count = 0
             with libarchive.file_reader(str(archive), **kwargs) as reader:
                 for entry in reader:
                     pathname = str(entry.pathname or "")
                     if not pathname:
                         continue
+                    count += 1
                     target = safe_join(dest, pathname)
                     if entry.isdir:
                         target.mkdir(parents=True, exist_ok=True)
@@ -131,6 +133,8 @@ class LibarchiveHandler:
                     with open(target, "wb") as fh:
                         for block in entry.get_blocks():
                             fh.write(block)
+            if count == 0:
+                return _err("empty or unreadable archive")
             return Result(ErrorClass.NONE)
         except Exception as exc:  # noqa: BLE001 — ValueError from safe_join lands here too
             return self._classify(str(exc))

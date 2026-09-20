@@ -102,6 +102,9 @@ def process_archive(
     family: str,
 ) -> bool:
     """Extract one archive; True on success or skip, False on failure."""
+    # Resolve to an absolute path: subprocess handlers (ar/cpio) run with
+    # cwd=dest, so a relative archive path would resolve against dest.
+    archive = archive.resolve()
     sweep_stale(archive)
     base_target = archive.parent / target_name(archive.name)
 
@@ -109,6 +112,11 @@ def process_archive(
         if skip_existing:
             log("info", f"skipping {archive.name}: already extracted")
             return True
+        if base_target.is_file():
+            # findings M12: a target-name collision with a regular file is an
+            # error (never clobber or silently suffix over an unrelated file).
+            log("error", f"{archive.name}: target {base_target.name} is an existing file")
+            return False
         target = compute_target(archive, force=False)
     else:
         target = base_target

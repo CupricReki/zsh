@@ -196,6 +196,16 @@ class TestProcessArchive:
         assert archive.exists()  # -r never removes on failure
         assert not (tmp_path / "x").exists()
 
+    def test_file_collision_is_error(self, tmp_path):
+        # findings M12: a target-name collision with a regular file is an error,
+        # never a silent suffix or a clobber.
+        archive = tmp_path / "x.tar.gz"
+        make_tar(archive)
+        (tmp_path / "x").write_text("I am a file")
+        assert not process_archive(archive, [], force=False, remove=False, skip_existing=False, family="tar")
+        assert (tmp_path / "x").read_text() == "I am a file"
+        assert archive.exists()
+
     def test_marker_not_leaked_into_output(self, tmp_path):
         archive = tmp_path / "x.tar.gz"
         make_tar(archive)

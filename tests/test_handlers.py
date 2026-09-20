@@ -145,6 +145,16 @@ class TestLibarchiveHandler:
         assert result.ok
         assert (dest / "f.txt").read_text() == "zipped\n"
 
+    def test_empty_archive_is_error(self, tmp_path):
+        # libarchive yields 0 entries for a 0-byte file without raising;
+        # treat that as a failure, not a successful empty extraction.
+        archive = tmp_path / "x.zip"
+        archive.write_bytes(b"")
+        dest = tmp_path / "out"
+        dest.mkdir()
+        result = LibarchiveHandler().extract(archive, dest, None)
+        assert result.cls is ErrorClass.EXTRACT_ERROR
+
 
 @pytest.mark.skipif(
     not shutil.which("7z") and not shutil.which("7za"),
