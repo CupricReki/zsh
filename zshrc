@@ -141,7 +141,8 @@ if dir_exists "$ZFUNC"; then
   done
 fi
 
-# Note: extract function is loaded via sheldon (ohmyzsh-extract plugin)
+# Note: extract function is loaded via sheldon (ohmyzsh-extract plugin);
+# custom/extract.zsh wraps it for -R/-p/-P/-F (sourced after sheldon below).
 
 # # Load source alias files
 if dir_exists "$ZSH_CUSTOM/alias"; then
@@ -185,6 +186,10 @@ unset _sheldon_output
 # Aliases resolve before functions; clear any `backup` alias so the autoloaded
 # function from $ZFUNC/backup is used (same as the old inline backup() in alias.zsh).
 unalias backup 2>/dev/null
+
+# extract wrapper: routes -R/-p/-P/-F invocations to bin/extract.py.
+# Must load after sheldon so the plugin's extract() can be saved as extract_orig.
+source "$ZSH_CUSTOM/extract.zsh"
 
 # ================================================
 # Conditional Plugins - Only load if tools exist

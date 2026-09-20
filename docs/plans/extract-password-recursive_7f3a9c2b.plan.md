@@ -85,13 +85,13 @@ Where each task should use them:
 
 | Task | Description | Status |
 |---|---|---|
-| A | Package skeleton + password candidate parsing + spec §3 sync | pending |
-| B | Discovery: families, split-volume filter, target naming, recursion | pending |
-| C | Dispatch engine: ErrorClass/Result/Handler + generic resolve() | pending |
-| D | Backend handlers + registry + run_streamed (spec §7.2 chains) | pending |
-| E | Orchestration: temp dirs, placement, collapse, merge, -r safeguard | pending |
-| F | Typer CLI, bin shim, zsh wrapper, zshrc wiring, completion | pending |
-| Z | Full validation + .test-evidence-extract-password-recursive.json | pending |
+| A | Package skeleton + password candidate parsing + spec §3 sync | done |
+| B | Discovery: families, split-volume filter, target naming, recursion | done |
+| C | Dispatch engine: ErrorClass/Result/Handler + generic resolve() | done |
+| D | Backend handlers + registry + run_streamed (spec §7.2 chains) | done |
+| E | Orchestration: temp dirs, placement, collapse, merge, -r safeguard | done |
+| F | Typer CLI, bin shim, zsh wrapper, zshrc wiring, completion | done |
+| Z | Full validation + .test-evidence-extract-password-recursive.json | done |
 
 ---
 
@@ -99,7 +99,7 @@ Where each task should use them:
 
 **Context:** Establishes `zsh/libraries/python/extract/` as an importable package and the password-candidate contract every later task consumes. Interface exported (stable for Tasks C-E): `parse_password_file(text) -> list[str]` and `load_candidates(password, password_file) -> list[str]`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 **Files:**
 - Create: `zsh/tests/conftest.py`
@@ -185,12 +185,12 @@ def test_load_candidates_none():
     assert load_candidates(None, None) == []
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_passwords.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'extract'`
 
-- [ ] **Step 3: Create the package**
+- [x] **Step 3: Create the package**
 
 **Files:**
 - Create: `zsh/libraries/python/extract/__init__.py`
@@ -253,12 +253,12 @@ def load_candidates(password: str | None, password_file: str | None) -> list[str
     return candidates
 ```
 
-- [ ] **Step 4: Run tests, verify they pass**
+- [x] **Step 4: Run tests, verify they pass**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_passwords.py -v`
 Expected: PASS — 9 passed
 
-- [ ] **Step 5: Sync spec §3 component rows**
+- [x] **Step 5: Sync spec §3 component rows**
 
 **Files:**
 - Modify: `docs/specs/2026-09-19-extract-password-recursive-design.md`
@@ -278,7 +278,7 @@ and the test row `| `zsh/tests/test_extract.py` | pytest suite | new |` with:
 
 Also replace the §11 opening sentence `pytest suite in `zsh/tests/test_extract.py`, invoking` with `pytest suite in `zsh/tests/test_*.py` (one module per package module), invoking` so the spec and plan agree on the test layout.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd /home/cupric/dev/zsh
@@ -290,7 +290,7 @@ git commit -m "feat(extract): add package skeleton and password candidate parsin
 
 **Context:** Consumed by Tasks E/F. Interface: `family_for(name) -> str | None`, `target_name(name) -> str`, `is_skipped_volume(name) -> bool`, `discover(paths, recursive) -> list[Path]`, `DiscoveryError`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 **Files:**
 - Create: `zsh/tests/test_discovery.py`
@@ -396,12 +396,12 @@ def test_discover_directory_requires_recursive(tmp_path):
         discover([tmp_path], recursive=False)
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_discovery.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'extract.discovery'`
 
-- [ ] **Step 3: Implement discovery**
+- [x] **Step 3: Implement discovery**
 
 **Files:**
 - Create: `zsh/libraries/python/extract/discovery.py`
@@ -416,12 +416,12 @@ from pathlib import Path
 # Compound suffixes (incl. split-archive first volumes) consume as one unit.
 NAME_SUFFIXES: tuple[str, ...] = (
     ".tar.zst", ".tar.bz2", ".tar.gz", ".tar.lz4", ".tar.lrz", ".tar.lz",
-    ".tar.br", ".tar.xz", ".tar.zma", ".tar.bz", ".tar.Z",
+    ".tar.br", ".tar.xz", ".tar.zma", ".tar.bz", ".tar.z",
     ".tbz2", ".tbz", ".tgz", ".txz", ".tzst", ".tlz",
     ".part1.rar", ".7z.001",
     ".sublime-package",
     ".tar", ".rar", ".zip", ".7z", ".gz", ".bz2", ".xz", ".lrz", ".lz4",
-    ".lzma", ".z", ".Z", ".zst", ".zstd", ".br", ".lz", ".zpaq", ".zlib",
+    ".lzma", ".z", ".zst", ".zstd", ".br", ".lz", ".zpaq", ".zlib",
     ".rpm", ".deb", ".cab", ".exe",
     ".cpio", ".obscpio", ".war", ".jar", ".ear", ".ipa", ".ipsw", ".xpi",
     ".apk", ".aar", ".whl",
@@ -430,7 +430,7 @@ NAME_SUFFIXES: tuple[str, ...] = (
 FAMILY_BY_SUFFIX: dict[str, str] = {
     ".tar.zst": "tar", ".tar.bz2": "tar", ".tar.gz": "tar", ".tar.lz4": "tar",
     ".tar.lrz": "tar", ".tar.lz": "tar", ".tar.br": "tar", ".tar.xz": "tar",
-    ".tar.zma": "tar", ".tar.bz": "tar", ".tar.Z": "tar",
+    ".tar.zma": "tar", ".tar.bz": "tar", ".tar.z": "tar",
     ".tbz2": "tar", ".tbz": "tar", ".tgz": "tar", ".txz": "tar", ".tzst": "tar",
     ".tlz": "tar", ".tar": "tar",
     ".zip": "zip", ".war": "zip", ".jar": "zip", ".ear": "zip",
@@ -442,7 +442,7 @@ FAMILY_BY_SUFFIX: dict[str, str] = {
     ".cpio": "cpio", ".obscpio": "cpio",
     ".zlib": "zlib",
     ".gz": "single", ".bz2": "single", ".xz": "single", ".lrz": "single",
-    ".lz4": "single", ".lzma": "single", ".z": "single", ".Z": "single",
+    ".lz4": "single", ".lzma": "single", ".z": "single",
     ".zst": "single", ".zstd": "single", ".br": "single", ".lz": "single",
     ".zpaq": "single",
 }
@@ -512,12 +512,12 @@ def discover(paths: list[Path], recursive: bool) -> list[Path]:
     return found
 ```
 
-- [ ] **Step 4: Run tests, verify they pass**
+- [x] **Step 4: Run tests, verify they pass**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_discovery.py -v`
 Expected: PASS — 17 passed (7 functions + 1 parametrized with 11 cases)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /home/cupric/dev/zsh
@@ -531,7 +531,7 @@ git commit -m "feat(extract): add archive discovery, split-volume filter, and ta
 
 **Context:** The traversal core (spec §7.1/§7.3). Consumed by Tasks D/E. Interface: `ErrorClass` enum, `Result` dataclass, `Handler` protocol, `PASSWORD_FAMILIES`, and `resolve(archive, family, chain, handlers, passwords, new_tempdir) -> tuple[Result, Path | None]`. `resolve` owns per-attempt temp-dir creation and cleanup; `new_tempdir` is injected by orchestration (Task E).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 **Files:**
 - Create: `zsh/tests/test_engine.py`
@@ -680,12 +680,12 @@ def test_all_fail_returns_error_and_no_tempdir(tempdirs):
     assert not made[0].exists() and not made[1].exists()
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_engine.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'extract.engine'`
 
-- [ ] **Step 3: Implement the engine**
+- [x] **Step 3: Implement the engine**
 
 **Files:**
 - Create: `zsh/libraries/python/extract/engine.py`
@@ -765,7 +765,11 @@ def resolve(
             continue
         for index, password in enumerate(attempts):
             tmp = new_tempdir()
-            result = handler.extract(archive, tmp, password)
+            try:
+                result = handler.extract(archive, tmp, password)
+            except Exception:
+                shutil.rmtree(tmp, ignore_errors=True)
+                raise
             if result.ok:
                 result.candidate_index = index if password is not None else None
                 return result, tmp
@@ -778,12 +782,12 @@ def resolve(
     return Result(ErrorClass.EXTRACT_ERROR, "no capable handler succeeded"), None
 ```
 
-- [ ] **Step 4: Run tests, verify they pass**
+- [x] **Step 4: Run tests, verify they pass**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_engine.py -v`
 Expected: PASS — 9 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /home/cupric/dev/zsh
@@ -795,7 +799,7 @@ git commit -m "feat(extract): add generic dispatch engine with capability-gated 
 
 **Context:** Implements spec §7.2 chains. Interface consumed by Task E: `CHAIN_TABLE: dict[str, tuple[str, ...]]`, `HANDLERS: dict[str, Handler]`, and `run_streamed(cmd, cwd=None) -> tuple[int, str]`. Defensive rules (spec §7.1): list argv only, `stdin=DEVNULL`, availability probes, output-driven classification, no writes outside `dest` (`safe_join`). Step 0 below empirically pins the backend behaviors this task relies on before any code is written.
 
-- [ ] **Step 0: Backend behavior spike** (run first; ~10 minutes, write mode)
+- [x] **Step 0: Backend behavior spike** (run first; ~10 minutes, write mode)
 
 No code changes yet — these commands pin the facts Task D's code depends on:
 
@@ -810,7 +814,7 @@ Record, in order:
 3. **p7zip no-password prompt behavior** — `timeout 5 7z x -p encrypted.7z -oout </dev/null ; echo rc=$?`. If it exits immediately with an error (EOF/"Wrong password"), `stdin=DEVNULL` alone is sufficient. If it hangs (timeout 124) or reads the controlling TTY, change Step 3's `SevenZipHandler` no-password branch to pass `-p""` (empty-password token) and re-run this check to confirm it no longer prompts.
 4. **unzip wrong-password exit code** — `unzip -P wrong crypto.zip -d out ; echo rc=$?` — confirm the "incorrect password" output text used by `UnzipHandler` actually appears on the local unzip build.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 **Files:**
 - Create: `zsh/tests/test_handlers.py`
@@ -1122,12 +1126,12 @@ class TestZlibHandler:
         assert (dest / "x").read_bytes() == b"zlib content\n"
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_handlers.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'extract.handlers'`
 
-- [ ] **Step 3: Implement handlers**
+- [x] **Step 3: Implement handlers**
 
 **Files:**
 - Create: `zsh/libraries/python/extract/handlers.py`
@@ -1243,11 +1247,13 @@ class LibarchiveHandler:
         if password is not None:
             kwargs["passphrase"] = password.encode("utf-8", "surrogateescape")
         try:
+            count = 0
             with libarchive.file_reader(str(archive), **kwargs) as reader:
                 for entry in reader:
                     pathname = str(entry.pathname or "")
                     if not pathname:
                         continue
+                    count += 1
                     target = safe_join(dest, pathname)
                     if entry.isdir:
                         target.mkdir(parents=True, exist_ok=True)
@@ -1266,6 +1272,8 @@ class LibarchiveHandler:
                     with open(target, "wb") as fh:
                         for block in entry.get_blocks():
                             fh.write(block)
+            if count == 0:
+                return _err("empty or unreadable archive")
             return Result(ErrorClass.NONE)
         except Exception as exc:  # noqa: BLE001 — ValueError from safe_join lands here too
             return self._classify(str(exc))
@@ -1273,7 +1281,11 @@ class LibarchiveHandler:
     @staticmethod
     def _classify(message: str) -> Result:
         low = message.lower()
-        if "passphrase" in low or "wrong password" in low or "incorrect password" in low:
+        # libarchive wording (measured, Task D Step 0 spike): AES wrong
+        # passphrase -> "Incorrect passphrase"; ZipCrypto wrong passphrase ->
+        # "ZIP bad CRC" (decrypts to garbage that fails CRC). Both are
+        # wrong-password, not corruption.
+        if "passphrase" in low or "wrong password" in low or "incorrect password" in low or "bad crc" in low:
             return Result(ErrorClass.WRONG_PASSWORD, message)
         # finding C4/M7: libarchive raises "encrypted, but currently not
         # supported" for encrypted 7z and "unrecognized archive format" for
@@ -1327,7 +1339,7 @@ class TarSubprocessHandler:
             rc = self._pipe([_tool(("lzcat",)) or "lzcat", str(archive)], ["tar", "-xf", "-"], dest)
         elif low.endswith(".tar.br"):
             rc = self._pipe([_tool(("brotli",)) or "brotli", "-dc", str(archive)], ["tar", "-xf", "-"], dest)
-        elif low.endswith(".tar.Z"):
+        elif low.endswith(".tar.z"):
             rc = self._pipe([_tool(("uncompress",)) or "uncompress", "-c", str(archive)], ["tar", "-xf", "-"], dest)
         elif low.endswith(".tar.bz"):
             rc = self._pipe([_tool(("bzip2",)) or "bzip2", "-dc", str(archive)], ["tar", "-xf", "-"], dest)
@@ -1516,7 +1528,6 @@ class SingleFileHandler:
         ".xz": ((("xz", "-dc"), "stdout"),),
         ".lzma": ((("unlzma", "-c"), "stdout"),),
         ".z": ((("uncompress", "-c"), "stdout"),),
-        ".Z": ((("uncompress", "-c"), "stdout"),),
         ".zst": ((("zstd", "-dc"), "stdout"),),
         ".zstd": ((("zstd", "-dc"), "stdout"),),
         ".lz4": ((("lz4", "-dc"), "stdout"),),
@@ -1569,12 +1580,12 @@ HANDLERS: dict = {
 }
 ```
 
-- [ ] **Step 4: Run tests, verify they pass**
+- [x] **Step 4: Run tests, verify they pass**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_handlers.py -v`
 Expected: PASS (unrar test skipped); if a libarchive exception-message test fails, adjust `LibarchiveHandler._classify` matchers to the locally observed messages (Step 0 recorded them), re-run until green, and note the actual messages in the commit body.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /home/cupric/dev/zsh
@@ -1588,7 +1599,7 @@ git commit -m "feat(extract): add backend handlers and chain registry"
 
 **Context:** The per-archive flow (spec §6.1-§6.6): stale sweep, target compute (skip/suffix/force), temp-dir factory with ownership marker, engine call, collapse, placement (rename or merge), `-r` removal with re-stat safeguard. Interface consumed by Task F: `process_archive(archive, passwords, *, force, remove, skip_existing, family) -> bool`. Status output goes through `extract/logutil.py` — a shim over `standard_logging.log` that forces **all** levels to stderr (the vendored lib sends only error/critical to stderr; spec §5 requires all of extract's own output on stderr).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 **Files:**
 - Create: `zsh/tests/test_orchestration.py`
@@ -1793,12 +1804,12 @@ class TestProcessArchive:
         assert not (tmp_path / "x").exists()
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_orchestration.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'extract.orchestration'`
 
-- [ ] **Step 3: Implement orchestration and the log shim**
+- [x] **Step 3: Implement orchestration and the log shim**
 
 **Files:**
 - Create: `zsh/libraries/python/extract/logutil.py`
@@ -1916,6 +1927,8 @@ def merge_into(src: Path, dst: Path) -> None:
             continue
         if dest_item.is_dir() and not dest_item.is_symlink():
             shutil.rmtree(dest_item)
+        elif dest_item.is_symlink():
+            dest_item.unlink()  # unlink the symlink, never follow it (spec §6.6)
         dest_item.parent.mkdir(parents=True, exist_ok=True)
         os.replace(item, dest_item)
 
@@ -1941,6 +1954,9 @@ def process_archive(
     family: str,
 ) -> bool:
     """Extract one archive; True on success or skip, False on failure."""
+    # Resolve to an absolute path: subprocess handlers (ar/cpio) run with
+    # cwd=dest, so a relative archive path would resolve against dest.
+    archive = archive.resolve()
     sweep_stale(archive)
     base_target = archive.parent / target_name(archive.name)
 
@@ -1948,6 +1964,11 @@ def process_archive(
         if skip_existing:
             log("info", f"skipping {archive.name}: already extracted")
             return True
+        if base_target.is_file():
+            # findings M12: a target-name collision with a regular file is an
+            # error (never clobber or silently suffix over an unrelated file).
+            log("error", f"{archive.name}: target {base_target.name} is an existing file")
+            return False
         target = compute_target(archive, force=False)
     else:
         target = base_target
@@ -1972,6 +1993,7 @@ def process_archive(
 
         assert tmp is not None
         collapse_tree(tmp)
+        (tmp / MARKER_NAME).unlink(missing_ok=True)  # don't leak the ownership marker
 
         if force and target.exists():
             merge_into(tmp, target)
@@ -1998,12 +2020,12 @@ def process_archive(
     return True
 ```
 
-- [ ] **Step 4: Run tests, verify they pass**
+- [x] **Step 4: Run tests, verify they pass**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_orchestration.py -v`
 Expected: PASS — 18 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /home/cupric/dev/zsh
@@ -2015,7 +2037,7 @@ git commit -m "feat(extract): add orchestration with atomic temp-dir placement a
 
 **Context:** Wires everything together (spec §5, §9, §10). Typer CLI in the package, executable shim in `zsh/bin/`, zsh wrapper + `zshrc` source line, generated completion.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 **Files:**
 - Create: `zsh/tests/test_cli.py`
@@ -2199,12 +2221,12 @@ class TestWrapper:
         assert result.stdout.strip() == "PLUGIN"
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_cli.py -v`
 Expected: FAIL — every test errors on the missing `bin/extract.py` shim (subprocess `FileNotFoundError` surfaces as nonzero rc / missing stdout) and the missing `custom/extract.zsh` wrapper
 
-- [ ] **Step 3: Implement the Typer CLI**
+- [x] **Step 3: Implement the Typer CLI**
 
 **Files:**
 - Create: `zsh/libraries/python/extract/cli.py`
@@ -2280,7 +2302,7 @@ if __name__ == "__main__":
     app()
 ```
 
-- [ ] **Step 4: Create the bin shim**
+- [x] **Step 4: Create the bin shim**
 
 **Files:**
 - Create: `zsh/bin/extract.py`
@@ -2313,7 +2335,7 @@ Then make it executable:
 Run: `chmod +x /home/cupric/dev/zsh/bin/extract.py`
 Expected: no output
 
-- [ ] **Step 5: Create the zsh wrapper and wire zshrc**
+- [x] **Step 5: Create the zsh wrapper and wire zshrc**
 
 **Files:**
 - Create: `zsh/custom/extract.zsh`
@@ -2365,7 +2387,7 @@ extract() {
 source "$ZSH_CUSTOM/extract.zsh"
 ```
 
-- [ ] **Step 6: Generate the completion**
+- [x] **Step 6: Generate the completion**
 
 Run: `cd /home/cupric/dev/zsh && python3 bin/extract.py --show-completion zsh > completion/_extract`
 Then: `sed -i '1s/^#compdef .*/#compdef extract extract.py/' completion/_extract`
@@ -2388,17 +2410,17 @@ _arguments \
 
 Expected: file written, first line `#compdef extract extract.py`.
 
-- [ ] **Step 7: Run tests, verify they pass**
+- [x] **Step 7: Run tests, verify they pass**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_cli.py -v`
 Expected: all `test_cli.py` tests pass (skips honored when 7z is absent)
 
-- [ ] **Step 8: Sanity-check the wrapper syntax**
+- [x] **Step 8: Sanity-check the wrapper syntax**
 
 Run: `zsh -n custom/extract.zsh && zsh -n zshrc`
 Expected: no output, exit 0
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 cd /home/cupric/dev/zsh
@@ -2410,7 +2432,7 @@ git commit -m "feat(extract): add Typer CLI, bin shim, zsh wrapper, and completi
 
 ### Task Z: Full validation
 
-- [ ] **Step 1: Run the complete test suite**
+- [x] **Step 1: Run the complete test suite**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/ -v`
 Expected: all tests pass (unrar/7z-dependent tests skipped only when tools absent); record the summary line (e.g. `= 63 passed, 2 skipped in 12.3s =`).
@@ -2421,12 +2443,12 @@ skipped — any other skip means a fixture went unexercised and must be explaine
 the evidence. The two `xfail` cases (Alpine `.apk`, multi-volume `.7z.001`) are
 documented gaps from the findings doc; leave them `xfail`, do not force them green.
 
-- [ ] **Step 2: Compile-check all Python modules and syntax-check zsh files**
+- [x] **Step 2: Compile-check all Python modules and syntax-check zsh files**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m py_compile bin/extract.py libraries/python/extract/*.py && zsh -n completion/_extract && zsh -n custom/extract.zsh`
 Expected: exit 0, no output. (py_compile is the lint substitute — this repo has no flake8/ruff; `zsh -n` syntax-checks the completion and wrapper.)
 
-- [ ] **Step 3: Functional smoke test (all spec §5 flags on real files)**
+- [x] **Step 3: Functional smoke test (all spec §5 flags on real files)**
 
 Run:
 
@@ -2444,7 +2466,7 @@ python3 /home/cupric/dev/zsh/bin/extract.py -r top.tar.gz && test ! -f top.tar.g
 
 Expected: extraction dirs appear, `SKIP_OK` and `REMOVE_OK` printed.
 
-- [ ] **Step 4: Write test evidence**
+- [x] **Step 4: Write test evidence**
 
 **Files:**
 - Create: `.test-evidence-extract-password-recursive.json`
@@ -2478,7 +2500,7 @@ Expected: extraction dirs appear, `SKIP_OK` and `REMOVE_OK` printed.
 }
 ```
 
-- [ ] **Step 5: Commit validation evidence**
+- [x] **Step 5: Commit validation evidence**
 
 ```bash
 cd /home/cupric/dev/zsh
@@ -2494,3 +2516,15 @@ git commit -m "test(extract): add validation evidence"
 - p7zip prompts on the controlling TTY for encrypted archives; the `SevenZipHandler` no-password path passes `-p""` (already decided) — Task D Step 0 item 3 re-confirms it no longer prompts.
 - `rar` archives can only be integration-tested if a rar *creator* is installed; the engine-level tests cover the unrar path's classification without one.
 - Task D is the largest task (~12 handlers, ~20 tests). If the executing subagent struggles or the two-stage review flags quality, split it at execution time — `handlers.py` separates cleanly into primary handlers (libarchive/tarfile/unzip/7z/unrar) and auxiliary handlers (single-file/rpm/cpio/deb/cab/zlib), and the registry makes the split mechanical.
+- Task D shipped with four plan-code bugfixes (recorded in commit `261f5fe` + `180a4f1`): `entry.ishardlink`→`entry.islnk` (libarchive-c attribute), `SevenZipHandler` was missing the `str(archive)` operand, `TarfileHandler` declines exotic compressions by suffix (Python 3.14 raises `ReadError`, not `CompressionError`), and `SingleFileHandler` cwd-mode no longer references an unbound `proc`. The `_classify` `"bad crc"` wrong-password marker (spike: ZipCrypto wrong password emits `"ZIP bad CRC"`, while AES emits `"Incorrect passphrase"`) is also required.
+- Security follow-ups (plan-level, not shipped): `Rpm2cpioHandler`/`CpioHandler` invoke `cpio` without `--no-absolute-filenames` (a hostile `.cpio`/`.rpm` could write absolute paths outside the target); `LibarchiveHandler` does not guard symlink follow-through (a symlink member + a later `link/…` member escapes `safe_join`); `run_streamed`'s timeout only fires after stdout EOF, not while a child is hung mid-stream.
+- The Typer-generated zsh completion (`--show-completion zsh`) is non-functional: it emits `_extractpy_completion`, but zsh autoloads completion by file basename (`_extract`). Task F uses the hand-written `_arguments` form (the plan's Step 6 fallback) instead. The wrapper's `-p*`/`-r*` patterns will also false-positive on dash-leading filenames like `-password.tar` (delegated to the shim and mis-parsed) — a documented low-probability edge.
+
+## Execution Started
+- **Date:** 2026-09-19 23:15 EDT
+- **Base commit:** af056666a9a53166e557c6f14836031285da0979
+
+## Plan Completed
+- **Date:** 2026-09-20 00:36 EDT
+- **Final commit:** b25887edfeeba685a75f7de19dfd7c2fb94a1a5b
+- **Summary:** Shipped extract.py (Typer CLI + zsh wrapper + completion) with password candidates, recursive extraction, and force/remove flags; full fixture matrix green (196 passed).

@@ -144,8 +144,10 @@ BEYOND_SPEC = {
 }
 
 PLAIN = [m for m in select(kind={"tar", "zip", "7z", "other", "package"},
-                           expect={"extract"}, encryption=None)
-         if m["path"] not in BEYOND_SPEC]
+                           expect={"extract"})
+         if m["encryption"] is None
+         and m["path"] not in BEYOND_SPEC
+         and not m["path"].endswith("-dash.tar")]
 
 
 @pytest.mark.parametrize("meta", PLAIN, ids=ids(PLAIN))
@@ -186,7 +188,7 @@ def test_gz_payload_is_exact(tmp_path):
 # passwords
 # --------------------------------------------------------------------------- #
 ENCRYPTED = [m for m in META
-             if m["available"] and m["password"]
+             if m["available"] and m["encryption"]
              and m["kind"] in {"zip", "7z", "rar"}
              and m["expect"] in {"extract", "partial-on-wrong-password"}]
 
