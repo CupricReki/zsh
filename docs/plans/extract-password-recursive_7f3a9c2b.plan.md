@@ -88,7 +88,7 @@ Where each task should use them:
 | A | Package skeleton + password candidate parsing + spec §3 sync | done |
 | B | Discovery: families, split-volume filter, target naming, recursion | done |
 | C | Dispatch engine: ErrorClass/Result/Handler + generic resolve() | done |
-| D | Backend handlers + registry + run_streamed (spec §7.2 chains) | pending |
+| D | Backend handlers + registry + run_streamed (spec §7.2 chains) | done |
 | E | Orchestration: temp dirs, placement, collapse, merge, -r safeguard | pending |
 | F | Typer CLI, bin shim, zsh wrapper, zshrc wiring, completion | pending |
 | Z | Full validation + .test-evidence-extract-password-recursive.json | pending |
@@ -795,7 +795,7 @@ git commit -m "feat(extract): add generic dispatch engine with capability-gated 
 
 **Context:** Implements spec §7.2 chains. Interface consumed by Task E: `CHAIN_TABLE: dict[str, tuple[str, ...]]`, `HANDLERS: dict[str, Handler]`, and `run_streamed(cmd, cwd=None) -> tuple[int, str]`. Defensive rules (spec §7.1): list argv only, `stdin=DEVNULL`, availability probes, output-driven classification, no writes outside `dest` (`safe_join`). Step 0 below empirically pins the backend behaviors this task relies on before any code is written.
 
-- [ ] **Step 0: Backend behavior spike** (run first; ~10 minutes, write mode)
+- [x] **Step 0: Backend behavior spike** (run first; ~10 minutes, write mode)
 
 No code changes yet — these commands pin the facts Task D's code depends on:
 
@@ -810,7 +810,7 @@ Record, in order:
 3. **p7zip no-password prompt behavior** — `timeout 5 7z x -p encrypted.7z -oout </dev/null ; echo rc=$?`. If it exits immediately with an error (EOF/"Wrong password"), `stdin=DEVNULL` alone is sufficient. If it hangs (timeout 124) or reads the controlling TTY, change Step 3's `SevenZipHandler` no-password branch to pass `-p""` (empty-password token) and re-run this check to confirm it no longer prompts.
 4. **unzip wrong-password exit code** — `unzip -P wrong crypto.zip -d out ; echo rc=$?` — confirm the "incorrect password" output text used by `UnzipHandler` actually appears on the local unzip build.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 **Files:**
 - Create: `zsh/tests/test_handlers.py`
@@ -1122,12 +1122,12 @@ class TestZlibHandler:
         assert (dest / "x").read_bytes() == b"zlib content\n"
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_handlers.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'extract.handlers'`
 
-- [ ] **Step 3: Implement handlers**
+- [x] **Step 3: Implement handlers**
 
 **Files:**
 - Create: `zsh/libraries/python/extract/handlers.py`
@@ -1273,7 +1273,11 @@ class LibarchiveHandler:
     @staticmethod
     def _classify(message: str) -> Result:
         low = message.lower()
-        if "passphrase" in low or "wrong password" in low or "incorrect password" in low:
+        # libarchive wording (measured, Task D Step 0 spike): AES wrong
+        # passphrase -> "Incorrect passphrase"; ZipCrypto wrong passphrase ->
+        # "ZIP bad CRC" (decrypts to garbage that fails CRC). Both are
+        # wrong-password, not corruption.
+        if "passphrase" in low or "wrong password" in low or "incorrect password" in low or "bad crc" in low:
             return Result(ErrorClass.WRONG_PASSWORD, message)
         # finding C4/M7: libarchive raises "encrypted, but currently not
         # supported" for encrypted 7z and "unrecognized archive format" for
@@ -1568,12 +1572,12 @@ HANDLERS: dict = {
 }
 ```
 
-- [ ] **Step 4: Run tests, verify they pass**
+- [x] **Step 4: Run tests, verify they pass**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_handlers.py -v`
 Expected: PASS (unrar test skipped); if a libarchive exception-message test fails, adjust `LibarchiveHandler._classify` matchers to the locally observed messages (Step 0 recorded them), re-run until green, and note the actual messages in the commit body.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /home/cupric/dev/zsh
@@ -2493,6 +2497,8 @@ git commit -m "test(extract): add validation evidence"
 - p7zip prompts on the controlling TTY for encrypted archives; the `SevenZipHandler` no-password path passes `-p""` (already decided) — Task D Step 0 item 3 re-confirms it no longer prompts.
 - `rar` archives can only be integration-tested if a rar *creator* is installed; the engine-level tests cover the unrar path's classification without one.
 - Task D is the largest task (~12 handlers, ~20 tests). If the executing subagent struggles or the two-stage review flags quality, split it at execution time — `handlers.py` separates cleanly into primary handlers (libarchive/tarfile/unzip/7z/unrar) and auxiliary handlers (single-file/rpm/cpio/deb/cab/zlib), and the registry makes the split mechanical.
+- Task D shipped with four plan-code bugfixes (recorded in commit `261f5fe` + `180a4f1`): `entry.ishardlink`→`entry.islnk` (libarchive-c attribute), `SevenZipHandler` was missing the `str(archive)` operand, `TarfileHandler` declines exotic compressions by suffix (Python 3.14 raises `ReadError`, not `CompressionError`), and `SingleFileHandler` cwd-mode no longer references an unbound `proc`. The `_classify` `"bad crc"` wrong-password marker (spike: ZipCrypto wrong password emits `"ZIP bad CRC"`, while AES emits `"Incorrect passphrase"`) is also required.
+- Security follow-ups (plan-level, not shipped): `Rpm2cpioHandler`/`CpioHandler` invoke `cpio` without `--no-absolute-filenames` (a hostile `.cpio`/`.rpm` could write absolute paths outside the target); `LibarchiveHandler` does not guard symlink follow-through (a symlink member + a later `link/…` member escapes `safe_join`); `run_streamed`'s timeout only fires after stdout EOF, not while a child is hung mid-stream.
 
 ## Execution Started
 - **Date:** 2026-09-19 23:15 EDT
