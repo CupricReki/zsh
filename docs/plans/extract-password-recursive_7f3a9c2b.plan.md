@@ -86,7 +86,7 @@ Where each task should use them:
 | Task | Description | Status |
 |---|---|---|
 | A | Package skeleton + password candidate parsing + spec §3 sync | done |
-| B | Discovery: families, split-volume filter, target naming, recursion | pending |
+| B | Discovery: families, split-volume filter, target naming, recursion | done |
 | C | Dispatch engine: ErrorClass/Result/Handler + generic resolve() | pending |
 | D | Backend handlers + registry + run_streamed (spec §7.2 chains) | pending |
 | E | Orchestration: temp dirs, placement, collapse, merge, -r safeguard | pending |
@@ -290,7 +290,7 @@ git commit -m "feat(extract): add package skeleton and password candidate parsin
 
 **Context:** Consumed by Tasks E/F. Interface: `family_for(name) -> str | None`, `target_name(name) -> str`, `is_skipped_volume(name) -> bool`, `discover(paths, recursive) -> list[Path]`, `DiscoveryError`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 **Files:**
 - Create: `zsh/tests/test_discovery.py`
@@ -396,12 +396,12 @@ def test_discover_directory_requires_recursive(tmp_path):
         discover([tmp_path], recursive=False)
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_discovery.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'extract.discovery'`
 
-- [ ] **Step 3: Implement discovery**
+- [x] **Step 3: Implement discovery**
 
 **Files:**
 - Create: `zsh/libraries/python/extract/discovery.py`
@@ -512,12 +512,12 @@ def discover(paths: list[Path], recursive: bool) -> list[Path]:
     return found
 ```
 
-- [ ] **Step 4: Run tests, verify they pass**
+- [x] **Step 4: Run tests, verify they pass**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_discovery.py -v`
 Expected: PASS — 17 passed (7 functions + 1 parametrized with 11 cases)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /home/cupric/dev/zsh
