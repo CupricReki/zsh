@@ -47,11 +47,12 @@ Major decisions locked in during design (rationale lives in the referenced secti
 
 | File | Role | New/Edit |
 |---|---|---|
-| `zsh/bin/extract.py` | Standalone Python 3 CLI (stdlib + typer + standards logging) | new |
+| `zsh/bin/extract.py` | Entry-point shim; the implementation lives in the new `zsh/libraries/python/extract/` package | new |
+| `zsh/libraries/python/extract/` | Python package: `passwords.py`, `discovery.py`, `engine.py`, `handlers.py`, `orchestration.py`, `cli.py` | new |
 | `zsh/custom/extract.zsh` | Wrapper: delegates `-R/-p/-P/-F` invocations to `extract.py`, otherwise calls the plugin's function | new |
 | `zshrc` | One source line for the wrapper, placed **after** the sheldon eval (near the `unalias backup` line); update the stale comment at line ~144 | edit |
 | `zsh/completion/_extract` | zsh completion generated from the Typer CLI (shadows the plugin's copy via `$FPATH` order) | new |
-| `zsh/tests/test_extract.py` | pytest suite | new |
+| `zsh/tests/test_*.py` | pytest suite (one module per package module) | new |
 
 The sheldon plugin **stays as-is**; `extract.py` is a sibling, not a replacement.
 
@@ -229,7 +230,7 @@ extract() {
 
 ## 11. Testing
 
-pytest suite in `zsh/tests/test_extract.py`, invoking `extract.py` via subprocess against tmpdirs (mirrors `libraries/python/standards/python/test_standard_logging.py` conventions):
+pytest suite in `zsh/tests/test_*.py` (one module per package module), invoking `extract.py` via subprocess against tmpdirs (mirrors `libraries/python/standards/python/test_standard_logging.py` conventions):
 
 1. **Password file parsing** — symbols, interior spaces, CRLF, padding, blank lines, dedupe, order.
 2. **Encrypted zip** — ZipCrypto (`7z a -p…`) **and AES** (`7z a -mem=AES256 -p…`, exercising the `unzip -P` fallback): correct `-p`; wrong-then-correct `-P` list (2nd candidate); all-wrong → archive preserved even with `-r`; corrupt zip → `EXTRACT_ERROR` (no rename, archive preserved).
