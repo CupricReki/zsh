@@ -87,7 +87,7 @@ Where each task should use them:
 |---|---|---|
 | A | Package skeleton + password candidate parsing + spec §3 sync | done |
 | B | Discovery: families, split-volume filter, target naming, recursion | done |
-| C | Dispatch engine: ErrorClass/Result/Handler + generic resolve() | pending |
+| C | Dispatch engine: ErrorClass/Result/Handler + generic resolve() | done |
 | D | Backend handlers + registry + run_streamed (spec §7.2 chains) | pending |
 | E | Orchestration: temp dirs, placement, collapse, merge, -r safeguard | pending |
 | F | Typer CLI, bin shim, zsh wrapper, zshrc wiring, completion | pending |
@@ -531,7 +531,7 @@ git commit -m "feat(extract): add archive discovery, split-volume filter, and ta
 
 **Context:** The traversal core (spec §7.1/§7.3). Consumed by Tasks D/E. Interface: `ErrorClass` enum, `Result` dataclass, `Handler` protocol, `PASSWORD_FAMILIES`, and `resolve(archive, family, chain, handlers, passwords, new_tempdir) -> tuple[Result, Path | None]`. `resolve` owns per-attempt temp-dir creation and cleanup; `new_tempdir` is injected by orchestration (Task E).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 **Files:**
 - Create: `zsh/tests/test_engine.py`
@@ -680,12 +680,12 @@ def test_all_fail_returns_error_and_no_tempdir(tempdirs):
     assert not made[0].exists() and not made[1].exists()
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_engine.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'extract.engine'`
 
-- [ ] **Step 3: Implement the engine**
+- [x] **Step 3: Implement the engine**
 
 **Files:**
 - Create: `zsh/libraries/python/extract/engine.py`
@@ -778,12 +778,12 @@ def resolve(
     return Result(ErrorClass.EXTRACT_ERROR, "no capable handler succeeded"), None
 ```
 
-- [ ] **Step 4: Run tests, verify they pass**
+- [x] **Step 4: Run tests, verify they pass**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_engine.py -v`
 Expected: PASS — 9 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /home/cupric/dev/zsh
