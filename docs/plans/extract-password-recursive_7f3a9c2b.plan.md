@@ -89,7 +89,7 @@ Where each task should use them:
 | B | Discovery: families, split-volume filter, target naming, recursion | done |
 | C | Dispatch engine: ErrorClass/Result/Handler + generic resolve() | done |
 | D | Backend handlers + registry + run_streamed (spec §7.2 chains) | done |
-| E | Orchestration: temp dirs, placement, collapse, merge, -r safeguard | pending |
+| E | Orchestration: temp dirs, placement, collapse, merge, -r safeguard | done |
 | F | Typer CLI, bin shim, zsh wrapper, zshrc wiring, completion | pending |
 | Z | Full validation + .test-evidence-extract-password-recursive.json | pending |
 
@@ -765,7 +765,11 @@ def resolve(
             continue
         for index, password in enumerate(attempts):
             tmp = new_tempdir()
-            result = handler.extract(archive, tmp, password)
+            try:
+                result = handler.extract(archive, tmp, password)
+            except Exception:
+                shutil.rmtree(tmp, ignore_errors=True)
+                raise
             if result.ok:
                 result.candidate_index = index if password is not None else None
                 return result, tmp
@@ -1591,7 +1595,7 @@ git commit -m "feat(extract): add backend handlers and chain registry"
 
 **Context:** The per-archive flow (spec §6.1-§6.6): stale sweep, target compute (skip/suffix/force), temp-dir factory with ownership marker, engine call, collapse, placement (rename or merge), `-r` removal with re-stat safeguard. Interface consumed by Task F: `process_archive(archive, passwords, *, force, remove, skip_existing, family) -> bool`. Status output goes through `extract/logutil.py` — a shim over `standard_logging.log` that forces **all** levels to stderr (the vendored lib sends only error/critical to stderr; spec §5 requires all of extract's own output on stderr).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 **Files:**
 - Create: `zsh/tests/test_orchestration.py`
@@ -1796,12 +1800,12 @@ class TestProcessArchive:
         assert not (tmp_path / "x").exists()
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_orchestration.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'extract.orchestration'`
 
-- [ ] **Step 3: Implement orchestration and the log shim**
+- [x] **Step 3: Implement orchestration and the log shim**
 
 **Files:**
 - Create: `zsh/libraries/python/extract/logutil.py`
@@ -1919,6 +1923,8 @@ def merge_into(src: Path, dst: Path) -> None:
             continue
         if dest_item.is_dir() and not dest_item.is_symlink():
             shutil.rmtree(dest_item)
+        elif dest_item.is_symlink():
+            dest_item.unlink()  # unlink the symlink, never follow it (spec §6.6)
         dest_item.parent.mkdir(parents=True, exist_ok=True)
         os.replace(item, dest_item)
 
@@ -1975,6 +1981,7 @@ def process_archive(
 
         assert tmp is not None
         collapse_tree(tmp)
+        (tmp / MARKER_NAME).unlink(missing_ok=True)  # don't leak the ownership marker
 
         if force and target.exists():
             merge_into(tmp, target)
@@ -2001,12 +2008,12 @@ def process_archive(
     return True
 ```
 
-- [ ] **Step 4: Run tests, verify they pass**
+- [x] **Step 4: Run tests, verify they pass**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_orchestration.py -v`
 Expected: PASS — 18 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /home/cupric/dev/zsh
