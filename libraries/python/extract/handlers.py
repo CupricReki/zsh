@@ -424,12 +424,13 @@ class SingleFileHandler:
                     proc = subprocess.run(cmd, stdout=fh, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL)
                 if proc.returncode == 0:
                     return Result(ErrorClass.NONE)
+                return _err(f"{binary} failed (rc={proc.returncode})")
             else:
                 cmd = [binary] + list(candidates[1:]) + [str(archive)]
                 rc, _ = run_streamed(cmd, cwd=dest)
                 if rc == 0:
                     return Result(ErrorClass.NONE)
-            return _err(f"{binary} failed (rc={getattr(proc, 'returncode', None) or 'unknown'})")
+                return _err(f"{binary} failed (rc={rc})")
         return _err(f"requires a decompressor for {ext}")
 
 
