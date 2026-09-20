@@ -85,7 +85,7 @@ Where each task should use them:
 
 | Task | Description | Status |
 |---|---|---|
-| A | Package skeleton + password candidate parsing + spec §3 sync | pending |
+| A | Package skeleton + password candidate parsing + spec §3 sync | done |
 | B | Discovery: families, split-volume filter, target naming, recursion | pending |
 | C | Dispatch engine: ErrorClass/Result/Handler + generic resolve() | pending |
 | D | Backend handlers + registry + run_streamed (spec §7.2 chains) | pending |
@@ -99,7 +99,7 @@ Where each task should use them:
 
 **Context:** Establishes `zsh/libraries/python/extract/` as an importable package and the password-candidate contract every later task consumes. Interface exported (stable for Tasks C-E): `parse_password_file(text) -> list[str]` and `load_candidates(password, password_file) -> list[str]`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 **Files:**
 - Create: `zsh/tests/conftest.py`
@@ -185,12 +185,12 @@ def test_load_candidates_none():
     assert load_candidates(None, None) == []
 ```
 
-- [ ] **Step 2: Run tests, verify they fail**
+- [x] **Step 2: Run tests, verify they fail**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_passwords.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'extract'`
 
-- [ ] **Step 3: Create the package**
+- [x] **Step 3: Create the package**
 
 **Files:**
 - Create: `zsh/libraries/python/extract/__init__.py`
@@ -253,12 +253,12 @@ def load_candidates(password: str | None, password_file: str | None) -> list[str
     return candidates
 ```
 
-- [ ] **Step 4: Run tests, verify they pass**
+- [x] **Step 4: Run tests, verify they pass**
 
 Run: `cd /home/cupric/dev/zsh && python3 -m pytest tests/test_passwords.py -v`
 Expected: PASS — 9 passed
 
-- [ ] **Step 5: Sync spec §3 component rows**
+- [x] **Step 5: Sync spec §3 component rows**
 
 **Files:**
 - Modify: `docs/specs/2026-09-19-extract-password-recursive-design.md`
@@ -278,7 +278,7 @@ and the test row `| `zsh/tests/test_extract.py` | pytest suite | new |` with:
 
 Also replace the §11 opening sentence `pytest suite in `zsh/tests/test_extract.py`, invoking` with `pytest suite in `zsh/tests/test_*.py` (one module per package module), invoking` so the spec and plan agree on the test layout.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd /home/cupric/dev/zsh
@@ -2494,3 +2494,7 @@ git commit -m "test(extract): add validation evidence"
 - p7zip prompts on the controlling TTY for encrypted archives; the `SevenZipHandler` no-password path passes `-p""` (already decided) — Task D Step 0 item 3 re-confirms it no longer prompts.
 - `rar` archives can only be integration-tested if a rar *creator* is installed; the engine-level tests cover the unrar path's classification without one.
 - Task D is the largest task (~12 handlers, ~20 tests). If the executing subagent struggles or the two-stage review flags quality, split it at execution time — `handlers.py` separates cleanly into primary handlers (libarchive/tarfile/unzip/7z/unrar) and auxiliary handlers (single-file/rpm/cpio/deb/cab/zlib), and the registry makes the split mechanical.
+
+## Execution Started
+- **Date:** 2026-09-19 23:15 EDT
+- **Base commit:** af056666a9a53166e557c6f14836031285da0979
