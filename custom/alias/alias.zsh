@@ -153,7 +153,7 @@ dgu() {
     done
   fi
 }
-alias agyyolo="agy --dangeorusly-skip-permission"
+alias agyyolo="agy --dangerously-skip-permissions"
 alias diff='diff --color'
 alias dirs='dirs -v'
 alias distro='cat /etc/*-release'
