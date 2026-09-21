@@ -359,7 +359,17 @@ zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 # force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
 zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:(ls|cat|bat):*' fzf-preview '$ZSCRIPTS/fzf-preview.sh ${(Q)realpath}'
-zstyle ':completion:*' list-grouped true
+# Do NOT set this here. fzf-tab's enable-fzf-tab forces `list-grouped false`
+# (it saves the previous value in _ftb_orig_list_grouped and restores it in
+# disable-fzf-tab), but this file runs AFTER sheldon loads fzf-tab, so setting
+# it true here overrides fzf-tab. With list-grouped on, zsh moves a shared
+# option description off the individual matches and onto the description
+# group; fzf-tab only reads per-match descriptions (`compadd -d`), so those
+# matches arrive with no description and it falls back to showing the bare
+# name. Symptom: `extract -<TAB>` showed no help text while `extract --<TAB>`
+# did (short forms share their help with the long forms, so only a bare `-`
+# matches both and groups them).
+# zstyle ':completion:*' list-grouped true
 # switch group using `<` and `>`
 zstyle ':fzf-tab:*' switch-group '<' '>'
 # Set minimum height
