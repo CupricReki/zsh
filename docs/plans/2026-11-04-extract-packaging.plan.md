@@ -1857,3 +1857,8 @@ Expected: both pushes succeed. Then hand off to `plan-completion` (which archive
 - [2026-11-04-extract-packaging.md](../specs/2026-11-04-extract-packaging.md)
 - [2026-11-04-extract-packaging-spec.md](../handover/2026-11-04-extract-packaging-spec.md)
 - [2026-11-04-extract-packaging-plan-review.md](../findings/2026-11-04-extract-packaging-plan-review.md)
+
+## Execution Started
+- **Date:** 2026-11-04 01:46 EST
+- **Base commit:** 228f448804a21f42291e1f8dd109465e06e0651f
+- **Design doc:** [2026-11-04-extract-packaging.md](docs/specs/2026-11-04-extract-packaging.md)
