@@ -43,3 +43,4 @@ env/
 # Git worktrees
 .worktrees/
 
+.pytest_cache/
