@@ -97,6 +97,8 @@ export SAVEHIST=10000
 # Set options
 # Set command line autocorrect
 setopt correct
+# Allow inline comments when typing or pasting interactively (bash-compatible)
+setopt interactive_comments
 # Share history between terminal sessions
 # setopt share_history
 
