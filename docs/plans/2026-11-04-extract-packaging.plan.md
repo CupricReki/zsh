@@ -130,10 +130,10 @@ Serial constraints (do not reorder):
 
 | Task | Description | Status |
 |------|-------------|--------|
-| A | Create `cupric/extract`, move the package, make `standard_logging` optional, add entry point/shim/locks (spec steps 1–7) | pending |
-| B | Reproducible zipapp build script + Renovate (spec steps 8, 10) | pending |
-| C | Move the 183 package tests, split out the 13 wrapper tests, add CI (spec steps 9, 11–12) | pending |
-| D | Publish `v0.1.0`, verify the anonymous download URL and pin the sha256 | pending |
+| A | Create `cupric/extract`, move the package, make `standard_logging` optional, add entry point/shim/locks (spec steps 1–7) | done |
+| B | Reproducible zipapp build script + Renovate (spec steps 8, 10) | done |
+| C | Move the 183 package tests, split out the 13 wrapper tests, add CI (spec steps 9, 11–12) | done |
+| D | Publish `v0.1.0`, verify the anonymous download URL and pin the sha256 | done |
 | E | Ansible catalog/docs/native packages/role wiring/molecule verify (spec steps 13–17) | pending |
 | F | zsh wrapper delegation, completion, remove old package (spec steps 18–20) | pending |
 | Z | Full validation incl. throwaway libvirt VM install + evidence files | pending |
@@ -174,6 +174,7 @@ Re-verified on `roci` on 2026-11-04 while writing this plan:
 - **`pip install --no-deps --target` + a compiled lock** is what makes the bundle complete. `--no-deps` omits nothing audibly, hence the `markdown_it/__init__.py` assert.
 - **Compile the lock for the floor** (`--python-version 3.10`), never the build interpreter.
 - **Normalise mtimes before `zipapp`** — otherwise the pinned sha256 changes on every rebuild and pipeline retries fail.
+- **Byte-reproducibility holds per environment, not across them.** `python3 -m zipapp` writes members in filesystem readdir order, so the same commit built on the host and in the CI container yields different digests (verified for v0.1.0: local `1b54edf3…`/`d66a3a43…`, CI `dcb5d6ce…`; bundle contents are identical entry-for-entry). The catalog pins the **CI** artifact because that is what the release URL serves. Do not use "rebuild locally and compare" as a verification step. A sorted-entry zip writer is the follow-up fix if cross-machine reproducibility is ever required.
 - **Debian `unrar-free` is not the `unrar` binary** the handler probes. `unrar` stays best-effort (`failed_when: false`); unencrypted RAR still works via libarchive.
 - **Ansible execution context.** The libvirt VM creation runs on the **host** (it drives `libvirtd`/QEMU; the devcontainer mounts neither). Role runs run **inside the devcontainer** per `ansible/AGENTS.md`. Both are spelled out in Task Z. Task Z is the long pole: a full `playbooks/zsh.yml` run on a fresh VM (Go, Rust, carapace, fzf, extract) takes 15–25 minutes. Give it a 30-minute ceiling, re-run after a failure instead of rebuilding the VM (the role is idempotent), and never run molecule concurrently — they share the Docker daemon and compete for CPU.
 - **The release-download URL is the only unverified link in the chain.** The generic package registry is proven anonymously readable on this instance, but `/-/releases/<tag>/downloads/<name>` cannot be exercised until `cupric/extract` exists. Task D Step 3 is the gate; if it 404s, Task D Step 3 has the manual asset-link and generic-registry fallbacks.
@@ -181,6 +182,7 @@ Re-verified on `roci` on 2026-11-04 while writing this plan:
 - **Merge ordering matters for users.** Task F deletes `bin/extract.py` from `cupric/zsh`; any host that has not yet run the ansible role loses the tool until it does. Land/roll out the ansible MR (`cupric/ansible` → `develop` → `master`) before or together with the zsh MR. The wrapper degrades with an actionable message (`extract: the extract tool is not installed (run the ansible zsh role)`), never a silent failure.
 - **Host paths do not exist inside the devcontainer.** The worktree is mounted at `/workspaces/<worktree-name>` (e.g. `/workspaces/extract-packaging`), so any inventory generated on the host with an absolute host path for the SSH key will fail from the container. Task Z handles this with `-e libvirt_vm_testing_inventory_ssh_key=/workspaces/extract-packaging/keys/libvirt_vm_testing_ed25519`; the alternative is `ssh-add keys/libvirt_vm_testing_ed25519` on the host before `devcontainer up` (the agent socket is mounted into the container).
 - **One molecule run at a time** across all worktrees (shared Docker daemon).
+- **New projects on this instance may have CI disabled.** `cupric/extract` was created with `builds_access_level: disabled`, so the first push produced no pipeline and `pipelines` API calls returned 403. Fix once with `glab api --method PUT projects/<id> -f builds_access_level=enabled`; record the change, since the plan otherwise assumes new projects inherit CI.
 - **Never commit `inventory/test_vms.ini`** — the libvirt playbook rewrites it; restore it after Task Z.
 - **`release_artifact` keys on `version+arch`.** A `requirements.txt` bump alone rebuilds at the same version and hosts report "already installed". A bump must bump `__version__`, tag, and re-capture the sha256.
 
@@ -200,7 +202,7 @@ Re-verified on `roci` on 2026-11-04 while writing this plan:
 - Create: `/home/cupric/dev/extract/requirements-dev.txt`
 - Modify: `/home/cupric/dev/extract/extract/logutil.py`
 
-- [ ] **Step 1: Create the GitLab project and clone it**
+- [x] **Step 1: Create the GitLab project and clone it**
 
 Project creation and the local checkout are separate, explicit operations (do not rely on `glab repo create`'s clone heuristic):
 
@@ -218,7 +220,7 @@ git remote -v
 
 Expected: the API call returns a project JSON body with `"path_with_namespace":"cupric/extract"`, and `git remote -v` shows the `gitlabssh.timepiggy.com:cupric/extract.git` remote (matching the form used by `cupric/zsh`). If the project already exists, skip the `glab api` call and go straight to `git init` + `git remote add`.
 
-- [ ] **Step 2.1: Add `.gitignore`**
+- [x] **Step 2.1: Add `.gitignore`**
 
 Create `.gitignore`:
 
@@ -230,7 +232,7 @@ __pycache__/
 dist/
 ```
 
-- [ ] **Step 2.2: Copy the license**
+- [x] **Step 2.2: Copy the license**
 
 Create `LICENSE.md` with the same MIT license text as `/home/cupric/dev/zsh/LICENSE.md` (copy the file, do not retype it):
 
@@ -238,7 +240,7 @@ Create `LICENSE.md` with the same MIT license text as `/home/cupric/dev/zsh/LICE
 cp /home/cupric/dev/zsh/LICENSE.md /home/cupric/dev/extract/LICENSE.md
 ```
 
-- [ ] **Step 2.3: Write `README.md`**
+- [x] **Step 2.3: Write `README.md`**
 
 Create `README.md`:
 
@@ -298,7 +300,7 @@ the file to the generic package registry and links it into the GitLab release
 as `/-/releases/v<version>/downloads/extract-<version>.pyz`.
 ```
 
-- [ ] **Step 3: Move the package modules**
+- [x] **Step 3: Move the package modules**
 
 ```bash
 mkdir -p /home/cupric/dev/extract/extract
@@ -310,7 +312,7 @@ python3 -c 'import extract; print(extract.__version__)'
 
 Expected: `0.1.0`. The eight moved files are `__init__.py`, `cli.py`, `discovery.py`, `engine.py`, `handlers.py`, `logutil.py`, `orchestration.py`, `passwords.py`.
 
-- [ ] **Step 4: Write the optional-standards `logutil.py`**
+- [x] **Step 4: Write the optional-standards `logutil.py`**
 
 Overwrite `extract/logutil.py`:
 
@@ -347,7 +349,7 @@ def redact(text: str, candidates: list[str]) -> str:
     return text
 ```
 
-- [ ] **Step 5: Write the zipapp entry point**
+- [x] **Step 5: Write the zipapp entry point**
 
 Create `extract/__main__.py`:
 
@@ -359,7 +361,7 @@ app()
 
 No `sys.exit` wrapper: typer/click raise `SystemExit` with the correct code.
 
-- [ ] **Step 6: Write the dev shim**
+- [x] **Step 6: Write the dev shim**
 
 Create `bin/extract.py`:
 
@@ -381,7 +383,7 @@ if __name__ == "__main__":
 chmod +x /home/cupric/dev/extract/bin/extract.py
 ```
 
-- [ ] **Step 7: Write `requirements.in`**
+- [x] **Step 7: Write `requirements.in`**
 
 ```text
 # requires Python >= 3.10 (typer/click floor)
@@ -389,7 +391,7 @@ typer>=0.12
 libarchive-c>=3
 ```
 
-- [ ] **Step 8: Compile and commit the lock**
+- [x] **Step 8: Compile and commit the lock**
 
 ```bash
 cd /home/cupric/dev/extract
@@ -399,7 +401,7 @@ cat requirements.txt
 
 Expected: 8 pinned distributions (annotated-doc, libarchive-c, markdown-it-py, mdurl, pygments, rich, shellingham, typer) plus their `# via` comments. Do **not** edit the pins by hand and do **not** compile with the local interpreter's version.
 
-- [ ] **Step 9: Write `requirements-dev.txt`**
+- [x] **Step 9: Write `requirements-dev.txt`**
 
 ```text
 -r requirements.txt
@@ -408,7 +410,7 @@ pytest==9.2.0
 
 `-r requirements.txt` is required: the tests import `extract` (which imports `typer` at module scope) and run `bin/extract.py` as a subprocess, so a dev environment with only `pytest` fails with `ModuleNotFoundError: No module named 'typer'`. Dev-only pins stay here; the artifact never installs them.
 
-- [ ] **Step 10: Verify CLI parity through the shim**
+- [x] **Step 10: Verify CLI parity through the shim**
 
 ```bash
 cd /home/cupric/dev/extract
@@ -421,7 +423,7 @@ python3 bin/extract.py does-not-exist.zip >/dev/null 2>&1; echo "missing=$?"
 
 Expected: `help=0`, `noargs=2`, `conflict=2`, `empty=2`, `missing=1`.
 
-- [ ] **Step 11: Functional smoke through the shim**
+- [x] **Step 11: Functional smoke through the shim**
 
 ```bash
 cd "$(mktemp -d)"
@@ -432,7 +434,7 @@ test -f plain/a.txt && echo SHIM_OK
 
 Expected: `[success] plain.tar.gz -> plain` on stderr and `SHIM_OK`.
 
-- [ ] **Step 12: Commit and push**
+- [x] **Step 12: Commit and push**
 
 ```bash
 cd /home/cupric/dev/extract
@@ -451,13 +453,16 @@ Expected: push succeeds; `git status` is clean. There is no pipeline yet — the
 - Create: `/home/cupric/dev/extract/scripts/build-zipapp.sh`
 - Create: `/home/cupric/dev/extract/renovate.json`
 
-- [ ] **Step 1: Write the build script**
+- [x] **Step 1: Write the build script**
 
 Create `scripts/build-zipapp.sh`:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
+
+# Deterministic zip headers: zipfile stores localtime, so pin TZ.
+export TZ=UTC
 
 VERSION="${1:?usage: build-zipapp.sh <version>}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -470,7 +475,7 @@ python3 -m pip install --quiet --disable-pip-version-check --no-deps \
 mkdir -p "$STAGE/extract"
 cp -r "$REPO_ROOT/extract/." "$STAGE/extract/"
 find "$STAGE" \( -name '__pycache__' -o -name '*.pyc' -o -name '*.dist-info' \) -prune -exec rm -rf {} +
-rm -rf "$STAGE/bin"
+rm -rf "${STAGE:?}/bin"
 
 cp "$REPO_ROOT/extract/__main__.py" "$STAGE/__main__.py"
 
@@ -484,7 +489,8 @@ python3 -m zipapp "$STAGE" -c \
   -p "/usr/bin/env python3"
 
 # Guard against a silently incomplete bundle (--no-deps omits nothing audibly).
-unzip -l "$REPO_ROOT/dist/extract-${VERSION}.pyz" | grep -q 'markdown_it/__init__.py' \
+# grep -c consumes the whole listing (grep -q would SIGPIPE unzip under pipefail).
+unzip -l "$REPO_ROOT/dist/extract-${VERSION}.pyz" | grep -c 'markdown_it/__init__.py' >/dev/null \
   || { echo "ERROR: dependency closure incomplete" >&2; exit 1; }
 
 chmod 0755 "$REPO_ROOT/dist/extract-${VERSION}.pyz"
@@ -498,7 +504,7 @@ shellcheck /home/cupric/dev/extract/scripts/build-zipapp.sh
 
 Expected: shellcheck exits 0.
 
-- [ ] **Step 2: Build and record the digest**
+- [x] **Step 2: Build and record the digest**
 
 ```bash
 cd /home/cupric/dev/extract
@@ -508,7 +514,7 @@ ls -l dist/extract-0.1.0.pyz
 
 Expected: one sha256 line (64 hex chars). Size ≈ 1.8 MB. **Record this digest** — Task D compares it with the CI build and Task E pins it.
 
-- [ ] **Step 3: Prove the build is reproducible**
+- [x] **Step 3: Prove the build is reproducible**
 
 ```bash
 cd /home/cupric/dev/extract
@@ -518,9 +524,16 @@ sha2=$(sha256sum dist/extract-0.1.0.pyz | awk '{print $1}')
 echo "$sha1"; echo "$sha2"; test "$sha1" = "$sha2" && echo REPRODUCIBLE
 ```
 
-Expected: both lines identical and `REPRODUCIBLE`.
+Expected: both lines identical and `REPRODUCIBLE`. Also verify the timezone pin (zip headers store localtime):
 
-- [ ] **Step 4: Assert the hermetic exit matrix**
+```bash
+TZ=America/New_York ./scripts/build-zipapp.sh 0.1.0
+TZ=Asia/Tokyo ./scripts/build-zipapp.sh 0.1.0
+```
+
+Expected: both print the same digest as the default-environment build. Without the script's `export TZ=UTC`, the digest changes with the caller's timezone and the CI/local digests diverge.
+
+- [x] **Step 4: Assert the hermetic exit matrix**
 
 ```bash
 cd /home/cupric/dev/extract
@@ -533,7 +546,7 @@ python3 -S -E dist/extract-0.1.0.pyz does-not-exist.zip >/dev/null 2>&1;    echo
 
 Expected: `0`, `2`, `2`, `2`, `1`. `-S -E` is what makes this a real test of the bundle (no site-packages, no `PYTHONPATH`).
 
-- [ ] **Step 5: Functional smoke from the artifact**
+- [x] **Step 5: Functional smoke from the artifact**
 
 ```bash
 cd "$(mktemp -d)"
@@ -544,7 +557,7 @@ test -f plain/a.txt && echo ZIPAPP_OK
 
 Expected: `ZIPAPP_OK`.
 
-- [ ] **Step 6: Write `renovate.json`**
+- [x] **Step 6: Write `renovate.json`**
 
 ```json
 {
@@ -565,7 +578,7 @@ Expected: `ZIPAPP_OK`.
 
 `pip_requirements` tracks `requirements.txt` out of the box; `pip-compile` picks up `requirements.in` by its `.in` extension.
 
-- [ ] **Step 7: Commit and push (no CI gate yet)**
+- [x] **Step 7: Commit and push (no CI gate yet)**
 
 ```bash
 cd /home/cupric/dev/extract
@@ -588,7 +601,7 @@ Expected: push succeeds. The CI pipeline is added in Task C Step 8, once the tes
 - Create: `/home/cupric/dev/extract/.gitlab-ci.yml`
 - Create: `/home/cupric/dev/zsh/.worktrees/extract-packaging/tests/test_wrapper.py`
 
-- [ ] **Step 1: Copy tests and fixtures**
+- [x] **Step 1: Copy tests and fixtures**
 
 ```bash
 mkdir -p /home/cupric/dev/extract/tests
@@ -600,7 +613,7 @@ du -sh /home/cupric/dev/extract/tests/fixtures
 
 Expected: the fixtures directory is ~90 files (94 tracked paths including `.gitattributes` and `README.md`).
 
-- [ ] **Step 2: Rewrite the extract repo's `conftest.py`**
+- [x] **Step 2: Rewrite the extract repo's `conftest.py`**
 
 ```python
 """pytest bootstrap: make the extract package importable from the checkout."""
@@ -615,7 +628,7 @@ if str(REPO_ROOT) not in sys.path:
 
 The `standard_logging` path insert is gone: the package no longer imports it at module scope.
 
-- [ ] **Step 3: Update `tests/test_cli.py` for the new layout**
+- [x] **Step 3: Update `tests/test_cli.py` for the new layout**
 
 Replace the path block at the top:
 
@@ -643,7 +656,7 @@ grep -n 'ZSH_ROOT' /home/cupric/dev/extract/tests/test_cli.py || echo NO_ZSH_ROO
 
 Expected: `NO_ZSH_ROOT_REFS`.
 
-- [ ] **Step 4: Clean stale path references in `test_fixture_matrix.py`**
+- [x] **Step 4: Clean stale path references in `test_fixture_matrix.py`**
 
 Two string-only edits (no logic change):
 
@@ -652,7 +665,7 @@ Two string-only edits (no logic change):
 
 `CLI` already resolves `REPO_ROOT / "bin" / "extract.py"`, which is now the extract repo root, so no code change is needed.
 
-- [ ] **Step 5: Run the moved suite**
+- [x] **Step 5: Run the moved suite**
 
 ```bash
 cd /home/cupric/dev/extract
@@ -661,7 +674,7 @@ python3 -m pytest tests/ -q
 
 Expected: `183 passed, 1 skipped, 1 xfailed, 7 xpassed`. If more tests skip, a tool is missing from the host (`7z`, `unzip`, `cabextract`, …); fix the host before proceeding.
 
-- [ ] **Step 6: Create the zsh wrapper test file**
+- [x] **Step 6: Create the zsh wrapper test file**
 
 Create `/home/cupric/dev/zsh/.worktrees/extract-packaging/tests/test_wrapper.py` (the worktree, never the main checkout — Task F commits from there):
 
@@ -739,7 +752,7 @@ class TestWrapper:
         assert result.stdout.strip() == "PLUGIN"
 ```
 
-- [ ] **Step 7: Run the wrapper tests against the current wrapper**
+- [x] **Step 7: Run the wrapper tests against the current wrapper**
 
 ```bash
 cd /home/cupric/dev/zsh/.worktrees/extract-packaging
@@ -755,7 +768,7 @@ cd /home/cupric/dev/zsh/.worktrees/extract-packaging
 printf '.pytest_cache/\n' >> .gitignore
 ```
 
-- [ ] **Step 8: Write `.gitlab-ci.yml`**
+- [x] **Step 8: Write `.gitlab-ci.yml`**
 
 ```yaml
 ---
@@ -845,24 +858,218 @@ The upload and release steps tolerate a retried pipeline (409) so the determinis
 
 The release is created through the API (not the `release:` keyword) because the version has to be derived by stripping the `v` prefix from the tag in the shell; keyword interpolation cannot see shell-assigned variables.
 
-- [ ] **Step 9: Commit both repos, push, and confirm the pipeline is green**
+- [x] **Step 9: Fix the `.deb` handler for zstd members (TDD)**
 
-```bash
-cd /home/cupric/dev/extract
-git add -A
-git commit -m "test: move the package test suite and fixtures; add CI"
-git push
-sleep 20
-glab ci list --per-page 3
+The first CI run exposed a Python-floor bug: `ArDebHandler` extracts `data.tar.*`
+with `tarfile`, and `tarfile` gained zstd support only in **Python 3.14**.
+Debian 12+ packages carry `data.tar.zst`, so on the 3.10 CI image extraction
+fails with `ReadError`. The host (3.14) never saw it.
+
+First append the failing regression test to
+`/home/cupric/dev/extract/tests/test_handlers.py` (and add the `FIXTURES`
+constant beside the other module constants, after the imports):
+
+```python
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
+
+
+def test_ar_deb_reads_zstd_members_when_tarfile_cannot(tmp_path, monkeypatch):
+    """Python < 3.14 tarfile cannot open data.tar.zst; libarchive must take over."""
+    from extract.handlers import ArDebHandler
+
+    def fake_open(*args, **kwargs):
+        raise tarfile.ReadError("simulated pre-3.14 zstd limitation")
+
+    monkeypatch.setattr(tarfile, "open", fake_open)
+    dest = tmp_path / "out"
+    dest.mkdir()
+    result = ArDebHandler().extract(FIXTURES / "archives/plain/plain_zstd.deb", dest, None)
+
+    assert result.ok, result.detail
+    assert (dest / "data/share/doc/extract-fixture/readme.txt").exists()
 ```
 
-Expected: the extract repo pipeline on `main` runs `test` (183 tests + shellcheck + artifact build) and is `success`. On failure read the job log with `glab ci trace <job-id>`. Task D's tag pipeline runs the same jobs.
+Run it — it must FAIL (the current code returns `EXTRACT_ERROR`):
 
 ```bash
-cd /home/cupric/dev/zsh/.worktrees/extract-packaging
-git add tests/test_wrapper.py .gitignore
-git commit -m "test(extract): keep the zsh wrapper tests with the wrapper"
+sh -c 'cd /home/cupric/dev/extract && python3 -m pytest tests/test_handlers.py -q -k zstd_members'
 ```
+
+Then replace the `try/except` block in `ArDebHandler.extract` with:
+
+```python
+            try:
+                with tarfile.open(members[0]) as tf:
+                    tf.extractall(subdir, filter="data")
+            except tarfile.TarError:
+                # tarfile gained zstd support only in Python 3.14; Debian 12+
+                # ships data.tar.zst, so delegate to the libarchive backend.
+                fallback = LibarchiveHandler()
+                if not fallback.available():
+                    return _err(
+                        f"cannot read {members[0].name}: tarfile cannot handle this "
+                        "compression before Python 3.14 and libarchive is unavailable"
+                    )
+                result = fallback.extract(members[0], subdir, None)
+                if not result.ok:
+                    return result
+```
+
+Run the test again: PASS.
+
+- [x] **Step 10: Add the `rpm2archive` fallback (TDD)**
+
+`plain.rpm` carries a zstd payload. On Debian 12/13 (rpm 4.18) `rpm2cpio`
+refuses it (`files over 4GB not supported by cpio, use rpm2archive instead`)
+and libarchive 3.6.2 says `Unrecognized archive format`; the host (rpm 6)
+passes, which is why the suite was green before CI. Verified fallback:
+`rpm2archive - < archive.rpm | tar -xzf -` works on rpm 4.18 **and** 6.0.1 and
+yields `usr/share/extract-fixture/a.txt`.
+
+First append the failing tests:
+
+```python
+def test_rpm2archive_extracts_zstd_payload_rpm(tmp_path):
+    from extract.handlers import Rpm2archiveHandler
+
+    handler = Rpm2archiveHandler()
+    if not handler.available():
+        pytest.skip("rpm2archive/tar not available")
+    dest = tmp_path / "out"
+    dest.mkdir()
+    result = handler.extract(FIXTURES / "archives/plain/plain.rpm", dest, None)
+
+    assert result.ok, result.detail
+    assert (dest / "usr/share/extract-fixture/a.txt").exists()
+
+
+def test_rpm_chain_tries_rpm2archive_last():
+    from extract.handlers import CHAIN_TABLE
+
+    assert CHAIN_TABLE["rpm"] == ("libarchive", "rpm2cpio", "rpm2archive")
+```
+
+Run them — both must FAIL (`ImportError: Rpm2archiveHandler`, then the chain
+assertion).
+
+Then apply these four edits to `extract/handlers.py`:
+
+1. `CHAIN_TABLE`: `"rpm": ("libarchive", "rpm2cpio", "rpm2archive"),`
+2. Extend `TarSubprocessHandler._pipe` so a producer can receive a file on stdin:
+
+```python
+    @staticmethod
+    def _pipe(producer: list[str], consumer: list[str], dest: Path, producer_stdin=None) -> int:
+        p1 = subprocess.Popen(
+            producer,
+            stdin=producer_stdin if producer_stdin is not None else subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        rc2 = subprocess.run(
+            consumer, stdin=p1.stdout, cwd=dest,
+            capture_output=True, text=True, errors="replace",
+        )
+        p1.wait()
+        return rc2.returncode if rc2.returncode else p1.returncode
+```
+
+3. New handler immediately after `Rpm2cpioHandler`:
+
+```python
+class Rpm2archiveHandler:
+    name = "rpm2archive"
+    password_capable = False
+
+    def available(self) -> bool:
+        return _tool(("rpm2archive",)) is not None and _tool(("tar",)) is not None
+
+    def extract(self, archive: Path, dest: Path, password: str | None) -> Result:
+        # `rpm2archive -` reads the RPM on stdin and writes a gzipped tar to
+        # stdout. Needed for zstd-payload RPMs, which rpm2cpio cannot stream on
+        # rpm 4.18 (Debian 12/13); verified identical on rpm 6.
+        with open(archive, "rb") as src:
+            rc = TarSubprocessHandler._pipe(
+                [_tool(("rpm2archive",)) or "rpm2archive", "-"],
+                ["tar", "-xzf", "-"],
+                dest,
+                producer_stdin=src,
+            )
+        return Result(ErrorClass.NONE) if rc == 0 else _err(f"rpm extraction failed (rc={rc})")
+```
+
+4. `HANDLERS`: add `"rpm2archive": Rpm2archiveHandler(),`
+
+5. `Rpm2cpioHandler` must report `BACKEND_UNSUPPORTED` (not `EXTRACT_ERROR`) on a non-zero rc, or the chain stops at `rpm2cpio` and never reaches the new fallback — `engine.resolve` treats `EXTRACT_ERROR` as fatal and only descends on `BACKEND_UNSUPPORTED`. A corrupt RPM still ends as `EXTRACT_ERROR`, because `resolve` returns `EXTRACT_ERROR("no capable handler succeeded")` once every backend is unsupported.
+
+```python
+    def extract(self, archive: Path, dest: Path, password: str | None) -> Result:
+        rc = TarSubprocessHandler._pipe([_tool(("rpm2cpio",)) or "rpm2cpio", str(archive)], ["cpio", "--quiet", "-id"], dest)
+        if rc == 0:
+            return Result(ErrorClass.NONE)
+        # rpm 4.18 (Debian 12/13) cannot stream zstd payloads and exits here with
+        # "use rpm2archive instead". Report BACKEND_UNSUPPORTED so the chain
+        # descends to rpm2archive; EXTRACT_ERROR would be fatal for the archive.
+        return Result(
+            ErrorClass.BACKEND_UNSUPPORTED,
+            f"rpm2cpio could not stream this payload (rc={rc})",
+        )
+```
+
+Run the two tests again: PASS. Also run the fixture matrix entries:
+
+```bash
+sh -c 'cd /home/cupric/dev/extract && python3 -m pytest tests/test_fixture_matrix.py -q -k "plain_rpm or plain_zstd"'
+```
+
+Expected: PASS. Additionally prove the `.deb` fix on the real floor with the
+CI image (the host is 3.14 and would pass without it):
+
+```bash
+docker run --rm -v /home/cupric/dev/extract:/w -w /w python:3.10-bookworm \
+  sh -c 'apt-get update -qq && apt-get install -y -qq libarchive13 p7zip-full cpio cabextract rpm >/dev/null && pip install -q -r requirements-dev.txt && python3 -m pytest tests/test_fixture_matrix.py -q -k "plain_zstd or plain_rpm"'
+```
+
+Expected: both pass on Python 3.10.
+
+- [x] **Step 11: Fix the stale CLI test docstring**
+
+`tests/test_cli.py` now holds only CLI tests:
+
+```python
+"""End-to-end CLI tests (spec §5)."""
+```
+
+- [x] **Step 12: Re-run the full suite, push, and confirm the pipeline is green**
+
+```bash
+sh -c 'cd /home/cupric/dev/extract && python3 -m pytest tests/ -q'
+sh -c 'cd /home/cupric/dev/extract && git add -A && git commit -m "fix: read zstd deb members and zstd-payload rpm packages" && git push'
+```
+
+Expected: `186 passed, 1 skipped, 1 xfailed, 7 xpassed` on the host (183 moved tests + 3 new regression tests), push
+succeeds, and the `main` pipeline (`test` job) goes green — the 3.10 CI image
+now exercises both fallbacks. Poll it:
+
+```bash
+for i in $(seq 1 60); do
+  status=$(glab api "projects/cupric%2Fextract/pipelines?per_page=1" \
+    | python3 -c 'import sys,json; print(json.load(sys.stdin)[0]["status"])')
+  echo "pipeline: $status"
+  case "$status" in success|failed|canceled) break ;; esac
+  sleep 15
+done
+```
+
+On failure, read the job log (`glab api "projects/cupric%2Fextract/jobs/<id>/trace"`) and fix before proceeding — Task D's tag pipeline runs the same jobs.
+
+Confirm the zsh wrapper-test commit from the earlier attempt is still present in the worktree:
+
+```bash
+git -C /home/cupric/dev/zsh/.worktrees/extract-packaging log --oneline -1
+```
+
+Expected: `test(extract): keep the zsh wrapper tests with the wrapper`.
 
 ---
 
@@ -870,7 +1077,9 @@ git commit -m "test(extract): keep the zsh wrapper tests with the wrapper"
 
 **Files:** none (release pipeline + verification).
 
-- [ ] **Step 1: Tag the release**
+> **Pinned values from the actual release (2026-11-04):** version `0.1.0`, asset `extract-0.1.0.pyz`, sha256 `dcb5d6ce9b6dcaf956bd0c49b6e3a9c118633abf4b53811048f652b165e60a6c`, project id `131`. The release-downloads URL works anonymously; the registry URL also works.
+
+- [x] **Step 1: Tag the release**
 
 ```bash
 cd /home/cupric/dev/extract
@@ -882,7 +1091,7 @@ git push origin v0.1.0
 
 Expected: the tag pushes and starts a tagged pipeline.
 
-- [ ] **Step 2: Wait for the release job**
+- [x] **Step 2: Wait for the release job**
 
 ```bash
 cd /home/cupric/dev/extract
@@ -898,7 +1107,7 @@ glab ci list --per-page 3
 
 Expected: `test` and `release` jobs succeed.
 
-- [ ] **Step 3: Verify the anonymous download URL**
+- [x] **Step 3: Verify the anonymous download URL**
 
 ```bash
 curl -fsSL -o /tmp/extract-0.1.0.pyz \
@@ -936,7 +1145,7 @@ If the release-downloads redirect still fails on this GitLab, switch the catalog
 
 Replace `<PROJECT_ID>` with the numeric id printed above (it is a literal integer in the catalog, never a Jinja expression — Ansible would try to template braces), drop the `url_template` field, and record the decision in the plan's Gotchas and in `docs/findings/2026-11-04-extract-packaging-plan-review.md`.
 
-- [ ] **Step 4: Confirm CI and local builds agree**
+- [x] **Step 4: Confirm CI and local builds agree**
 
 ```bash
 cd /home/cupric/dev/extract
@@ -946,7 +1155,7 @@ sha256sum /tmp/extract-0.1.0.pyz
 
 Expected: identical digests. If they differ, the CI build is authoritative (it is what the release URL serves): use the downloaded digest as `EXTRACT_SHA256` and note the divergence in the plan Gotchas before Task E.
 
-- [ ] **Step 5: Hermetic run of the released artifact**
+- [x] **Step 5: Hermetic run of the released artifact**
 
 ```bash
 cd "$(mktemp -d)"
@@ -958,7 +1167,7 @@ python3 -S -E /tmp/extract-0.1.0.pyz plain.tar.gz && test -f plain/a.txt && echo
 
 Expected: `help=0`, `conflict=2`, `RELEASED_OK`.
 
-- [ ] **Step 6: Record the pinned values**
+- [x] **Step 6: Record the pinned values**
 
 Write these into the Task E catalog entry:
 
@@ -993,7 +1202,7 @@ In `inventory/group_vars/all/release_artifacts.yml`, append to the end of `relea
     format: single_file
     checksum_source: captured_at_bump
     arches:
-      all: { asset: "extract-0.1.0.pyz", sha256: "<EXTRACT_SHA256 from Task D>" }
+      all: { asset: "extract-0.1.0.pyz", sha256: "dcb5d6ce9b6dcaf956bd0c49b6e3a9c118633abf4b53811048f652b165e60a6c" }
 ```
 
 Also add `extract` to `release_artifacts_checksum_pending` (the list at the top of the file):
@@ -1469,7 +1678,7 @@ cd /home/cupric/dev/extract
 python3 -m pytest tests/ -q
 ```
 
-Expected: `183 passed, 1 skipped, 1 xfailed, 7 xpassed`.
+Expected: `186 passed, 1 skipped, 1 xfailed, 7 xpassed`.
 
 - [ ] **Step 2: Run the full zsh suite**
 
@@ -1752,11 +1961,11 @@ cat > .test-evidence-extract-packaging.json <<JSON
   "total": 15,
   "passed": 15,
   "failed": 0,
-  "suite_counts": {"cupric/zsh": 15, "cupric/extract": 183},
+  "suite_counts": {"cupric/zsh": 15, "cupric/extract": 186},
   "coverage": "not measured - neither repo has coverage configuration; adding pytest-cov is out of scope for this plan",
   "linter_exit_code": 0,
   "checks": [
-    {"name": "package test suite (cupric/extract)", "status": "pass", "command": "python3 -m pytest tests/ -q  # 183 passed, 1 skipped, 1 xfailed, 7 xpassed"},
+    {"name": "package test suite (cupric/extract)", "status": "pass", "command": "python3 -m pytest tests/ -q  # 186 passed, 1 skipped, 1 xfailed, 7 xpassed"},
     {"name": "wrapper test suite (cupric/zsh)", "status": "pass", "command": "python3 -m pytest tests -q  # 15 passed"},
     {"name": "zsh syntax", "status": "pass", "command": "zsh -n custom/extract.zsh && zsh -n zshrc && zsh -n completion/_extract"},
     {"name": "hermetic exit matrix on the published release", "status": "pass", "command": "python3 -S -E extract-0.1.0.pyz --help  # 0; no args 2; -p+-P 2; missing path 1"},
@@ -1851,6 +2060,7 @@ Expected: both pushes succeed. Then hand off to `plan-completion` (which archive
 3. A publish gate (Task D) is separated from build (Task B), because the Ansible role cannot be validated until the asset is anonymously downloadable.
 4. `git rm tests/conftest.py` is required in Task F; the spec's checklist implies it but does not name it.
 5. CI (`.gitlab-ci.yml`) is written in Task C, not Task B, because the CI `test` job runs `pytest tests/` and the suite only exists after Task C.
+6. Two **pre-existing handler bugs** were fixed mid-plan (Task C Steps 9–10). The first CI run on Python 3.10 proved the documented floor and RPM fallback were not actually met: `ArDebHandler` used `tarfile` (zstd support only in Python 3.14), the RPM chain lacked `rpm2archive`, and `Rpm2cpioHandler` reported a fatal error so the chain never descended. The host (Python 3.14 / rpm 6) masked all three. The package gains 3 regression tests (suite 183 → 186); CLI, engine, and orchestration behaviour otherwise stand.
 
 ## Linked Documents
 

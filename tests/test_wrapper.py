@@ -69,3 +69,27 @@ class TestWrapper:
         )
         result = self._zsh(snippet)
         assert result.stdout.strip() == "PLUGIN"
+
+    def test_delegates_to_installed_command(self, tmp_path):
+        fakebin = tmp_path / "bin"
+        fakebin.mkdir()
+        tool = fakebin / "extract"
+        tool.write_text('#!/bin/sh\necho INSTALLED "$@"\n')
+        tool.chmod(0o755)
+        snippet = (
+            "extract() { echo PLUGIN; }; "
+            f"PATH={fakebin}:$PATH; rehash; unset ZBIN; "
+            f"source {WRAPPER}; extract -p pw x.zip"
+        )
+        result = self._zsh(snippet)
+        assert result.stdout.strip() == "INSTALLED -p pw x.zip"
+
+    def test_reports_missing_tool(self, tmp_path):
+        snippet = (
+            "extract() { echo PLUGIN; }; "
+            f"PATH={tmp_path}; rehash; unset ZBIN; "
+            f"source {WRAPPER}; extract -p pw x.zip"
+        )
+        result = self._zsh(snippet)
+        assert result.returncode == 1
+        assert "not installed" in result.stderr
