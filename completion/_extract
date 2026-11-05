@@ -1,4 +1,4 @@
-#compdef extract extract.py
+#compdef extract
 
 _arguments \
   '(-R --recursive)'{-R,--recursive}'[extract every archive below each directory, in place]' \
