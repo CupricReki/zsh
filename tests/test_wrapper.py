@@ -93,3 +93,21 @@ class TestWrapper:
         result = self._zsh(snippet)
         assert result.returncode == 1
         assert "not installed" in result.stderr
+
+    def test_delegates_when_zbin_has_no_shim(self, tmp_path):
+        # zshenv exports ZBIN for every shell; the production case is
+        # "ZBIN set, no extract.py there, binary on PATH".
+        fakebin = tmp_path / "bin"
+        fakebin.mkdir()
+        tool = fakebin / "extract"
+        tool.write_text('#!/bin/sh\necho INSTALLED "$@"\n')
+        tool.chmod(0o755)
+        emptybin = tmp_path / "zbin"
+        emptybin.mkdir()
+        snippet = (
+            "extract() { echo PLUGIN; }; "
+            f"PATH={fakebin}:$PATH; rehash; ZBIN={emptybin}; "
+            f"source {WRAPPER}; extract -p pw x.zip"
+        )
+        result = self._zsh(snippet)
+        assert result.stdout.strip() == "INSTALLED -p pw x.zip"

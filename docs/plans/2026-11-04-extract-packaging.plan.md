@@ -1514,6 +1514,24 @@ Append to `TestWrapper` in `tests/test_wrapper.py`:
         result = self._zsh(snippet)
         assert result.returncode == 1
         assert "not installed" in result.stderr
+
+    def test_delegates_when_zbin_has_no_shim(self, tmp_path):
+        # zshenv exports ZBIN for every shell; the production case is
+        # "ZBIN set, no extract.py there, binary on PATH".
+        fakebin = tmp_path / "bin"
+        fakebin.mkdir()
+        tool = fakebin / "extract"
+        tool.write_text('#!/bin/sh\necho INSTALLED "$@"\n')
+        tool.chmod(0o755)
+        emptybin = tmp_path / "zbin"
+        emptybin.mkdir()
+        snippet = (
+            "extract() { echo PLUGIN; }; "
+            f"PATH={fakebin}:$PATH; rehash; ZBIN={emptybin}; "
+            f"source {WRAPPER}; extract -p pw x.zip"
+        )
+        result = self._zsh(snippet)
+        assert result.stdout.strip() == "INSTALLED -p pw x.zip"
 ```
 
 - [x] **Step 2: Run the tests to confirm they fail**
@@ -1605,7 +1623,7 @@ python3 -m pytest tests/test_wrapper.py -q
 zsh -n custom/extract.zsh && zsh -n zshrc && zsh -n completion/_extract && echo SYNTAX_OK
 ```
 
-Expected: `15 passed` and `SYNTAX_OK`.
+Expected: `16 passed` and `SYNTAX_OK`.
 
 - [x] **Step 7: Remove the moved package and its tests**
 
@@ -1630,7 +1648,7 @@ cd /home/cupric/dev/zsh/.worktrees/extract-packaging
 python3 -m pytest tests -q
 ```
 
-Expected: `15 passed`. There must be no collection errors from the removed `conftest.py`.
+Expected: `16 passed`. There must be no collection errors from the removed `conftest.py`.
 
 - [x] **Step 9: Functional smoke without the binary, and with a stub**
 
@@ -1692,7 +1710,7 @@ cd /home/cupric/dev/zsh/.worktrees/extract-packaging
 python3 -m pytest tests -q
 ```
 
-Expected: `15 passed`.
+Expected: `16 passed`.
 
 - [x] **Step 3: Run the ansible gates**
 
@@ -1993,10 +2011,10 @@ cat > .test-evidence-extract-packaging.json <<JSON
   "phases_completed": ["analyze", "sanitize", "red", "green", "verify"],
   "test_command": "python3 -m pytest tests -q (cupric/zsh); python3 -m pytest tests/ -q (cupric/extract)",
   "exit_code": 0,
-  "total": 15,
-  "passed": 15,
+  "total": 16,
+  "passed": 16,
   "failed": 0,
-  "suite_counts": {"cupric/zsh": 15, "cupric/extract": 186},
+  "suite_counts": {"cupric/zsh": 16, "cupric/extract": 186},
   "coverage": "not measured - neither repo has coverage configuration; adding pytest-cov is out of scope for this plan",
   "linter_exit_code": 0,
   "checks": [
