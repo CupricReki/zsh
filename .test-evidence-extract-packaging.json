@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "slug": "extract-packaging",
+  "ref": "feature/extract-packaging",
+  "commit": "e844569e87c5c95cf017147969acc253809ac082",
+  "timestamp": "2026-11-05T01:42:14Z",
+  "phases_completed": ["analyze", "sanitize", "red", "green", "verify"],
+  "test_command": "python3 -m pytest tests -q (cupric/zsh); python3 -m pytest tests/ -q (cupric/extract)",
+  "exit_code": 0,
+  "total": 15,
+  "passed": 15,
+  "failed": 0,
+  "suite_counts": {"cupric/zsh": 15, "cupric/extract": 186},
+  "coverage": "not measured - neither repo has coverage configuration; adding pytest-cov is out of scope for this plan",
+  "linter_exit_code": 0,
+  "checks": [
+    {"name": "package test suite (cupric/extract, host Python 3.14)", "status": "pass", "command": "python3 -m pytest tests/ -q  # 186 passed, 1 skipped, 1 xfailed, 7 xpassed"},
+    {"name": "package test suite on the Python 3.10 CI image", "status": "pass", "command": "pipeline 2126 job 7733  # 186 passed, 1 skipped, 1 xfailed, 7 xpassed"},
+    {"name": "wrapper test suite (cupric/zsh)", "status": "pass", "command": "python3 -m pytest tests -q  # 15 passed"},
+    {"name": "zsh syntax", "status": "pass", "command": "zsh -n custom/extract.zsh && zsh -n zshrc && zsh -n completion/_extract"},
+    {"name": "ansible lint + naming + catalog invariants", "status": "pass", "command": "just lint (0 failures) && python3 ci/check_naming.py && python3 ci/check_release_artifacts.py"},
+    {"name": "molecule both floor sides (MR pipeline 2142, job 7784)", "status": "pass", "command": "molecule-zsh success; 5 platforms 'extract binary installed' + '--help exits 0' + marker 0.1.0; alma9 'extract correctly skipped below the Python floor'"},
+    {"name": "hermetic matrix on the published release", "status": "pass", "command": "sha256 dcb5d6ce9b6dcaf956bd0c49b6e3a9c118633abf4b53811048f652b165e60a6c (matches catalog pin); help 0, noargs 2, conflict 2, missing 1; PUBLISHED_OK"},
+    {"name": "throwaway VM install (Proxmox extract-validation-pve, Ubuntu 22.04.5, Python 3.10.12)", "status": "pass", "command": "playbooks/zsh.yml -e zsh_target_user=ansible-bootstrap  # ok=216 changed=38 failed=0; verify playbook ok=18 failed=0 incl. wrapper delegation + fall-through; VM destroyed after"}
+  ]
+}
