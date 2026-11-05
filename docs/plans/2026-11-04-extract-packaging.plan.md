@@ -112,7 +112,7 @@ If the `git push origin master` is rejected (protected branch), branch from the 
 flowchart TD
   A[Task A: new repo + package move + lock] --> B[Task B: build script + renovate]
   B --> C[Task C: move tests + add CI]
-  C --> D[Task D: tag v0.1.0 -> release asset -> verify sha256]
+  C --> D[Task D: tag v0.1.1 -> release asset -> verify sha256]
   D --> E[Task E: ansible catalog + role + molecule]
   D --> F[Task F: zsh wrapper + completion + remove old package]
   E --> Z[Task Z: validation + throwaway VM + evidence]
@@ -133,7 +133,7 @@ Serial constraints (do not reorder):
 | A | Create `cupric/extract`, move the package, make `standard_logging` optional, add entry point/shim/locks (spec steps 1–7) | done |
 | B | Reproducible zipapp build script + Renovate (spec steps 8, 10) | done |
 | C | Move the 183 package tests, split out the 13 wrapper tests, add CI (spec steps 9, 11–12) | done |
-| D | Publish `v0.1.0`, verify the anonymous download URL and pin the sha256 | done |
+| D | Publish `v0.1.1`, verify the anonymous download URL and pin the sha256 | done |
 | E | Ansible catalog/docs/native packages/role wiring/molecule verify (spec steps 13–17) | done |
 | F | zsh wrapper delegation, completion, remove old package (spec steps 18–20) | done |
 | Z | Full validation incl. throwaway libvirt VM install + evidence files | done |
@@ -176,7 +176,7 @@ Re-verified on `roci` on 2026-11-04 while writing this plan:
 - **Normalise mtimes before `zipapp`** — otherwise the pinned sha256 changes on every rebuild and pipeline retries fail.
 - **libvirt VM creation is unavailable on `roci`.** The running kernel (`7.2.11-arch1-1`) has no matching module tree (`/lib/modules` holds `6.18.60-1-lts` and `7.2.14-arch1-1`), so `tun` cannot be loaded and `virt-install` fails with `Unable to open /dev/net/tun`. Until the host reboots into an installed kernel, use the Proxmox ephemeral VM instead (Task Z Step 5 note).
 - **Ansible VM role runs need `zsh_target_user` passed explicitly.** `playbooks/zsh.yml` renders it in a pre-task name before the role defaults it; a bare run fails with `'zsh_target_user' is undefined`.
-- **Byte-reproducibility holds per environment, not across them.** `python3 -m zipapp` writes members in filesystem readdir order, so the same commit built on the host and in the CI container yields different digests (verified for v0.1.0: local `1b54edf3…`/`d66a3a43…`, CI `dcb5d6ce…`; bundle contents are identical entry-for-entry). The catalog pins the **CI** artifact because that is what the release URL serves. Do not use "rebuild locally and compare" as a verification step. A sorted-entry zip writer is the follow-up fix if cross-machine reproducibility is ever required.
+- **The artifact is byte-reproducible across machines and Python versions** (verified 3.10 vs 3.14: both `5dc23406…`). `python3 -m zipapp` was **not** deterministic (readdir order before 3.12), so the build writes the zip itself with sorted entries and fixed timestamps/permissions. If you touch `scripts/build-zipapp.sh`, keep the ordering and metadata pins — the CI `determinism` job compares a 3.10 build against a 3.13 rebuild via artifacts.
 - **Debian `unrar-free` is not the `unrar` binary** the handler probes. `unrar` stays best-effort (`failed_when: false`); unencrypted RAR still works via libarchive.
 - **Ansible execution context.** The libvirt VM creation runs on the **host** (it drives `libvirtd`/QEMU; the devcontainer mounts neither). Role runs run **inside the devcontainer** per `ansible/AGENTS.md`. Both are spelled out in Task Z. Task Z is the long pole: a full `playbooks/zsh.yml` run on a fresh VM (Go, Rust, carapace, fzf, extract) takes 15–25 minutes. Give it a 30-minute ceiling, re-run after a failure instead of rebuilding the VM (the role is idempotent), and never run molecule concurrently — they share the Docker daemon and compete for CPU.
 - **The release-download URL is the only unverified link in the chain.** The generic package registry is proven anonymously readable on this instance, but `/-/releases/<tag>/downloads/<name>` cannot be exercised until `cupric/extract` exists. Task D Step 3 is the gate; if it 404s, Task D Step 3 has the manual asset-link and generic-registry fallbacks.
@@ -1049,7 +1049,7 @@ sh -c 'cd /home/cupric/dev/extract && python3 -m pytest tests/ -q'
 sh -c 'cd /home/cupric/dev/extract && git add -A && git commit -m "fix: read zstd deb members and zstd-payload rpm packages" && git push'
 ```
 
-Expected: `186 passed, 1 skipped, 1 xfailed, 7 xpassed` on the host (183 moved tests + 3 new regression tests), push
+Expected: `187 passed, 1 skipped, 1 xfailed, 7 xpassed` on the host (183 moved tests + 3 new regression tests), push
 succeeds, and the `main` pipeline (`test` job) goes green — the 3.10 CI image
 now exercises both fallbacks. Poll it:
 
@@ -1075,7 +1075,7 @@ Expected: `test(extract): keep the zsh wrapper tests with the wrapper`.
 
 ---
 
-### Task D: Publish `v0.1.0` and pin its digest
+### Task D: Publish `v0.1.1` and pin its digest
 
 **Files:** none (release pipeline + verification).
 
@@ -1087,8 +1087,8 @@ Expected: `test(extract): keep the zsh wrapper tests with the wrapper`.
 cd /home/cupric/dev/extract
 git status --short          # must be empty
 python3 -c 'import extract; print(extract.__version__)'   # 0.1.0
-git tag -a v0.1.0 -m "extract 0.1.0"
-git push origin v0.1.0
+git tag -a v0.1.1 -m "extract 0.1.0"
+git push origin v0.1.1
 ```
 
 Expected: the tag pushes and starts a tagged pipeline.
@@ -1113,7 +1113,7 @@ Expected: `test` and `release` jobs succeed.
 
 ```bash
 curl -fsSL -o /tmp/extract-0.1.0.pyz \
-  "https://gitlab.timepiggy.com/cupric/extract/-/releases/v0.1.0/downloads/extract-0.1.0.pyz"
+  "https://gitlab.timepiggy.com/cupric/extract/-/releases/v0.1.1/downloads/extract-0.1.0.pyz"
 ls -l /tmp/extract-0.1.0.pyz
 sha256sum /tmp/extract-0.1.0.pyz
 ```
@@ -1123,7 +1123,7 @@ Expected: a ~1.8 MB file and a 64-hex digest. The request must succeed **with no
 If this 404s, first inspect the release's asset links (the `release` job log is not enough — a missing `direct_asset_path` still yields a green job):
 
 ```bash
-glab api "projects/cupric%2Fextract/releases/v0.1.0" | python3 -m json.tool
+glab api "projects/cupric%2Fextract/releases/v0.1.1" | python3 -m json.tool
 PROJECT_ID=$(glab api projects/cupric%2Fextract | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
 echo "$PROJECT_ID"
 ```
@@ -1131,7 +1131,7 @@ echo "$PROJECT_ID"
 Expected: one link named `extract-0.1.0.pyz` with `"direct_asset_path": "/extract-0.1.0.pyz"`. If the link is missing, create it (this is idempotent enough for a one-off bootstrap; the CI job will overwrite it on the next tag):
 
 ```bash
-glab api --method POST "projects/cupric%2Fextract/releases/v0.1.0/assets/links" \
+glab api --method POST "projects/cupric%2Fextract/releases/v0.1.1/assets/links" \
   -f name=extract-0.1.0.pyz \
   -f url="https://gitlab.timepiggy.com/api/v4/projects/${PROJECT_ID}/packages/generic/extract/0.1.0/extract-0.1.0.pyz" \
   -f link_type=package \
@@ -1637,7 +1637,7 @@ python3 -m pytest tests/test_wrapper.py -q
 zsh -n custom/extract.zsh && zsh -n zshrc && zsh -n completion/_extract && echo SYNTAX_OK
 ```
 
-Expected: `17 passed` and `SYNTAX_OK`.
+Expected: `18 passed` and `SYNTAX_OK`.
 
 - [x] **Step 7: Remove the moved package and its tests**
 
@@ -1662,7 +1662,7 @@ cd /home/cupric/dev/zsh/.worktrees/extract-packaging
 python3 -m pytest tests -q
 ```
 
-Expected: `17 passed`. There must be no collection errors from the removed `conftest.py`.
+Expected: `18 passed`. There must be no collection errors from the removed `conftest.py`.
 
 - [x] **Step 9: Functional smoke without the binary, and with a stub**
 
@@ -1715,7 +1715,7 @@ cd /home/cupric/dev/extract
 python3 -m pytest tests/ -q
 ```
 
-Expected: `186 passed, 1 skipped, 1 xfailed, 7 xpassed`.
+Expected: `187 passed, 1 skipped, 1 xfailed, 7 xpassed`.
 
 - [x] **Step 2: Run the full zsh suite**
 
@@ -1724,7 +1724,7 @@ cd /home/cupric/dev/zsh/.worktrees/extract-packaging
 python3 -m pytest tests -q
 ```
 
-Expected: `17 passed`.
+Expected: `18 passed`.
 
 - [x] **Step 3: Run the ansible gates**
 
@@ -1743,7 +1743,7 @@ Expected: all exit 0.
 cd "$(mktemp -d)"
 cp /home/cupric/dev/extract/tests/fixtures/archives/plain/plain.tar.gz .
 ART=$(mktemp)
-curl -fsSL -o "$ART" "https://gitlab.timepiggy.com/cupric/extract/-/releases/v0.1.0/downloads/extract-0.1.0.pyz"
+curl -fsSL -o "$ART" "https://gitlab.timepiggy.com/cupric/extract/-/releases/v0.1.1/downloads/extract-0.1.0.pyz"
 python3 -S -E "$ART" --help >/dev/null; echo "help=$?"
 python3 -S -E "$ART" >/dev/null 2>&1; echo "noargs=$?"
 python3 -S -E "$ART" -p x -P f whatever.zip >/dev/null 2>&1; echo "conflict=$?"
@@ -2025,10 +2025,10 @@ cat > .test-evidence-extract-packaging.json <<JSON
   "phases_completed": ["analyze", "sanitize", "red", "green", "verify"],
   "test_command": "python3 -m pytest tests -q (cupric/zsh); python3 -m pytest tests/ -q (cupric/extract)",
   "exit_code": 0,
-  "total": 17,
-  "passed": 17,
+  "total": 18,
+  "passed": 18,
   "failed": 0,
-  "suite_counts": {"cupric/zsh": 17, "cupric/extract": 187},
+  "suite_counts": {"cupric/zsh": 18, "cupric/extract": 187},
   "coverage": "not measured - neither repo has coverage configuration; adding pytest-cov is out of scope for this plan",
   "linter_exit_code": 0,
   "checks": [
@@ -2143,7 +2143,7 @@ Expected: both pushes succeed. Then hand off to `plan-completion` (which archive
 ## Plan Completed
 - **Date:** 2026-11-04 20:51 EST
 - **Final commit:** 7092cef018c691b2a7dd984e717a1cc6cdc14a12
-- **Summary:** Shipped extract as a reproducible zipapp (v0.1.0) installed by the ansible release_artifact role, with zsh delegating to the installed binary; validated on Python 3.10 CI, molecule (6 distros) and a throwaway Proxmox VM.
+- **Summary:** Shipped extract as a reproducible zipapp (v0.1.1) installed by the ansible release_artifact role, with zsh delegating to the installed binary; validated on Python 3.10 CI, molecule (6 distros) and a throwaway Proxmox VM.
 - [2026-11-04-extract-packaging.md](../specs/2026-11-04-extract-packaging.md)
 - [2026-11-04-extract-packaging-spec.md](../handover/2026-11-04-extract-packaging-spec.md)
 - [2026-11-04-extract-packaging-plan-review.md](../findings/2026-11-04-extract-packaging-plan-review.md)

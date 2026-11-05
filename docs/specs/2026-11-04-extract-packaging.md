@@ -198,15 +198,39 @@ cp "$REPO_ROOT/extract/__main__.py" "$STAGE/__main__.py"
 find "$STAGE" -exec touch -h -d '2000-01-01T00:00:00Z' {} +
 
 mkdir -p "$REPO_ROOT/dist"
-python3 -m zipapp "$STAGE" -c \
-  -o "$REPO_ROOT/dist/extract-${VERSION}.pyz" \
-  -p "/usr/bin/env python3"
+OUT="$REPO_ROOT/dist/extract-${VERSION}.pyz"
+TMP="$REPO_ROOT/dist/.extract-${VERSION}.pyz.$$"
 
-# Guard against a silently incomplete bundle (--no-deps omits nothing audibly).
-unzip -l "$REPO_ROOT/dist/extract-${VERSION}.pyz" | grep -q 'markdown_it/__init__.py' \
-  || { echo "ERROR: dependency closure incomplete" >&2; exit 1; }
+# Write the zip ourselves, sorted with fixed timestamps and permissions.
+# `python3 -m zipapp` enumerates members in readdir order on Python <= 3.11
+# (sorted only from 3.12), which produced different digests for identical
+# inputs; sorted entries make the artifact byte-identical across machines and
+# Python versions. The shebang prefix keeps `#!` + zipimport working.
+python3 - "$STAGE" "$TMP" <<'PY'
+import sys, zipfile
+from pathlib import Path
 
-chmod 0755 "$REPO_ROOT/dist/extract-${VERSION}.pyz"
+stage, out = Path(sys.argv[1]), Path(sys.argv[2])
+files = sorted((p for p in stage.rglob("*") if p.is_file()),
+               key=lambda p: p.relative_to(stage).as_posix())
+with open(out, "wb") as handle:
+    handle.write(b"#!/usr/bin/env python3\n")
+    with zipfile.ZipFile(handle, "w", zipfile.ZIP_DEFLATED) as archive:
+        for path in files:
+            info = zipfile.ZipInfo(path.relative_to(stage).as_posix(),
+                                   date_time=(2000, 1, 1, 0, 0, 0))
+            info.external_attr = (0o100644 & 0xFFFF) << 16
+            info.compress_type = zipfile.ZIP_DEFLATED
+            archive.writestr(info, path.read_bytes())
+PY
+chmod 0755 "$TMP"
+
+# Guard against a silently incomplete bundle (--no-deps omits nothing audibly):
+# import the artifact itself rather than checking a single canary file.
+python3 -S -E "$TMP" --help >/dev/null \
+  || { echo "ERROR: built artifact fails to import" >&2; exit 1; }
+
+mv -f "$TMP" "$OUT"
 sha256sum "$REPO_ROOT/dist/extract-${VERSION}.pyz" | awk '{print $1}'
 ```
 
