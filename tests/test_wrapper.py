@@ -111,3 +111,17 @@ class TestWrapper:
         )
         result = self._zsh(snippet)
         assert result.stdout.strip() == "INSTALLED -p pw x.zip"
+
+    def test_propagates_the_tool_exit_status(self, tmp_path):
+        fakebin = tmp_path / "bin"
+        fakebin.mkdir()
+        tool = fakebin / "extract"
+        tool.write_text('#!/bin/sh\nexit 7\n')
+        tool.chmod(0o755)
+        snippet = (
+            "extract() { echo PLUGIN; }; "
+            f"PATH={fakebin}:$PATH; rehash; unset ZBIN; "
+            f"source {WRAPPER}; extract -p pw x.zip"
+        )
+        result = self._zsh(snippet)
+        assert result.returncode == 7

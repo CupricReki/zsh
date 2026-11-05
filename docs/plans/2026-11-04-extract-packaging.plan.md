@@ -59,7 +59,7 @@ New repo `cupric/extract`:
 |------|----------------|
 | `custom/extract.zsh` | flag-pattern wrapper; delegates to `command extract` (or the `ZBIN` test seam) |
 | `completion/_extract` | `#compdef extract` completion |
-| `tests/test_wrapper.py` | 13 moved + 2 new wrapper tests |
+| `tests/test_wrapper.py` | 13 moved + 4 new wrapper tests |
 | `zshrc` | loads the wrapper after sheldon; stale comments updated |
 | `.gitignore` | adds `.pytest_cache/` |
 
@@ -1532,6 +1532,20 @@ Append to `TestWrapper` in `tests/test_wrapper.py`:
         )
         result = self._zsh(snippet)
         assert result.stdout.strip() == "INSTALLED -p pw x.zip"
+
+    def test_propagates_the_tool_exit_status(self, tmp_path):
+        fakebin = tmp_path / "bin"
+        fakebin.mkdir()
+        tool = fakebin / "extract"
+        tool.write_text('#!/bin/sh\nexit 7\n')
+        tool.chmod(0o755)
+        snippet = (
+            "extract() { echo PLUGIN; }; "
+            f"PATH={fakebin}:$PATH; rehash; unset ZBIN; "
+            f"source {WRAPPER}; extract -p x y.zip"
+        )
+        result = self._zsh(snippet)
+        assert result.returncode == 7
 ```
 
 - [x] **Step 2: Run the tests to confirm they fail**
@@ -1541,7 +1555,7 @@ cd /home/cupric/dev/zsh/.worktrees/extract-packaging
 python3 -m pytest tests/test_wrapper.py -q
 ```
 
-Expected: `2 failed, 13 passed`. Both failures come from the old wrapper calling `${ZBIN}/extract.py` with `ZBIN` unset.
+Expected: `4 failed, 13 passed`. Every new test fails against the old wrapper: it always calls `${ZBIN}/extract.py`.
 
 - [x] **Step 3: Rewrite `custom/extract.zsh`**
 
@@ -1550,9 +1564,9 @@ Expected: `2 failed, 13 passed`. Both failures come from the old wrapper calling
 # Saves the plugin function as extract_orig, then delegates invocations using
 # the new flags to the installed `extract` binary (single-file zipapp installed
 # by the ansible zsh role). Everything else falls through to the plugin.
-# `ZBIN` is the tests/dev seam. NOTE: zshenv exports `ZBIN="${ZSH_DIR}/bin"` in
-# every shell, so it is never empty in production — it may only win while a
-# shim actually exists there, or the deleted `bin/extract.py` would be invoked.
+# The installed binary wins over the tests/dev seam: zshenv always exports
+# `ZBIN`, so a stale leftover shim must not shadow a working binary; the shim
+# path is only used when it actually exists and no binary is installed.
 # One-shot save (finding C6): re-sourcing zshrc must not capture the wrapper
 # itself as extract_orig, or extract would recurse forever.
 if (( ! $+functions[extract_orig] )) && (( $+functions[extract] )); then
@@ -1563,10 +1577,10 @@ extract() {
   for arg in "$@"; do
     case "$arg" in
       -R*|-p*|-P*|-F*|-r*|--recursive*|--password*|--password-file*|--force*|--remove*)
-        if [[ -n ${ZBIN:-} && -f ${ZBIN}/extract.py ]]; then
-          python3 "${ZBIN}/extract.py" "$@"
-        elif (( $+commands[extract] )); then
+        if (( $+commands[extract] )); then
           command extract "$@"
+        elif [[ -n ${ZBIN:-} && -f ${ZBIN}/extract.py ]]; then
+          python3 "${ZBIN}/extract.py" "$@"
         else
           print -u2 "extract: the extract tool is not installed (run the ansible zsh role)"
           return 1
@@ -1623,7 +1637,7 @@ python3 -m pytest tests/test_wrapper.py -q
 zsh -n custom/extract.zsh && zsh -n zshrc && zsh -n completion/_extract && echo SYNTAX_OK
 ```
 
-Expected: `16 passed` and `SYNTAX_OK`.
+Expected: `17 passed` and `SYNTAX_OK`.
 
 - [x] **Step 7: Remove the moved package and its tests**
 
@@ -1648,7 +1662,7 @@ cd /home/cupric/dev/zsh/.worktrees/extract-packaging
 python3 -m pytest tests -q
 ```
 
-Expected: `16 passed`. There must be no collection errors from the removed `conftest.py`.
+Expected: `17 passed`. There must be no collection errors from the removed `conftest.py`.
 
 - [x] **Step 9: Functional smoke without the binary, and with a stub**
 
@@ -1657,14 +1671,14 @@ cd /home/cupric/dev/zsh/.worktrees/extract-packaging
 # 1. no binary anywhere and no ZBIN -> explicit error, rc 1
 zsh -c 'unset ZBIN; source custom/extract.zsh; extract -p x y.zip'; echo "missing-tool-rc=$?"
 
-# 2. a stub `extract` on PATH -> delegated with the original argv
+# 2. a stub `extract` on PATH (ZBIN unset) -> delegated with the original argv
 stub=$(mktemp -d)
 cat > "$stub/extract" <<'SH'
 #!/bin/sh
 printf 'DELEGATED %s\n' "$*"
 SH
 chmod +x "$stub/extract"
-PATH="$stub:$PATH" zsh -c 'extract() { echo PLUGIN; }; source custom/extract.zsh; extract -p x y.zip'
+PATH="$stub:$PATH" zsh -c 'unset ZBIN; extract() { echo PLUGIN; }; source custom/extract.zsh; extract -p x y.zip'
 ```
 
 Expected: `extract: the extract tool is not installed (run the ansible zsh role)` and `missing-tool-rc=1`; then `DELEGATED -p x y.zip`.
@@ -1710,7 +1724,7 @@ cd /home/cupric/dev/zsh/.worktrees/extract-packaging
 python3 -m pytest tests -q
 ```
 
-Expected: `16 passed`.
+Expected: `17 passed`.
 
 - [x] **Step 3: Run the ansible gates**
 
@@ -2011,10 +2025,10 @@ cat > .test-evidence-extract-packaging.json <<JSON
   "phases_completed": ["analyze", "sanitize", "red", "green", "verify"],
   "test_command": "python3 -m pytest tests -q (cupric/zsh); python3 -m pytest tests/ -q (cupric/extract)",
   "exit_code": 0,
-  "total": 16,
-  "passed": 16,
+  "total": 17,
+  "passed": 17,
   "failed": 0,
-  "suite_counts": {"cupric/zsh": 16, "cupric/extract": 186},
+  "suite_counts": {"cupric/zsh": 17, "cupric/extract": 187},
   "coverage": "not measured - neither repo has coverage configuration; adding pytest-cov is out of scope for this plan",
   "linter_exit_code": 0,
   "checks": [
@@ -2104,12 +2118,12 @@ Expected: both pushes succeed. Then hand off to `plan-completion` (which archive
 
 **8. Human steps** — none. Every step is agent-executable with what is already on this host: `glab` authenticated, `virsh`/`virt-install` present, passwordless `sudo`, devcontainer CLI available. No `[human]` tags and therefore no checkpoints.
 
-**Bite-sized granularity** — mechanical multi-file steps are split per file (Task A 2.1–2.3, Task E 4.1–4.3). The remaining large steps are single atomic operations (one `zipapp` build, one playbook run, one molecule scenario) that cannot be usefully subdivided. TDD shape (write failing test → confirm red → implement → confirm green) is used where the change is code: Task C (wrapper tests land before the move is finished) and Task F (the two new wrapper tests are red against the old wrapper). Pure config and artifact moves use explicit verification commands instead, because there is no meaningful failing test to write first.
+**Bite-sized granularity** — mechanical multi-file steps are split per file (Task A 2.1–2.3, Task E 4.1–4.3). The remaining large steps are single atomic operations (one `zipapp` build, one playbook run, one molecule scenario) that cannot be usefully subdivided. TDD shape (write failing test → confirm red → implement → confirm green) is used where the change is code: Task C (wrapper tests land before the move is finished) and Task F (the new wrapper tests are red against the old wrapper). Pure config and artifact moves use explicit verification commands instead, because there is no meaningful failing test to write first.
 
 **Deliberate deviations from the spec (with evidence):**
 
 1. The closure is **8** distributions, not 9 — `typer==0.27.3` vendors `_click`. Adding `click` would install an unused distribution.
-2. Two wrapper tests are **added** (installed-command delegation, missing-tool error), so the zsh suite is 15, not 13. The spec's 13 are moved unchanged.
+2. Four wrapper tests are **added** (installed-command delegation, missing-tool error, ZBIN-without-shim, exit-status propagation), so the zsh suite is 17, not 13. The spec's 13 are moved unchanged.
 3. A publish gate (Task D) is separated from build (Task B), because the Ansible role cannot be validated until the asset is anonymously downloadable.
 4. `git rm tests/conftest.py` is required in Task F; the spec's checklist implies it but does not name it.
 5. CI (`.gitlab-ci.yml`) is written in Task C, not Task B, because the CI `test` job runs `pytest tests/` and the suite only exists after Task C.

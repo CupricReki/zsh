@@ -300,10 +300,10 @@ extract() {
   for arg in "$@"; do
     case "$arg" in
       -R*|-p*|-P*|-F*|-r*|--recursive*|--password*|--password-file*|--force*|--remove*)
-        if [[ -n ${ZBIN:-} ]]; then
-          python3 "${ZBIN}/extract.py" "$@"
-        elif (( $+commands[extract] )); then
+        if (( $+commands[extract] )); then
           command extract "$@"
+        elif [[ -n ${ZBIN:-} && -f ${ZBIN}/extract.py ]]; then
+          python3 "${ZBIN}/extract.py" "$@"
         else
           print -u2 "extract: the extract tool is not installed (run the ansible zsh role)"
           return 1
@@ -313,7 +313,7 @@ extract() {
     esac
   done
   if (( $+functions[extract_orig] )); then extract_orig "$@"; else
-    print -u2 "extract: plugin not loaded and extract.py flags not given"; return 1
+    print -u2 "extract: plugin not loaded and the extract tool's flags not given"; return 1
   fi
 }
 ```
@@ -321,6 +321,13 @@ extract() {
 ### 12. zsh completion
 
 `completion/_extract`, first line: `#compdef extract`.
+
+> **Implementation correction (2026-11-04).** `zshenv:97` exports
+> `ZBIN="${ZSH_DIR}/bin"` for every shell, so the original `[[ -n ${ZBIN:-} ]]`
+> guard was always true and would have invoked the deleted `bin/extract.py` on
+> every host. The shipped wrapper prefers an installed `extract` on `PATH` and
+> only falls back to the shim when it actually exists. The wrapper suite is 17
+> tests (13 moved + 4 new), not 13.
 
 ## Wiring Checklist
 
