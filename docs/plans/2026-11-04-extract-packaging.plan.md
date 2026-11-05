@@ -134,8 +134,8 @@ Serial constraints (do not reorder):
 | B | Reproducible zipapp build script + Renovate (spec steps 8, 10) | done |
 | C | Move the 183 package tests, split out the 13 wrapper tests, add CI (spec steps 9, 11–12) | done |
 | D | Publish `v0.1.0`, verify the anonymous download URL and pin the sha256 | done |
-| E | Ansible catalog/docs/native packages/role wiring/molecule verify (spec steps 13–17) | pending |
-| F | zsh wrapper delegation, completion, remove old package (spec steps 18–20) | pending |
+| E | Ansible catalog/docs/native packages/role wiring/molecule verify (spec steps 13–17) | done |
+| F | zsh wrapper delegation, completion, remove old package (spec steps 18–20) | done |
 | Z | Full validation incl. throwaway libvirt VM install + evidence files | pending |
 
 ## Verified Facts (re-check only if the world changed)
@@ -1188,7 +1188,7 @@ Write these into the Task E catalog entry:
 - Modify: `/home/cupric/dev/ansible/.worktrees/extract-packaging/roles/zsh/tasks/main.yml`
 - Modify: `/home/cupric/dev/ansible/.worktrees/extract-packaging/roles/zsh/molecule/default/verify.yml`
 
-- [ ] **Step 1: Add the catalog entry**
+- [x] **Step 1: Add the catalog entry**
 
 In `inventory/group_vars/all/release_artifacts.yml`, append to the end of `release_artifacts:` (same indentation as `fzf:`):
 
@@ -1220,7 +1220,7 @@ release_artifacts_checksum_pending:
 
 `captured_at_bump` **requires** this listing (`ci/check_release_artifacts.py` rule 1), even though a real sha256 is pinned. Do not remove the entry to silence the warning.
 
-- [ ] **Step 2: Add the docs catalog row**
+- [x] **Step 2: Add the docs catalog row**
 
 In `docs/reference/release-artifacts.md`, under `## Catalog`, after the `sealed-secrets` row:
 
@@ -1228,7 +1228,7 @@ In `docs/reference/release-artifacts.md`, under `## Catalog`, after the `sealed-
 | extract | 0.1.0 | GitLab releases `cupric/extract` | `roles/zsh` | CI build sha256 (re-capture per bump) |
 ```
 
-- [ ] **Step 3: Verify the catalog invariants**
+- [x] **Step 3: Verify the catalog invariants**
 
 ```bash
 cd /home/cupric/dev/ansible/.worktrees/extract-packaging
@@ -1237,7 +1237,7 @@ python3 ci/check_release_artifacts.py
 
 Expected: `release-artifact catalog: OK`, preceded by the expected `WARNING: entries without real checksums: ..., extract`.
 
-- [ ] **Step 4.1: Add the Debian native dependencies**
+- [x] **Step 4.1: Add the Debian native dependencies**
 
 In `roles/zsh/vars/main.yml`, append to the `zsh_packages` → `Debian` list (keep the existing section-comment style, two-space list indent).
 
@@ -1259,7 +1259,7 @@ In `roles/zsh/vars/main.yml`, append to the `zsh_packages` → `Debian` list (ke
     - xz-utils
 ```
 
-- [ ] **Step 4.2: Add the Arch native dependencies**
+- [x] **Step 4.2: Add the Arch native dependencies**
 
 Arch list (after `- go  # Go compiler and tools`):
 
@@ -1281,7 +1281,7 @@ Arch list (after `- go  # Go compiler and tools`):
     - xz
 ```
 
-- [ ] **Step 4.3: Add the Fedora/Alma native dependencies**
+- [x] **Step 4.3: Add the Fedora/Alma native dependencies**
 
 Fedora list (after the trailing `# Note: eza, lsd, mdcat may need to be installed from cargo on Fedora` comment):
 
@@ -1306,7 +1306,7 @@ Fedora list (after the trailing `# Note: eza, lsd, mdcat may need to be installe
 
 The `Fedora` key is also used for Alma 9 (RedHat family), where `p7zip`, `p7zip-plugins`, `cabextract`, `lzip`, and `ncompress` come from EPEL. All names were verified present in the four molecule images. On Arch, `p7zip` is a **virtual provided by `7zip`** — `pacman -S p7zip` resolves to `7zip` (verified), so the name is kept for symmetry; do not "fix" it to `7zip` without re-checking the other distros' lists.
 
-- [ ] **Step 5: Add the best-effort `unrar` task**
+- [x] **Step 5: Add the best-effort `unrar` task**
 
 In `roles/zsh/tasks/main.yml`, immediately after `- name: Install dependencies (Fedora)` and before `- name: Create fd symlink on Debian`, insert:
 
@@ -1323,7 +1323,7 @@ In `roles/zsh/tasks/main.yml`, immediately after `- name: Install dependencies (
   failed_when: false
 ```
 
-- [ ] **Step 6: Add the extract install block**
+- [x] **Step 6: Add the extract install block**
 
 In `roles/zsh/tasks/main.yml`, immediately after the `Create carapace config directories for target user` task and before `Ensure cargo bin directory exists for rust-tools binaries`, insert:
 
@@ -1355,7 +1355,7 @@ In `roles/zsh/tasks/main.yml`, immediately after the `Create carapace config dir
   when: _zsh_extract_pyfloor.rc != 0
 ```
 
-- [ ] **Step 7: Add molecule assertions**
+- [x] **Step 7: Add molecule assertions**
 
 Append to `roles/zsh/molecule/default/verify.yml`:
 
@@ -1425,7 +1425,7 @@ Append to `roles/zsh/molecule/default/verify.yml`:
 
 `verify.yml` runs with `gather_facts: false`, so the floor is decided by running `python3` rather than reading facts (same approach as the role).
 
-- [ ] **Step 8: Run lint and the catalog checks**
+- [x] **Step 8: Run lint and the catalog checks**
 
 ```bash
 cd /home/cupric/dev/ansible/.worktrees/extract-packaging
@@ -1436,7 +1436,7 @@ python3 ci/check_release_artifacts.py
 
 Expected: all three exit 0 (`ci/check_naming.py` takes no arguments). `just lint` runs `ansible-lint .` inside the devcontainer (path-scoped `ansible-lint roles/zsh/` would be equivalent; do not pass explicit files if you rely on `exclude_paths`).
 
-- [ ] **Step 9: Run molecule for both sides of the floor**
+- [x] **Step 9: Run molecule for both sides of the floor**
 
 Molecule platforms are prefixed with the worktree slug, so the names are `extract-packaging-ubuntu24` and `extract-packaging-alma9`, and both platforms are in the scenario's platform list. Run them one at a time (shared Docker daemon):
 
@@ -1452,7 +1452,7 @@ Expected: both scenarios finish with `Verifier completed successfully` (ubuntu24
 just molecule zsh "test -s default --destroy always"
 ```
 
-- [ ] **Step 10: Commit and open the MR**
+- [x] **Step 10: Commit and open the MR**
 
 ```bash
 cd /home/cupric/dev/ansible/.worktrees/extract-packaging
@@ -1484,7 +1484,7 @@ Expected: MR created against `develop`; do **not** pass `--auto-merge` (the `arm
 - Delete: `/home/cupric/dev/zsh/.worktrees/extract-packaging/tests/fixtures/`
 - Delete: `/home/cupric/dev/zsh/.worktrees/extract-packaging/tests/conftest.py`
 
-- [ ] **Step 1: Write the failing tests for the new delegation paths**
+- [x] **Step 1: Write the failing tests for the new delegation paths**
 
 Append to `TestWrapper` in `tests/test_wrapper.py`:
 
@@ -1514,7 +1514,7 @@ Append to `TestWrapper` in `tests/test_wrapper.py`:
         assert "not installed" in result.stderr
 ```
 
-- [ ] **Step 2: Run the tests to confirm they fail**
+- [x] **Step 2: Run the tests to confirm they fail**
 
 ```bash
 cd /home/cupric/dev/zsh/.worktrees/extract-packaging
@@ -1523,13 +1523,16 @@ python3 -m pytest tests/test_wrapper.py -q
 
 Expected: `2 failed, 13 passed`. Both failures come from the old wrapper calling `${ZBIN}/extract.py` with `ZBIN` unset.
 
-- [ ] **Step 3: Rewrite `custom/extract.zsh`**
+- [x] **Step 3: Rewrite `custom/extract.zsh`**
 
 ```zsh
 # extract() wrapper — sourced AFTER sheldon loads the ohmyzsh extract plugin.
 # Saves the plugin function as extract_orig, then delegates invocations using
 # the new flags to the installed `extract` binary (single-file zipapp installed
 # by the ansible zsh role). Everything else falls through to the plugin.
+# `ZBIN` is the tests/dev seam. NOTE: zshenv exports `ZBIN="${ZSH_DIR}/bin"` in
+# every shell, so it is never empty in production — it may only win while a
+# shim actually exists there, or the deleted `bin/extract.py` would be invoked.
 # One-shot save (finding C6): re-sourcing zshrc must not capture the wrapper
 # itself as extract_orig, or extract would recurse forever.
 if (( ! $+functions[extract_orig] )) && (( $+functions[extract] )); then
@@ -1540,7 +1543,7 @@ extract() {
   for arg in "$@"; do
     case "$arg" in
       -R*|-p*|-P*|-F*|-r*|--recursive*|--password*|--password-file*|--force*|--remove*)
-        if [[ -n ${ZBIN:-} ]]; then
+        if [[ -n ${ZBIN:-} && -f ${ZBIN}/extract.py ]]; then
           python3 "${ZBIN}/extract.py" "$@"
         elif (( $+commands[extract] )); then
           command extract "$@"
@@ -1553,14 +1556,14 @@ extract() {
     esac
   done
   if (( $+functions[extract_orig] )); then extract_orig "$@"; else
-    print -u2 "extract: plugin not loaded and extract.py flags not given"; return 1
+    print -u2 "extract: plugin not loaded and the extract tool's flags not given"; return 1
   fi
 }
 ```
 
-`ZBIN` remains an explicit test/dev seam; production hosts have it unset and take the `command extract` branch.
+`ZBIN` stays as the test/dev seam, but `zshenv:97` exports `ZBIN="${ZSH_DIR}/bin"` for every shell, so it is **never empty in production**. The guard therefore requires both a non-empty `ZBIN` and an existing `${ZBIN}/extract.py`; otherwise the deleted shim would be invoked on every host. Production hosts take the `command extract` branch.
 
-- [ ] **Step 4: Update the stale comments in `zshrc`**
+- [x] **Step 4: Update the stale comments in `zshrc`**
 
 Line ~146:
 
@@ -1582,7 +1585,7 @@ becomes:
 # Must load after sheldon so the plugin's extract() can be saved as extract_orig.
 ```
 
-- [ ] **Step 5: Point completion at the installed binary**
+- [x] **Step 5: Point completion at the installed binary**
 
 Change the first line of `completion/_extract`:
 
@@ -1592,7 +1595,7 @@ Change the first line of `completion/_extract`:
 
 (The `_arguments` body is unchanged.)
 
-- [ ] **Step 6: Run the wrapper tests**
+- [x] **Step 6: Run the wrapper tests**
 
 ```bash
 cd /home/cupric/dev/zsh/.worktrees/extract-packaging
@@ -1602,7 +1605,7 @@ zsh -n custom/extract.zsh && zsh -n zshrc && zsh -n completion/_extract && echo 
 
 Expected: `15 passed` and `SYNTAX_OK`.
 
-- [ ] **Step 7: Remove the moved package and its tests**
+- [x] **Step 7: Remove the moved package and its tests**
 
 ```bash
 cd /home/cupric/dev/zsh/.worktrees/extract-packaging
@@ -1618,7 +1621,7 @@ ls bin tests
 
 Expected: `bin/` still contains `lessfilter` and `mkdsk`; `tests/` contains only `test_wrapper.py`.
 
-- [ ] **Step 8: Run the full zsh test suite**
+- [x] **Step 8: Run the full zsh test suite**
 
 ```bash
 cd /home/cupric/dev/zsh/.worktrees/extract-packaging
@@ -1627,7 +1630,7 @@ python3 -m pytest tests -q
 
 Expected: `15 passed`. There must be no collection errors from the removed `conftest.py`.
 
-- [ ] **Step 9: Functional smoke without the binary, and with a stub**
+- [x] **Step 9: Functional smoke without the binary, and with a stub**
 
 ```bash
 cd /home/cupric/dev/zsh/.worktrees/extract-packaging
@@ -1646,7 +1649,7 @@ PATH="$stub:$PATH" zsh -c 'extract() { echo PLUGIN; }; source custom/extract.zsh
 
 Expected: `extract: the extract tool is not installed (run the ansible zsh role)` and `missing-tool-rc=1`; then `DELEGATED -p x y.zip`.
 
-- [ ] **Step 10: Commit and push**
+- [x] **Step 10: Commit and push**
 
 ```bash
 cd /home/cupric/dev/zsh/.worktrees/extract-packaging
