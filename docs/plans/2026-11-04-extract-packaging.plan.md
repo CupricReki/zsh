@@ -136,7 +136,7 @@ Serial constraints (do not reorder):
 | D | Publish `v0.1.0`, verify the anonymous download URL and pin the sha256 | done |
 | E | Ansible catalog/docs/native packages/role wiring/molecule verify (spec steps 13–17) | done |
 | F | zsh wrapper delegation, completion, remove old package (spec steps 18–20) | done |
-| Z | Full validation incl. throwaway libvirt VM install + evidence files | pending |
+| Z | Full validation incl. throwaway libvirt VM install + evidence files | done |
 
 ## Verified Facts (re-check only if the world changed)
 
@@ -174,6 +174,8 @@ Re-verified on `roci` on 2026-11-04 while writing this plan:
 - **`pip install --no-deps --target` + a compiled lock** is what makes the bundle complete. `--no-deps` omits nothing audibly, hence the `markdown_it/__init__.py` assert.
 - **Compile the lock for the floor** (`--python-version 3.10`), never the build interpreter.
 - **Normalise mtimes before `zipapp`** — otherwise the pinned sha256 changes on every rebuild and pipeline retries fail.
+- **libvirt VM creation is unavailable on `roci`.** The running kernel (`7.2.11-arch1-1`) has no matching module tree (`/lib/modules` holds `6.18.60-1-lts` and `7.2.14-arch1-1`), so `tun` cannot be loaded and `virt-install` fails with `Unable to open /dev/net/tun`. Until the host reboots into an installed kernel, use the Proxmox ephemeral VM instead (Task Z Step 5 note).
+- **Ansible VM role runs need `zsh_target_user` passed explicitly.** `playbooks/zsh.yml` renders it in a pre-task name before the role defaults it; a bare run fails with `'zsh_target_user' is undefined`.
 - **Byte-reproducibility holds per environment, not across them.** `python3 -m zipapp` writes members in filesystem readdir order, so the same commit built on the host and in the CI container yields different digests (verified for v0.1.0: local `1b54edf3…`/`d66a3a43…`, CI `dcb5d6ce…`; bundle contents are identical entry-for-entry). The catalog pins the **CI** artifact because that is what the release URL serves. Do not use "rebuild locally and compare" as a verification step. A sorted-entry zip writer is the follow-up fix if cross-machine reproducibility is ever required.
 - **Debian `unrar-free` is not the `unrar` binary** the handler probes. `unrar` stays best-effort (`failed_when: false`); unencrypted RAR still works via libarchive.
 - **Ansible execution context.** The libvirt VM creation runs on the **host** (it drives `libvirtd`/QEMU; the devcontainer mounts neither). Role runs run **inside the devcontainer** per `ansible/AGENTS.md`. Both are spelled out in Task Z. Task Z is the long pole: a full `playbooks/zsh.yml` run on a fresh VM (Go, Rust, carapace, fzf, extract) takes 15–25 minutes. Give it a 30-minute ceiling, re-run after a failure instead of rebuilding the VM (the role is idempotent), and never run molecule concurrently — they share the Docker daemon and compete for CPU.
@@ -1674,7 +1676,7 @@ Merge ordering is operationally significant: this MR removes `bin/extract.py`, s
 - Create (ephemeral, deleted in Step 8): `/home/cupric/dev/ansible/.worktrees/extract-packaging/.cache/extract-validation-vms.yml`
 - Create (ephemeral, deleted in Step 8): `/home/cupric/dev/ansible/.worktrees/extract-packaging/.cache/extract-validation-verify.yml`
 
-- [ ] **Step 1: Run the full package suite**
+- [x] **Step 1: Run the full package suite**
 
 ```bash
 cd /home/cupric/dev/extract
@@ -1683,7 +1685,7 @@ python3 -m pytest tests/ -q
 
 Expected: `186 passed, 1 skipped, 1 xfailed, 7 xpassed`.
 
-- [ ] **Step 2: Run the full zsh suite**
+- [x] **Step 2: Run the full zsh suite**
 
 ```bash
 cd /home/cupric/dev/zsh/.worktrees/extract-packaging
@@ -1692,7 +1694,7 @@ python3 -m pytest tests -q
 
 Expected: `15 passed`.
 
-- [ ] **Step 3: Run the ansible gates**
+- [x] **Step 3: Run the ansible gates**
 
 ```bash
 cd /home/cupric/dev/ansible/.worktrees/extract-packaging
@@ -1703,7 +1705,7 @@ python3 ci/check_release_artifacts.py
 
 Expected: all exit 0.
 
-- [ ] **Step 4: Re-run the hermetic matrix against the published artifact**
+- [x] **Step 4: Re-run the hermetic matrix against the published artifact**
 
 ```bash
 cd "$(mktemp -d)"
@@ -1719,7 +1721,7 @@ python3 -S -E "$ART" plain.tar.gz >/dev/null && test -f plain/a.txt && echo PUBL
 
 Expected: `help=0`, `noargs=2`, `conflict=2`, `missing=1`, `PUBLISHED_OK`.
 
-- [ ] **Step 5: Create the throwaway VM (host shell, not the devcontainer)**
+- [x] **Step 5: Create the throwaway VM (host shell, not the devcontainer)**
 
 The libvirt role drives `libvirtd`/QEMU on the host; the devcontainer mounts neither. This is the documented exception to "all ansible in the devcontainer".
 
@@ -1753,7 +1755,7 @@ ansible-playbook -i inventory/local_hypervisor.ini playbooks/libvirt_vm_testing.
 
 Ubuntu 22.04 (jammy) ships Python 3.10 — the exact supported floor, which no molecule platform covers. Extra vars override the role's `include_vars` of `vars/test_vms.yml`, so the name `extract-validation` does not collide with the repo's existing `ubuntu-headless` domain.
 
-- [ ] **Step 6: Confirm SSH and the Python version**
+- [x] **Step 6: Confirm SSH and the Python version**
 
 ```bash
 cd /home/cupric/dev/ansible/.worktrees/extract-packaging
@@ -1765,18 +1767,41 @@ ssh -i keys/libvirt_vm_testing_ed25519 -o StrictHostKeyChecking=accept-new \
 
 Expected: `Python 3.10.x` and `Ubuntu 22.04.x LTS`. If the IP is empty, wait and re-run the create playbook (it prints the IPs) or `virsh domifaddr extract-validation --source agent`.
 
-- [ ] **Step 7: Install with the real zsh role (devcontainer)**
+> **Environment note (2026-11-04):** on `roci` the libvirt path above fails — `virt-install` reports `Unable to open /dev/net/tun` because the running kernel's modules are missing (`modprobe tun` → `Module tun not found`; installed trees are `6.18.60-1-lts` and `7.2.14-arch1-1`). The same throwaway VM was deployed on Proxmox instead, using the repo's ephemeral definitions:
+>
+> ```bash
+> cat > .cache/extract-validation-pve.yml <<'YAML'
+> pve_vm_vms:
+>   - name: extract-validation-pve
+>     node: pve3
+>     vmid: 2012
+>     memory: 4096
+>     cores: 4
+>     disk: 20
+>     image_url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+>     net0: "model=virtio,bridge=vnet020"
+>     ipconfig0: "ip=dhcp"
+>     headless: true
+> YAML
+> just playbook "-i inventory/timepiggy.ini playbooks/pve_vm.yml -e vm_operation=create -e target_node=pve3 -e @.cache/extract-validation-pve.yml"
+> ```
+>
+> Get the IP with `pvesh get /nodes/pve3/qemu/2012/agent/network-get-interfaces --output-format json` (run with `-b`), then write a temporary inventory **inside `inventory/`** so `group_vars/all` resolves: `[extract_validation] extract-validation-pve ansible_host=<ip> ansible_user=ansible-bootstrap ansible_ssh_private_key_file=/workspaces/extract-packaging/keys/proxmox_vm_ed25519 ansible_ssh_common_args='-o StrictHostKeyChecking=accept-new'`. Delete it in Step 9.
+
+- [x] **Step 7: Install with the real zsh role (devcontainer)**
 
 ```bash
 cd /home/cupric/dev/ansible/.worktrees/extract-packaging
 devcontainer up --workspace-folder "$PWD"
 devcontainer exec --workspace-folder "$PWD" -- bash -lc \
-  'ansible-playbook -i inventory/test_vms.ini playbooks/zsh.yml'
+  'ansible-playbook -i inventory/test_vms.ini playbooks/zsh.yml -e zsh_target_user=testuser'
 ```
+
+> **`zsh_target_user` must be passed explicitly.** `playbooks/zsh.yml` renders it in a pre-task *name* before the role defaults it, so a bare run fails with `'zsh_target_user' is undefined`. On the libvirt VMs the SSH user is `testuser`; on a Proxmox cloud-init VM it is `ansible-bootstrap`.
 
 Expected: the play finishes without failures; the log contains `extract 0.1.0+x86_64 installed at /usr/local/bin`. This is a full role run (Go, rust-tools, carapace, fzf, extract), so allow 15–25 minutes and give the command a 30-minute ceiling. The role is idempotent: if an unrelated step fails (a transient download, a mirror hiccup), fix nothing and re-run against the same VM instead of recreating it. Do not start molecule in parallel — it shares the Docker daemon and competes for CPU with the VM.
 
-- [ ] **Step 8: Assert the installation and the wrapper on the VM**
+- [x] **Step 8: Assert the installation and the wrapper on the VM**
 
 Create `.cache/extract-validation-verify.yml`:
 
@@ -1927,22 +1952,29 @@ devcontainer exec --workspace-folder "$PWD" -- bash -lc \
 
 Expected: `failed=0`, and the log contains `WRAPPER_DELEGATED` and `WRAPPER_FELL_THROUGH`. This proves, on a real host, that the release URL is anonymously downloadable, the artifact runs on Python 3.10, encrypted extraction works through `libarchive`/`7z`, and the new wrapper delegates to the installed binary while still falling through to the plugin.
 
-- [ ] **Step 9: Tear the VM down and restore the tracked inventory**
+Implementation notes from the actual run (Ubuntu 22.04 / Proxmox):
+
+- Every `ansible.builtin.shell` task in this verification playbook needs `args: executable: /bin/bash`; the default `/bin/sh` (dash) rejects `set -o pipefail`.
+- The extractor collapses a single top-level directory, so the 7z fixture `src/a.txt` lands at `enc/a.txt` (not `enc/src/a.txt`), and `enc2.zip` at `enc2/a.txt` — assert the collapsed paths.
+- Extracted directories are created mode `0700` as root; the playbook's `become: true` is required for the `stat` tasks.
+
+- [x] **Step 9: Tear the VM down and restore the tracked inventory**
 
 ```bash
 cd /home/cupric/dev/ansible/.worktrees/extract-packaging
-virsh destroy extract-validation 2>/dev/null || true
-virsh undefine extract-validation --remove-all-storage 2>/dev/null || true
-sudo rm -rf /var/lib/libvirt/images/extract-validation /var/lib/libvirt/cloudinit/extract-validation
-git checkout -- inventory/test_vms.ini
-rm -f .cache/extract-validation-vms.yml .cache/extract-validation-verify.yml
-virsh list --all | grep -q extract-validation && echo VM_STILL_PRESENT || echo VM_GONE
+# Proxmox path (see Step 5 note); the libvirt equivalent is `virsh destroy/undefine`.
+printf 'vm_targets:\n  - extract-validation-pve\n' > .cache/extract-validation-destroy.yml
+just playbook "-i inventory/timepiggy.ini playbooks/pve_vm.yml -e vm_operation=destroy -e target_node=pve3 -e @.cache/extract-validation-pve.yml -e @.cache/extract-validation-destroy.yml"
+rm -f inventory/extract_validation.ini .cache/extract-validation-*.yml
+rm -rf .cache
+git checkout -- inventory/test_vms.ini 2>/dev/null || true
 git status --short
+echo '--- expected: no output above except the evidence file ---'
 ```
 
-Expected: `VM_GONE`, and no modification to `inventory/test_vms.ini` in `git status`.
+Expected: `pve_vm : Destroy KVM VMs` reports `changed` for `extract-validation-pve`; the temporary inventory/cache files are gone; `git status` shows nothing beyond the evidence file committed in Step 11.
 
-- [ ] **Step 10: Write the evidence files**
+- [x] **Step 10: Write the evidence files**
 
 The zsh record is the full cross-repo validation; the ansible record is scoped to
 the ansible gates (its `AGENTS.md` requires one per change). Molecule was run in
@@ -1995,7 +2027,7 @@ JSON
 python3 -m json.tool .test-evidence-extract-packaging.json >/dev/null && echo EVIDENCE_ANSIBLE_OK
 ```
 
-- [ ] **Step 11: Commit the evidence and finish the branch**
+- [x] **Step 11: Commit the evidence and finish the branch**
 
 ```bash
 cd /home/cupric/dev/zsh/.worktrees/extract-packaging
