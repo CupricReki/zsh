@@ -1,0 +1,30 @@
+schema = 1
+
+[vcs]
+default_branch = "master"
+feature_prefix = "feature/"
+
+[worktree]
+base = "master"
+require_sync = true
+
+[setup]
+kind = "none"
+command = ""
+
+[test]
+gate = "python3 -m pytest -q"
+evidence = ".test-evidence-"
+
+[docs]
+layout = "flat"
+project = "zsh"
+
+[release]
+mode = "tag-only"
+
+[ci]
+templates = []
+
+[hooks]
+style = "none"   # hooks/pre-commit is a custom zsh-bench guard; not managed by repo-bootstrap
