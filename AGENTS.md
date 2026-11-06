@@ -1,3 +1,9 @@
+## Workflow Declaration
+
+`/.workflow.toml` is the repository's source of truth for the branch model,
+setup contract, gate, docs layout, release mode, CI gates, and hook style.
+Read it before changing workflow behavior; do not restate its facts here.
+
 ## Learned User Preferences
 
 - Only commit files that were intentionally changed for the current request; avoid including unrelated staged or modified files in commits.
