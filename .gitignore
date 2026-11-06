@@ -5,6 +5,7 @@ zlogin_local/*
 *.zwc
 custom/keybinding/keybindings.gen.zsh
 .cache/antibody
+.cache/exptest/
 .zcompdump*
 
 # Nix build artifacts
